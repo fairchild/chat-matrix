@@ -41,15 +41,20 @@ below.
 |---|---|---|---|---|
 | assistant-ui (`:3001`) | pydantic-ai (`:8001`) | Vercel AI data stream, AI SDK v7 | browser → Python | works |
 | CopilotKit (`:3002`) | pydantic-ai (`:8001`) | AG-UI | browser → Next runtime → Python | works |
+| AI Elements (`:3003`) | pydantic-ai (`:8001`) | Vercel AI data stream, AI SDK v7 | browser → Python | works |
 
-Both cells run the same agent, so the differences you see are the stack. The
+Every cell runs the same agent, so the differences you see are the stack. The
 pydantic-ai backend serves both protocols from one agent — that was one line of
-difference — which is why adding the second cell needed no backend work.
+difference — which is why neither of the later cells needed backend work.
 
-The topology column is a real difference, not a detail. assistant-ui talks
-straight to Python; CopilotKit requires a server-side runtime in the middle,
-which is a place to put auth and rate limiting, and also a Node process that has
-to be up.
+The topology column is a real difference, not a detail. assistant-ui and
+AI Elements talk straight to Python; CopilotKit requires a server-side runtime
+in the middle, which is a place to put auth and rate limiting, and also a Node
+process that has to be up.
+
+assistant-ui and AI Elements pin everything except the UI library — same
+protocol, same topology, same backend — so that pair is the cleanest read on the
+frontend axis the matrix has.
 
 ## Why a scripted model by default
 
@@ -96,12 +101,13 @@ only needs the backend's base URL.
 
 ## Known gaps
 
-- **`next build` fails in both frontends**, while prerendering `/_global-error`
-  with a null `useContext`. It reproduces identically in assistant-ui and
-  CopilotKit, so it's a Next 16 issue rather than a difference between them.
-  Both run fine under `next dev`, which is all the harness uses.
+- **`next build` fails in every frontend**, with a null React internal during
+  prerender — `useContext` on `/_global-error` in assistant-ui and CopilotKit,
+  `useRef` on `/` in AI Elements. Three unrelated UI libraries failing the same
+  way makes it a Next 16 issue rather than a difference between them. All three
+  run fine under `next dev`, which is all the harness uses.
 - **Thread switching is backend-only.** `/threads` and `/threads/{id}` exist and
-  the store is real, but neither frontend renders a thread list — reload resumes
+  the store is real, but no frontend renders a thread list — reload resumes
   the current thread rather than letting you pick one.
 - **Human-in-the-loop approval isn't wired.** pydantic-ai supports deferred tool
   approval, and it's the sharpest test of the generative-UI axis, but it's not
