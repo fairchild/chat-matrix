@@ -1,0 +1,17 @@
+# process state and logs from scripts/run.sh
+.run/
+
+# python
+.venv/
+__pycache__/
+*.pyc
+
+# node
+node_modules/
+.next/
+*.tsbuildinfo
+
+# local config and data
+.env.local
+data/
+*.db

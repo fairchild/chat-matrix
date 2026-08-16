@@ -1,0 +1,23 @@
+[tools]
+python = "3.13"
+node = "22"
+
+[tasks.setup]
+description = "Install dependencies for every stack"
+run = "./scripts/setup.sh"
+
+[tasks.run]
+description = "Start every backend and frontend"
+run = "./scripts/run.sh"
+
+[tasks.stop]
+description = "Stop everything"
+run = "./scripts/stop.sh"
+
+[tasks.conformance]
+description = "Check a backend against the reference contract"
+run = "./protocol/conformance.sh"
+
+[tasks.logs]
+description = "Tail all running stack logs"
+run = "tail -f .run/*.log"
