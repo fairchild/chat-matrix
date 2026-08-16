@@ -43,6 +43,7 @@ below.
 | assistant-ui (`:3001`) | pydantic-ai (`:8001`) | Vercel AI data stream, AI SDK v7 | browser → Python | works |
 | CopilotKit (`:3002`) | pydantic-ai (`:8001`) | AG-UI | browser → Next runtime → Python | works |
 | AI Elements (`:3003`) | pydantic-ai (`:8001`) | Vercel AI data stream, AI SDK v7 | browser → Python | works |
+| shadcn (`:3004`) | pydantic-ai (`:8001`) | Vercel AI data stream, AI SDK v7 | browser → Python | works |
 
 Every cell runs the same agent, so the differences you see are the stack. The
 pydantic-ai backend serves both protocols from one agent — that was one line of
@@ -53,9 +54,11 @@ AI Elements talk straight to Python; CopilotKit requires a server-side runtime
 in the middle, which is a place to put auth and rate limiting, and also a Node
 process that has to be up.
 
-assistant-ui and AI Elements pin everything except the UI library — same
-protocol, same topology, same backend — so that pair is the cleanest read on the
-frontend axis the matrix has.
+assistant-ui, AI Elements and shadcn pin everything except the UI library — same
+protocol, same topology, same backend — so those three are the cleanest read on
+the frontend axis the matrix has. They also happen to land at three different
+points on tool-call rendering: a disclosure that doesn't name the tool, a
+generic card showing JSON, and a hand-written component per tool.
 
 ## Why a scripted model by default
 
