@@ -18,6 +18,9 @@ docs/            how it fits together, and how to extend it
 [`docs/architecture.md`](docs/architecture.md) covers the design: why it's
 organised around axes rather than stacks, how a request actually flows, and what
 adding a frontend, a protocol, or a backend each costs.
+[`docs/reflection.md`](docs/reflection.md) is the opinionated version — what the
+comparison actually showed so far, what it can't tell you yet, and what I'd
+change.
 
 ## Running it
 
