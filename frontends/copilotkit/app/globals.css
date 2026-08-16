@@ -29,3 +29,9 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 .badge-right { margin-left: auto; color: #71717a; }
+
+.badge-back {
+  color: #71717a;
+  text-decoration: none;
+}
+.badge-back:hover { color: #18181b; }

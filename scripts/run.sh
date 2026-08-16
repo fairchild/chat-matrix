@@ -3,6 +3,8 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/stacks.sh"
 
+INDEX_PORT="${INDEX_PORT:-3000}"
+
 mkdir -p "$RUN_DIR"
 
 start() { # start <kind> <name> <port> <dir> <cmd...>
@@ -35,6 +37,12 @@ for entry in "${FRONTENDS[@]}"; do
   start frontend "$name" "$port" "$ROOT/frontends/$name" bun run dev
 done
 
+# The hub isn't a cell in the matrix, so it lives here rather than in stacks.sh.
+# Static, and scoped to index/ so the rest of the repo isn't served over HTTP.
+printf '\033[1mstarting index\033[0m\n'
+start harness index "$INDEX_PORT" "$ROOT/index" \
+  python3 -m http.server "$INDEX_PORT" --bind 127.0.0.1
+
 printf '\n\033[1mwaiting for health\033[0m\n'
 status=0
 for entry in "${BACKENDS[@]}"; do
@@ -53,5 +61,11 @@ for entry in "${FRONTENDS[@]}"; do
     printf '  \033[31m✗\033[0m frontend %s — see %s\n' "$name" "$RUN_DIR/frontend-$name.log"; status=1
   fi
 done
+
+if wait_for_http "http://localhost:$INDEX_PORT" 20; then
+  printf '\n  \033[1mstart here → \033[4mhttp://localhost:%s\033[0m\n' "$INDEX_PORT"
+else
+  printf '  \033[31m✗\033[0m index — see %s\n' "$RUN_DIR/harness-index.log"; status=1
+fi
 
 exit "$status"

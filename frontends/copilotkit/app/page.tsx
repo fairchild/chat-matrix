@@ -4,6 +4,7 @@ import { CopilotChat } from "@copilotkit/react-core/v2";
 import { useEffect, useState } from "react";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8001";
+const INDEX_URL = process.env.NEXT_PUBLIC_INDEX_URL ?? "http://localhost:3000";
 
 type Health = {
   backend: string;
@@ -28,6 +29,9 @@ function BackendBadge() {
 
   return (
     <header className="badge">
+      <a className="badge-back" href={INDEX_URL} title="Back to the matrix">
+        ← matrix
+      </a>
       <span className="badge-name">CopilotKit</span>
       <span className="badge-dim">→ ag-ui →</span>
       {health ? (

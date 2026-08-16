@@ -29,7 +29,8 @@ change.
 ./scripts/run.sh       # or: mise run run
 ```
 
-Then open **http://localhost:3001**. Stop with `./scripts/stop.sh`; logs are in
+Then open **http://localhost:3000** — the index lists every cell and links into it.
+Stop with `./scripts/stop.sh`; logs are in
 `.run/`.
 
 No API keys required. The default model is a deterministic scripted one — see

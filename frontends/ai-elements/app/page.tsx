@@ -55,6 +55,7 @@ import { CopyIcon, MessagesSquareIcon, RefreshCcwIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8001";
+const INDEX_URL = process.env.NEXT_PUBLIC_INDEX_URL ?? "http://localhost:3000";
 
 type Health = {
   backend: string;
@@ -79,6 +80,13 @@ function BackendBadge() {
 
   return (
     <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2 text-xs">
+      <a
+        href={INDEX_URL}
+        className="text-muted-foreground hover:text-foreground"
+        title="Back to the matrix"
+      >
+        ← matrix
+      </a>
       <span className="font-medium">AI Elements</span>
       <span className="text-muted-foreground">→</span>
       {health ? (

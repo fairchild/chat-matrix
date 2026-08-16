@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>chat-stack matrix</title>
+<style>
+  :root {
+    --bg: #fbfbfa;
+    --panel: #fff;
+    --ink: #18181b;
+    --dim: #71717a;
+    --line: #e4e4e7;
+    --accent: #18181b;
+    --up: #16a34a;
+    --down: #a1a1aa;
+    --chip: #f4f4f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0c0d; --panel: #151517; --ink: #ededee; --dim: #8b8b93;
+      --line: #27272a; --accent: #ededee; --up: #4ade80; --down: #52525b;
+      --chip: #1f1f23;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 48px 24px 80px;
+    background: var(--bg); color: var(--ink);
+    font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .lede { color: var(--dim); margin: 0 0 32px; max-width: 62ch; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em;
+       color: var(--dim); margin: 40px 0 14px; font-weight: 600; }
+  a { color: inherit; }
+
+  .backend {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px;
+    padding: 14px 18px; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--panel); font-size: 13px;
+  }
+  .backend .name { font-weight: 600; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .chip { background: var(--chip); padding: 2px 7px; border-radius: 5px; font-size: 12px; }
+
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .cell {
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 18px; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--panel); text-decoration: none; color: inherit;
+    transition: border-color .12s ease, transform .12s ease;
+  }
+  .cell:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .cell[aria-disabled="true"] { opacity: .55; pointer-events: none; }
+  .cell .top { display: flex; align-items: center; gap: 8px; }
+  .cell .title { font-weight: 600; font-size: 16px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--down); flex: none; }
+  .dot.up { background: var(--up); }
+  .meta { display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; color: var(--dim); }
+  .meta b { color: var(--ink); font-weight: 500; }
+  .go { margin-top: auto; font-size: 12.5px; color: var(--dim); }
+  .cell:hover .go { color: var(--ink); }
+
+  .probes { display: grid; gap: 8px; }
+  .probe {
+    display: flex; align-items: baseline; gap: 12px; width: 100%; text-align: left;
+    padding: 11px 14px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--panel); color: inherit; font: inherit; font-size: 13.5px; cursor: pointer;
+  }
+  .probe:hover { border-color: var(--accent); }
+  .probe .why { color: var(--dim); font-size: 12.5px; margin-left: auto; flex: none; }
+  .copied { color: var(--up); }
+  footer { margin-top: 44px; color: var(--dim); font-size: 12.5px; }
+  code { background: var(--chip); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>chat-stack matrix</h1>
+  <p class="lede">
+    Pick a cell. Every one runs the same agent against the same backend, so the
+    differences you see are the stack rather than the answer.
+  </p>
+
+  <h2>Backend</h2>
+  <div class="backend" id="backend"><span class="name">checking…</span></div>
+
+  <h2>Frontends</h2>
+  <div class="grid" id="cells"></div>
+
+  <h2>What to try</h2>
+  <div class="probes" id="probes"></div>
+
+  <footer>
+    Same three prompts in each cell, then compare. Docs live in the repo:
+    <code>docs/architecture.md</code>, <code>docs/reflection.md</code>,
+    <code>protocol/CONTRACT.md</code>. Start and stop everything with
+    <code>./scripts/run.sh</code> and <code>./scripts/stop.sh</code>.
+  </footer>
+</div>
+
+<script>
+const BACKEND = "http://localhost:8001";
+
+const CELLS = [
+  {
+    name: "assistant-ui",
+    port: 3001,
+    protocol: "Vercel AI data stream (v7)",
+    topology: "browser → Python",
+    note: "Tool calls collapse behind a disclosure",
+  },
+  {
+    name: "CopilotKit",
+    port: 3002,
+    protocol: "AG-UI",
+    topology: "browser → Next runtime → Python",
+    note: "Tool renderers are opt-in",
+  },
+  {
+    name: "AI Elements",
+    port: 3003,
+    protocol: "Vercel AI data stream (v7)",
+    topology: "browser → Python",
+    note: "Vercel's own component registry",
+  },
+];
+
+const PROBES = [
+  ["What's the weather in Tokyo?", "fast structured tool"],
+  ["Search notes for streaming protocols.", "a list to render"],
+  ["Analyze assistant-ui as a chat frontend.", "slow (~3s) call"],
+];
+
+const cellsEl = document.getElementById("cells");
+CELLS.forEach((c) => {
+  const a = document.createElement("a");
+  a.className = "cell";
+  a.href = `http://localhost:${c.port}`;
+  a.id = `cell-${c.port}`;
+  a.setAttribute("aria-disabled", "true");
+  a.innerHTML = `
+    <div class="top"><span class="dot"></span><span class="title"></span></div>
+    <div class="meta">
+      <span><b>protocol</b> · <span class="proto"></span></span>
+      <span><b>topology</b> · <span class="topo"></span></span>
+      <span class="note"></span>
+    </div>
+    <div class="go">localhost:${c.port} — <span class="state">checking…</span></div>`;
+  a.querySelector(".title").textContent = c.name;
+  a.querySelector(".proto").textContent = c.protocol;
+  a.querySelector(".topo").textContent = c.topology;
+  a.querySelector(".note").textContent = c.note;
+  cellsEl.appendChild(a);
+});
+
+const probesEl = document.getElementById("probes");
+PROBES.forEach(([text, why]) => {
+  const b = document.createElement("button");
+  b.className = "probe";
+  b.innerHTML = `<span class="txt"></span><span class="why"></span>`;
+  b.querySelector(".txt").textContent = text;
+  b.querySelector(".why").textContent = why;
+  b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      const why = b.querySelector(".why");
+      const prev = why.textContent;
+      why.textContent = "copied";
+      why.classList.add("copied");
+      setTimeout(() => { why.textContent = prev; why.classList.remove("copied"); }, 1200);
+    } catch { /* clipboard blocked; the text is right there to select */ }
+  });
+  probesEl.appendChild(b);
+});
+
+async function refreshBackend() {
+  const el = document.getElementById("backend");
+  try {
+    const res = await fetch(`${BACKEND}/health`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const h = await res.json();
+    el.innerHTML = `
+      <span class="dot up"></span>
+      <span class="name"></span>
+      <span class="chip mono"></span>
+      <span class="tools"></span>
+      <span class="threads" style="margin-left:auto"></span>`;
+    el.querySelector(".name").textContent = h.backend;
+    el.querySelector(".chip").textContent = h.model;
+    el.querySelector(".tools").textContent = (h.tools || []).join(" · ");
+    el.querySelector(".threads").textContent =
+      `${h.threads} stored ${h.threads === 1 ? "thread" : "threads"}`;
+  } catch (err) {
+    el.innerHTML = `<span class="dot"></span><span class="name">backend unreachable at ${BACKEND}</span>`;
+  }
+}
+
+// Cross-origin dev servers won't allow a readable response, but a no-cors
+// request still distinguishes "listening" from "connection refused".
+async function isUp(port) {
+  try {
+    await fetch(`http://localhost:${port}/`, { mode: "no-cors", cache: "no-store" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function refreshCells() {
+  await Promise.all(CELLS.map(async (c) => {
+    const up = await isUp(c.port);
+    const el = document.getElementById(`cell-${c.port}`);
+    el.setAttribute("aria-disabled", up ? "false" : "true");
+    el.querySelector(".dot").classList.toggle("up", up);
+    el.querySelector(".state").textContent = up ? "open →" : "not running";
+  }));
+}
+
+function refresh() { refreshBackend(); refreshCells(); }
+refresh();
+setInterval(refresh, 4000);
+</script>
+</body>
+</html>
