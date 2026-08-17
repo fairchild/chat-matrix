@@ -52,13 +52,18 @@ Same six routes, same three tools. pi's built-in tools (read, bash, edit, …)
 are switched off — `tools:` is an allowlist of the three custom ones — because
 identical work across backends is the whole premise.
 
-The scripted `/chat` stream is byte-identical to pydantic-ai's for the four
-probe prompts (ids and timestamps aside), including the summary line, which
+The scripted `/chat` stream is byte-identical to pydantic-ai's across the five
+golden flows (ids and timestamps aside), including the summary line, which
 prints tool results the way pydantic-ai's does: `Weather(city='Tokyo', …)`. That
 is a Python dataclass `repr` leaking through pydantic-ai's script, reproduced
-here on purpose so a diff between the two backends is empty and any difference
-you see in a cell is the frontend. If `scripted.py` ever prints JSON instead,
-`RENDER` in `scripted.ts` becomes `JSON.stringify` and `pyrepr.ts` goes away.
+here on purpose so any difference you see in a cell is the frontend rather than
+the backend. `protocol/golden.ts` pins it: the fixtures are captured from the
+reference, so the parity is checked rather than agreed on.
+`pyrepr.ts` outlives the summary either way: `pyJson` spells the tool-call
+arguments, where `json.dumps`' space after the colon lands at the head of the
+second `tool-input-delta`, and `py` spells `analyze`'s own return, which follows
+pydantic-ai's `{topic!r}`. What the summary prints is a reference-side call, and
+changing it regenerates all ten fixtures.
 `/ag-ui` is identical modulo the same ids. pi's event model closes each tool
 call at `toolcall_end`, as its arguments finish — arguably the more useful
 timing to expose — but the `/chat` adapter holds `tool-input-available` until
