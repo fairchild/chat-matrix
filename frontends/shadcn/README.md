@@ -68,6 +68,19 @@ generative-UI axis with both ends visible. The generic renderer costs one prop
 and shows you a JSON blob. The specific renderer costs a component and shows you
 a card, and can't show you anything at all about a tool you didn't anticipate.
 
+**The card drops the tool's name, and that cost only showed up under a probe.**
+The weather card reads "Tokyo · crisp and sunny" and never says `get_weather`
+anywhere on screen. That's the right call for a reader — the answer is the
+point, not the machinery — but it means this is the one cell where you cannot
+tell which tool produced a result by looking at it. assistant-ui hides the name
+behind a disclosure; AI Elements puts it in the card header; here it exists only
+as the `data-tool` attribute. `probes/` found this the hard way: its flow
+sentence *"expect a tool call for get_weather"* resolved by matching the tool
+name as visible text, which works on the other three and cannot work here, so
+adapters grew a `toolNamed` override. A grammar written against three UIs
+turning out to encode an assumption about all of them is the kind of thing only
+a fourth stack surfaces, which is most of the argument for the matrix.
+
 **The optional-input idiom is already in the template.** `part.input?.city`,
 not `part.input.city`, because between `tool-input-start` and the first
 `tool-input-delta` the part has no input yet. AI Elements crashes at exactly
