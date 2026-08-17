@@ -20,6 +20,8 @@ bun run deploy         # publish the Worker
 |---|---|---|
 | `DEMO_MODEL` | `scripted` | only `scripted` is wired here so far |
 
+Deployed at `https://chat-stack-backend-cloudflare-agents.irons-in-the-fire8698.workers.dev` — conformance passes against it from the edge.
+
 ## Layout
 
 | File | |

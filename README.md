@@ -62,6 +62,22 @@ probe differ only in the summary's tool-result formatting and a `finishReason`
 field — the frontend gets the same work either way. A local clone runs both;
 Cloudflare runs the second, which is the point of it.
 
+### What's public
+
+The cloudflare-agents backend is deployed:
+
+```
+https://chat-stack-backend-cloudflare-agents.irons-in-the-fire8698.workers.dev
+```
+
+Conformance passes against it from the edge, and any local cell can drive it —
+`http://localhost:3004/?backend=https://chat-stack-backend-cloudflare-agents.irons-in-the-fire8698.workers.dev`
+— which is how the shadcn and AI Elements weather flows were run against it.
+(CopilotKit's runtime forwards only localhost backends, so that cell stays on
+its default when pointed at a hosted one.) The frontends aren't hosted yet: the
+three direct cells build fully static and would sit on Workers static assets;
+CopilotKit's `/api/copilotkit` needs a Node runtime somewhere.
+
 The topology column is a real difference, not a detail. assistant-ui and
 AI Elements talk straight to Python; CopilotKit requires a server-side runtime
 in the middle, which is a place to put auth and rate limiting, and also a Node
