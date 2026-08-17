@@ -156,15 +156,37 @@ prompt get byte-identical work to render and any difference you see is the stack
 The tools themselves still execute for real — only the model's choices are
 scripted.
 
-For real behaviour, set a provider string:
+For real behaviour, **pick a model in the backend's row at the hub**. Each row
+carries its own dropdown, because what a backend can reach differs: the pi
+backends can use a login you already did with the `pi` CLI, so they often offer
+providers the others can't without a single environment variable being set,
+while the Cloudflare Worker has no ambient credentials at all and carries the
+OpenAI provider only. The list comes from each backend's `GET /models`, and
+entries it can't serve are shown greyed with the reason rather than hidden —
+"no key" and "not wired here" are different problems.
+
+Credentials are read wherever that stack normally reads them: `OPENAI_API_KEY`,
+`ANTHROPIC_API_KEY` and `GOOGLE_API_KEY` from the environment — `mise env`
+territory — plus `pi auth login` for the pi backends, which is why those two
+often reach a provider with no variable set at all. The Cloudflare cell is the
+exception: a Worker has no ambient environment, so its key is a binding read
+from `backends/cloudflare-agents/.dev.vars` (gitignored, written by
+`scripts/setup.sh` from `.dev.vars.example`). Nothing here needs a key to run.
+
+The picker changes the running backend, so it applies to every cell pointed at
+it — the model stays the control variable, not a per-request field. To set it
+at boot instead, `DEMO_MODEL` still works, in either a shared id or the
+backend's own spelling, and `auto` takes the first provider you have configured:
 
 ```sh
-DEMO_MODEL=anthropic:claude-opus-5 ./scripts/run.sh
+DEMO_MODEL=openai/gpt-5.6-luna ./scripts/run.sh   # a shared id, understood everywhere
+DEMO_MODEL=auto ./scripts/run.sh                  # OpenAI, else Anthropic, else Google
+DEMO_MODEL=anthropic:claude-opus-5 ./scripts/run.sh   # pydantic-ai's own spelling still works
 ```
 
-Each backend reads the string its own way — pi wants `anthropic/claude-opus-4-5`
-and can use a login you've already done with the `pi` CLI — so set it per
-backend when they differ; each backend's README has the spelling.
+`./scripts/golden.sh` refuses to run against anything but `scripted`, and
+`probe.sh` and `conformance.sh` warn — both compare across cells, which only
+means something while every cell is doing identical work.
 
 ## What you're comparing
 
@@ -244,5 +266,6 @@ A recorded run against the live matrix:
   approval, and it's the sharpest test of the generative-UI axis, but it's not
   in the reference agent yet.
 - **The scripted model is keyword-matched**, so it won't chain tools or reason
-  about which to use. That's the cost of determinism; use `DEMO_MODEL` when you
+  about which to use. That's the cost of determinism; pick a real model in the
+  backend's row at the hub when you
   need real tool selection.

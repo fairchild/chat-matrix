@@ -1,0 +1,33 @@
+# Tasks for this cell on its own. The root `.mise.toml` drives the whole matrix;
+# these are for when the Worker is the only thing you are working on, and they
+# are thin wrappers over the `package.json` scripts so `bun run …` and
+# `mise run …` can't drift apart.
+
+[tasks.dev]
+description = "wrangler dev on :8002 — local secrets come from .dev.vars"
+run = "bun run dev"
+
+[tasks.types]
+description = "regenerate worker-configuration.d.ts from wrangler.jsonc and .dev.vars"
+run = "bun run types"
+
+[tasks.typecheck]
+description = "tsc --noEmit"
+run = "bun run typecheck"
+
+[tasks.deploy]
+description = "publish the Worker (its secrets are separate — `wrangler secret put`)"
+run = "bun run deploy"
+
+# The other three backends read provider keys straight from the process
+# environment, so `mise env` already serves them. A Worker can't: it has no
+# ambient environment, and only a binding reaches `env`. This is the bridge —
+# it takes what mise exported and writes the binding file wrangler reads.
+[tasks.dev-vars]
+description = "Write .dev.vars from the environment (overwrites it)"
+run = '''
+[ -n "${OPENAI_API_KEY:-}" ] || { echo "OPENAI_API_KEY is not set — nothing to write"; exit 1; }
+umask 077
+printf 'OPENAI_API_KEY=%s\n' "$OPENAI_API_KEY" > .dev.vars
+echo "wrote .dev.vars (OPENAI_API_KEY)"
+'''

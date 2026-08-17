@@ -4,26 +4,47 @@
  */
 
 import { aguiProtocol, turnFromRun, type RunAgentInput } from "./agui.ts";
+import { authRuntime, catalogue, initial, spec, unavailable } from "./models.ts";
 import { childArgs, PiChild, Pool } from "./pi.ts";
 import { streamTurn, type Protocol, type Turn } from "./protocol.ts";
+import { SCRIPTED } from "./scripted.ts";
 import { sessionIdFor, ThreadStore } from "./store.ts";
 import { TOOL_NAMES } from "./tools.ts";
 import { turnFromChat, vercelProtocol, type ChatRequest } from "./vercel.ts";
 
 export const BACKEND_NAME = "pi-rpc";
-export const MODEL_SPEC = process.env.DEMO_MODEL ?? "scripted";
+
+/** Credentials only — the child resolves and streams; this runtime just answers "can it?". */
+const runtime = await authRuntime();
+
+export const MODEL_SPEC = initial(runtime, process.env.DEMO_MODEL ?? SCRIPTED);
+/** The boot default. The running model is `current` — the hub can change it. */
 
 const PORT = Number(process.env.PORT ?? 8004);
 const store = new ThreadStore(process.env.DEMO_SESSIONS ?? "data/sessions");
 const pool = new Pool({
-  model: MODEL_SPEC,
+  model: spec(runtime, MODEL_SPEC),
   sessionDir: store.dir,
   idleMs: Number(process.env.DEMO_IDLE_SECONDS ?? 60) * 1000,
   max: Number(process.env.DEMO_MAX_CHILDREN ?? 4),
 });
 
 /** `scripted` is the extension's provider; anything else is pi's `provider/model[:thinking]`. */
-const model = MODEL_SPEC === "scripted" ? "scripted/scripted" : MODEL_SPEC;
+const model = spec(runtime, MODEL_SPEC);
+
+let current = MODEL_SPEC;
+
+/**
+ * Swap the running model. New children spawn with it; a child mid-turn finishes
+ * on the old one, since `--model` is an argv entry rather than something a live
+ * process can be told.
+ */
+function useModel(id: string): void {
+  const reason = unavailable(runtime, id);
+  if (reason) throw new Error(reason);
+  pool.setModel(spec(runtime, id));
+  current = id;
+}
 
 /** Fail at boot, not on the first message: ask a throwaway child what `--model` resolved to. */
 async function checkModel() {
@@ -78,12 +99,29 @@ async function handle(request: Request): Promise<Response> {
   if (request.method === "GET" && path === "/health") {
     return json({
       backend: BACKEND_NAME,
-      model: MODEL_SPEC,
+      model: current,
       protocols: { "vercel-ai": "/chat (sdk v7)", "ag-ui": "/ag-ui" },
       tools: TOOL_NAMES,
       threads: (await store.list()).length,
       children: pool.size,
     });
+  }
+
+  /** Every model this backend knows about, available or not, each with its reason. */
+  if (request.method === "GET" && path === "/models") {
+    return json({ current, models: catalogue(runtime, current) });
+  }
+
+  /** Switch the running model. Process-wide on purpose: the model is the control variable. */
+  if (request.method === "POST" && path === "/model") {
+    const { id } = (await request.json()) as { id?: unknown };
+    if (typeof id !== "string") return problem(400, 'body must be {"id": "…"}');
+    try {
+      useModel(id);
+    } catch (error) {
+      return problem(400, error instanceof Error ? error.message : String(error));
+    }
+    return json({ model: current });
   }
 
   if (request.method === "POST" && path === "/chat") {

@@ -18,18 +18,27 @@ bun run dev            # :8003 — or PORT=… bun run src/main.ts
 
 | Env | Default | |
 |---|---|---|
-| `DEMO_MODEL` | `scripted` | pi's `provider/model[:thinking]`, e.g. `anthropic/claude-opus-4-5:high` |
+| `DEMO_MODEL` | `scripted` | boot default: a shared id, `auto`, or pi's `provider/model[:thinking]` (`anthropic/claude-opus-4-5:high`) |
 | `DEMO_SESSIONS` | `data/sessions` | where the pi session files go |
 
 A real `DEMO_MODEL` resolves through pi's own model catalogue and credentials —
 the same `~/.pi/agent/auth.json` the `pi` CLI uses — so a provider you have
 logged into with pi needs no key in the environment here.
 
+That's why the model picker is per-backend rather than one control over the
+whole matrix: this backend reaches credentials the others can't see. `GET
+/models` reports each candidate's source, so an entry reads `anthropic login
+(pi auth)` or `openai env key` depending on where the credential actually came
+from, and OpenAI resolves through `openai` when a key is set and `openai-codex`
+when a Codex login is what you have. `POST /model {"id": …}` switches while it
+runs; sessions read the model when they open, so the next turn picks it up.
+
 ## Layout
 
 | File | |
 |---|---|
 | `src/agent.ts` | the reference agent: three tools via `defineTool`, one `AgentSession` per request |
+| `src/models.ts` | what this backend can reach, and why — the picker's data |
 | `src/scripted.ts` | deterministic model — a pi-ai `Provider` following the same script as `scripted.py` |
 | `src/store.ts` | threads as pi session files, read back with pi's own `SessionManager` |
 | `src/protocol.ts` | what a wire protocol provides, and the loop that streams one turn through it |

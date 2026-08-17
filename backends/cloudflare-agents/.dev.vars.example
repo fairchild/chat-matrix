@@ -1,0 +1,10 @@
+# Local secrets for `wrangler dev`. `scripts/setup.sh` copies this to `.dev.vars`,
+# which is gitignored — put real values there, never here.
+#
+# A Worker has no ambient environment: a variable exported in your shell is
+# invisible inside it, and only a binding reaches `env`. This file is that
+# binding. A deployed Worker takes the same name from `wrangler secret put`.
+#
+# Leave a key empty and the model picker offers it greyed, saying which binding
+# is missing — the backend still runs on the scripted model.
+OPENAI_API_KEY=

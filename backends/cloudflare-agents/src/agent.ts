@@ -9,7 +9,6 @@
 
 import { stepCountIs, streamText, tool, type LanguageModel, type ModelMessage } from "ai";
 import { z } from "zod";
-import { scriptedModel } from "./scripted";
 
 export const BACKEND_NAME = "cloudflare-agents";
 export const SDK_VERSION = 7;
@@ -100,12 +99,6 @@ export const tools = {
 };
 
 export const TOOL_NAMES = Object.keys(tools);
-
-/** `scripted` gives deterministic runs; anything else is left for a real provider to claim. */
-export function modelFor(spec: string): LanguageModel {
-  if (spec === "scripted") return scriptedModel();
-  throw new Error(`DEMO_MODEL=${JSON.stringify(spec)} is not wired for this backend yet; only "scripted" is`);
-}
 
 export type OnFinish = (responseMessages: ModelMessage[]) => void;
 

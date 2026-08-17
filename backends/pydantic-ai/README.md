@@ -10,14 +10,21 @@ uv run uvicorn app.main:app --port 8001
 
 | Env | Default | |
 |---|---|---|
-| `DEMO_MODEL` | `scripted` | any pydantic-ai model string, e.g. `anthropic:claude-opus-5` |
+| `DEMO_MODEL` | `scripted` | boot default: a shared id, `auto`, or any pydantic-ai model string (`anthropic:claude-opus-5`) |
 | `DEMO_DB` | `data/threads.db` | SQLite thread store |
+| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_API_KEY` | — | make the matching model selectable |
+
+`GET /models` lists what this backend can reach and `POST /model {"id": …}`
+switches it while it runs — the hub's dropdown is those two. Credentials come
+from the environment and nowhere else here, so an entry is unavailable exactly
+when its variable is unset, and `/models` says which one.
 
 ## Layout
 
 | File | |
 |---|---|
 | `app/agent.py` | the reference agent and its three tools |
+| `app/models.py` | what this backend can reach, and why — the picker's data |
 | `app/scripted.py` | deterministic model, so frontends are the only variable |
 | `app/store.py` | thread persistence, in pydantic-ai's own message format |
 | `app/main.py` | the HTTP surface |

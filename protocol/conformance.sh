@@ -25,9 +25,14 @@ if curl -sf "$BACKEND/health" -o "$health"; then
   for field in '"backend"' '"model"' '"tools"' '"protocols"'; do
     assert "health exposes $field" "$field" "$health"
   done
+  model="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["model"])' "$health")"
   printf '    backend=%s model=%s\n' \
     "$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["backend"])' "$health")" \
-    "$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["model"])' "$health")"
+    "$model"
+  # These assertions are about which events the stream carries, and a real model
+  # chooses whether to call a tool at all. It can pass; it can also miss for a
+  # reason that isn't a conformance failure.
+  [ "$model" = "scripted" ] || printf '    \033[33m⚠\033[0m not on scripted — a real model picks its own tools, so a miss here may be the model\n'
 else
   bad "GET /health unreachable — is the backend running?"
   printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"

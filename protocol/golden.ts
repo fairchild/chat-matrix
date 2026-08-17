@@ -171,10 +171,11 @@ const paint = (code: number) => (text: string) => `\x1b[${code}m${text}\x1b[0m`;
 const [green, red, yellow, bold] = [paint(32), paint(31), paint(33), paint(1)];
 const count = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-async function backendName(url: string): Promise<string> {
+async function backendHealth(url: string): Promise<{ name: string; model: string }> {
   const response = await fetch(`${url}/health`, { signal: AbortSignal.timeout(10_000) });
   if (!response.ok) throw new Error(`GET /health → ${response.status}`);
-  return ((await response.json()) as { backend?: string }).backend ?? url;
+  const health = (await response.json()) as { backend?: string; model?: string };
+  return { name: health.backend ?? url, model: health.model ?? "unknown" };
 }
 
 /** Every fixture at once, consumed in the fixtures' order. A failed capture is a difference like
@@ -205,8 +206,22 @@ async function unified(golden: string, actual: string, file: string, backend: st
 /** One pass over the fixtures; `--update` writes what a check would have compared. */
 async function run(url: string, exceptions: Record<string, Exception[]>, updating: boolean): Promise<boolean> {
   let name: string;
-  try { name = await backendName(url); } catch (error) {
+  let model: string;
+  try { ({ name, model } = await backendHealth(url)); } catch (error) {
     console.log(`  ${red("✗")} ${url} unreachable — is the backend running? (${error})`);
+    return false;
+  }
+  // The model is switchable at runtime now, so it has to be checked here rather
+  // than assumed from how the backend was started. Golden compares bytes, and a
+  // real provider makes different bytes every run — there'd be nothing to learn
+  // from the diff, so refuse instead of printing one.
+  if (model !== "scripted") {
+    console.log(
+      bold(`\ngolden: ${name} · ${url}`) +
+        `\n  ${red("✗")} running on ${model}, not scripted — golden compares bytes, which only means` +
+        `\n    something on a deterministic model. Switch it back at the hub, or:` +
+        `\n    curl -X POST ${url}/model -H 'content-type: application/json' -d '{"id":"scripted"}'`,
+    );
     return false;
   }
   const out = [bold(`\ngolden${updating ? " --update" : ""}: ${name} · ${url}`)];

@@ -174,7 +174,7 @@ What it does **not** get is data from this repo's default backend. The
 disclosure never appears. Two ways to see it:
 
 ```sh
-DEMO_MODEL=anthropic:claude-opus-5 ./scripts/run.sh   # a model that actually reasons
+DEMO_MODEL=auto ./scripts/run.sh   # a model that actually reasons — or pick one at the hub
 ```
 
 or teach `scripted` to emit a `ThinkingPart` before it picks a tool — which

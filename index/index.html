@@ -4,84 +4,140 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>chat-stack matrix</title>
+<meta name="description" content="Four chat frontends against four agent backends, all running the same agent, so the differences you see are the stack rather than the answer." />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="chat-stack matrix" />
+<meta property="og:description" content="Four chat frontends against four agent backends, all running the same agent, so the differences you see are the stack rather than the answer." />
+<meta name="twitter:card" content="summary" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='%2371717a'%3E%3Crect x='1' y='1' width='6' height='6' rx='1.5'/%3E%3Crect x='9' y='1' width='6' height='6' rx='1.5'/%3E%3Crect x='1' y='9' width='6' height='6' rx='1.5'/%3E%3C/g%3E%3Crect x='9' y='9' width='6' height='6' rx='1.5' fill='%234ade80'/%3E%3C/svg%3E" />
 <style>
   :root {
     --bg: #fbfbfa;
     --panel: #fff;
     --ink: #18181b;
     --dim: #71717a;
+    --faint: #a1a1aa;
     --line: #e4e4e7;
     --accent: #18181b;
     --up: #16a34a;
-    --down: #a1a1aa;
+    --down: #d4d4d8;
     --chip: #f4f4f5;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #0c0c0d; --panel: #151517; --ink: #ededee; --dim: #8b8b93;
-      --line: #27272a; --accent: #ededee; --up: #4ade80; --down: #52525b;
-      --chip: #1f1f23;
+      --faint: #6b6b73; --line: #27272a; --accent: #ededee; --up: #4ade80;
+      --down: #3f3f46; --chip: #1f1f23;
     }
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body {
     margin: 0; padding: 48px 24px 80px;
     background: var(--bg); color: var(--ink);
     font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   }
-  .wrap { max-width: 940px; margin: 0 auto; }
+  .wrap { max-width: 1000px; margin: 0 auto; }
   h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.02em; }
-  .lede { color: var(--dim); margin: 0 0 32px; max-width: 62ch; }
+  .lede { color: var(--dim); margin: 0 0 10px; max-width: 66ch; }
   h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em;
-       color: var(--dim); margin: 40px 0 14px; font-weight: 600; }
-  h2 .step { display: inline-block; width: 18px; height: 18px; line-height: 18px; text-align: center;
-             border-radius: 50%; background: var(--accent); color: var(--bg); font-size: 11px;
-             margin-right: 8px; letter-spacing: 0; }
+       color: var(--dim); margin: 44px 0 14px; font-weight: 600; }
   a { color: inherit; }
   .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-  .chip { background: var(--chip); padding: 2px 7px; border-radius: 5px; font-size: 12px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--down); flex: none; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--down); flex: none; }
   .dot.up { background: var(--up); }
 
-  /* The backend axis: one radio per backend, all health-checked, one chosen. */
-  fieldset.backends {
-    margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 10px;
-    background: var(--panel); overflow: hidden;
-  }
-  .opt {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
-    padding: 12px 18px 12px 15px; font-size: 13px; cursor: pointer;
-    border-top: 1px solid var(--line); border-left: 3px solid transparent;
-  }
-  .opt:first-child { border-top: 0; }
-  .opt:hover { background: var(--chip); }
-  .opt:has(input:checked) { border-left-color: var(--accent); background: var(--chip); }
-  .opt input { accent-color: var(--accent); margin: 0 4px 0 0; width: 14px; height: 14px; }
-  .opt .name { font-weight: 600; }
-  .opt .detail { display: flex; align-items: center; gap: 10px; color: var(--dim); }
-  .opt .right { margin-left: auto; display: flex; gap: 14px; color: var(--dim); font-size: 12.5px; }
-  .opt:not(:has(input:checked)):not(:hover) .name { color: var(--dim); }
-  .hint { color: var(--dim); font-size: 12.5px; margin: 10px 0 0; }
+  nav { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--dim); margin: 0 0 34px; }
+  nav a { text-decoration: none; border-bottom: 1px solid var(--line); padding-bottom: 1px; }
+  nav a:hover { color: var(--ink); border-color: var(--accent); }
 
-  .using { color: var(--dim); font-size: 13px; margin: -6px 0 14px; }
-  .using b { color: var(--ink); font-weight: 600; }
-
-  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-  .cell {
-    display: flex; flex-direction: column; gap: 10px;
-    padding: 18px; border: 1px solid var(--line); border-radius: 10px;
-    background: var(--panel); text-decoration: none; color: inherit;
-    transition: border-color .12s ease, transform .12s ease;
+  .banner {
+    margin: 0 0 18px; padding: 11px 14px; border: 1px solid var(--line);
+    border-radius: 8px; background: var(--panel); color: var(--dim); font-size: 13px;
   }
-  .cell:hover { border-color: var(--accent); transform: translateY(-1px); }
-  .cell[aria-disabled="true"] { opacity: .55; pointer-events: none; }
-  .cell .top { display: flex; align-items: center; gap: 8px; }
-  .cell .title { font-weight: 600; font-size: 16px; }
-  .meta { display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; color: var(--dim); }
-  .meta b { color: var(--ink); font-weight: 500; }
-  .go { margin-top: auto; font-size: 12.5px; color: var(--dim); display: flex; gap: 2px 6px; flex-wrap: wrap; }
-  .go .pair { color: var(--ink); font-weight: 500; }
-  .cell:hover .go { color: var(--ink); }
+  .banner code { background: var(--chip); padding: 1px 5px; border-radius: 4px; }
+
+  /* The matrix. A real table: backends are columns, frontends are rows, and a
+     square is live only when the backend advertises the protocol its frontend
+     speaks — which /health reports, so the grid reads it rather than claims it. */
+  .scroll { overflow-x: auto; }
+  table.matrix {
+    width: 100%; min-width: 660px; border-collapse: collapse; table-layout: fixed;
+  }
+  table.matrix th, table.matrix td {
+    border: 1px solid var(--line); padding: 0; vertical-align: top;
+    transition: background .1s ease;
+  }
+  th.corner {
+    background: linear-gradient(to top right, transparent calc(50% - 0.5px), var(--line) 50%, transparent calc(50% + 0.5px));
+    width: 27%; height: 62px; position: relative; font-weight: 400;
+  }
+  th.corner span {
+    position: absolute; font-size: 10.5px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--faint);
+  }
+  th.corner .b { top: 8px; right: 10px; }
+  th.corner .f { bottom: 8px; left: 10px; }
+
+  thead th.b { padding: 10px 12px; text-align: left; }
+  tbody th.f { padding: 12px 12px; text-align: left; width: 27%; }
+  .hdr { display: flex; align-items: center; gap: 7px; }
+  .hdr .name { font-weight: 600; font-size: 13.5px; letter-spacing: -0.01em; }
+  .why { display: block; margin-top: 2px; padding-left: 14px;
+         font-size: 11.5px; line-height: 1.35; color: var(--faint); }
+
+  /* Which model a backend runs is a property of the backend axis, so the
+     control lives on that axis. Reachable entries read as their name alone to
+     keep the closed control legible; the rest carry their reason. */
+  th.b .model {
+    display: block; margin: 7px 0 0 14px; max-width: calc(100% - 14px);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px;
+    color: var(--ink); background: var(--chip); border: 1px solid var(--line);
+    border-radius: 5px; padding: 2px 4px; cursor: pointer;
+  }
+  th.b .model:disabled { cursor: default; opacity: .6; }
+  th.b .model option:disabled { color: var(--dim); }
+  th.b .err { display: block; margin: 3px 0 0 14px; font-size: 11px; color: var(--faint); }
+  th.b .err.bad { color: #b91c1c; }
+  @media (prefers-color-scheme: dark) { th.b .err.bad { color: #f87171; } }
+
+  /* A square: a link when it runs, an inert mark when it doesn't. */
+  td .sq {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 52px; text-decoration: none; color: var(--faint); font-size: 15px;
+  }
+  td a.sq { color: var(--dim); }
+  td a.sq:hover { background: var(--chip); color: var(--ink); box-shadow: inset 0 0 0 1px var(--dim); }
+  td a.sq:focus-visible { background: var(--chip); color: var(--ink); outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
+  td .sq .on { display: none; font-size: 12px; }
+  td .sq .path { font-size: 12px; color: var(--faint); }
+  td a.sq:hover .path, td a.sq:focus-visible .path { color: var(--ink); }
+  td .sq .mark { font-size: 12px; letter-spacing: 0.04em; }
+  td a.sq .mark { font-size: 15px; }
+
+  /* Cross-hairs: hovering a square lights its row and its column. */
+  .matrix[data-hc="0"] [data-c="0"], .matrix[data-hc="1"] [data-c="1"],
+  .matrix[data-hc="2"] [data-c="2"], .matrix[data-hc="3"] [data-c="3"],
+  .matrix[data-hr="0"] [data-r="0"], .matrix[data-hr="1"] [data-r="1"],
+  .matrix[data-hr="2"] [data-r="2"], .matrix[data-hr="3"] [data-r="3"] { background: var(--chip); }
+
+  /* One line under the grid, so a square's detail costs a hover instead of a
+     card. Fixed height: reading the matrix shouldn't reflow the page. */
+  .readout { min-height: 62px; margin: 14px 2px 0; font-size: 13px; line-height: 1.5; }
+  .readout .pair { font-weight: 600; }
+  .readout .say { display: block; color: var(--dim); font-size: 12.5px; }
+
+  /* The frontend that isn't in the matrix, and shouldn't be drawn as if it were. */
+  .outside {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px;
+    margin-top: 16px; padding: 13px 15px; border: 1px dashed var(--line);
+    border-radius: 9px; text-decoration: none; color: inherit;
+  }
+  .outside:hover { border-color: var(--dim); }
+  .outside .name { font-weight: 600; font-size: 13.5px; }
+  .outside .why { padding: 0; margin: 0; color: var(--dim); font-size: 12.5px; }
+  .outside .go { margin-left: auto; font-size: 12.5px; color: var(--dim); }
+  .outside:hover .go { color: var(--ink); }
 
   .probes { display: grid; gap: 8px; }
   .probe {
@@ -90,37 +146,58 @@
     background: var(--panel); color: inherit; font: inherit; font-size: 13.5px; cursor: pointer;
   }
   .probe:hover { border-color: var(--accent); }
-  .probe .why { color: var(--dim); font-size: 12.5px; margin-left: auto; flex: none; }
-  .copied { color: var(--up); }
+  .probe .why { margin: 0; padding: 0; color: var(--dim); font-size: 12.5px; margin-left: auto; flex: none; }
+  .probe:hover .why { color: var(--ink); }
+  .copied { color: var(--up) !important; }
+
   footer { margin-top: 44px; color: var(--dim); font-size: 12.5px; }
+  footer a { text-decoration: none; border-bottom: 1px solid var(--line); }
+  footer a:hover { color: var(--ink); border-color: var(--accent); }
   code { background: var(--chip); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+
+  /* Narrow: the table stops being a table and each frontend becomes a block,
+     its four backends listed by name. */
+  @media (max-width: 700px) {
+    body { padding: 32px 16px 64px; }
+    .scroll { overflow: visible; }
+    table.matrix, table.matrix tbody, table.matrix tr { display: block; min-width: 0; }
+    table.matrix thead { display: none; }
+    table.matrix tr { border: 1px solid var(--line); border-radius: 9px; margin-bottom: 10px; overflow: hidden; }
+    table.matrix th, table.matrix td { border: 0; display: block; width: auto; }
+    tbody th.f { border-bottom: 1px solid var(--line) !important; }
+    td .sq { justify-content: flex-start; min-height: 40px; padding: 0 13px; }
+    td .sq .on { display: block; }
+    td a.sq .mark { margin-left: auto; }
+    .readout { min-height: 0; }
+    .wide { display: none; }
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>chat-stack matrix</h1>
   <p class="lede">
-    Pick a backend, then a frontend. Every cell runs the same agent, so the
+    Backends across, frontends down. Every square runs the same agent, so the
     differences you see are the stack rather than the answer.
   </p>
+  <nav id="nav"></nav>
 
-  <h2><span class="step">1</span>Backend</h2>
-  <fieldset class="backends" id="backends"></fieldset>
-  <p class="hint" id="hint" hidden></p>
+  <p class="banner" id="banner" hidden></p>
 
-  <h2><span class="step">2</span>Frontend</h2>
-  <p class="using">Each opens with <b id="using">…</b> as its backend.</p>
-  <div class="grid" id="cells"></div>
+  <div class="scroll">
+    <table class="matrix" id="matrix">
+      <thead><tr id="head"></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <p class="readout" id="readout"></p>
+
+  <a class="outside" id="outside" hidden></a>
 
   <h2>What to try</h2>
   <div class="probes" id="probes"></div>
 
-  <footer>
-    Same three prompts in each cell, then compare. Docs live in the repo:
-    <code>docs/architecture.md</code>, <code>docs/reflection.md</code>,
-    <code>protocol/CONTRACT.md</code>. Start and stop everything with
-    <code>./scripts/run.sh</code> and <code>./scripts/stop.sh</code>.
-  </footer>
+  <footer id="footer"></footer>
 </div>
 
 <script>
@@ -129,49 +206,62 @@
 // local clone runs.
 const HOSTED = null;
 
-// The backend axis. Add a line when a new backend lands; everything else here
-// keys off it, and cells receive the choice as ?backend=.
-const BACKENDS = HOSTED?.backends ?? [
-  { name: "pydantic-ai", url: "http://localhost:8001" },
-  { name: "cloudflare-agents", url: "http://localhost:8002" },
-  { name: "pi", url: "http://localhost:8003" },
-  { name: "pi-rpc", url: "http://localhost:8004" },
+// Empty until the repo is public; the doc references below stay plain text
+// until it isn't.
+const REPO = "";
+
+// The two axes, as data. A backend's `why` is the one-line version; `long` is
+// what the readout says when you hover its column.
+const BACKENDS = [
+  {
+    name: "pydantic-ai", port: 8001, why: "the reference",
+    long: "Python and uvicorn, threads in a SQLite file — what the contract was written against.",
+  },
+  {
+    name: "cloudflare-agents", port: 8002, why: "the published one",
+    long: "Workers, a Durable Object per thread — no server to keep up, so it's the one that gets hosted.",
+  },
+  {
+    name: "pi", port: 8003, why: "owns its runtime",
+    long: "Bun, the pi SDK in-process — an agent that owns its model runtime and tool loop already.",
+  },
+  {
+    name: "pi-rpc", port: 8004, why: "out of process",
+    long: "Bun driving <code>pi --mode rpc</code> per thread — the same agent from outside the process.",
+  },
 ];
 
-const CELLS = [
+// `speaks` is the key a backend's /health advertises under `protocols`, so a
+// square goes dark on its own if a backend stops serving that protocol.
+const FRONTENDS = [
   {
-    id: "assistant-ui",
-    name: "assistant-ui",
-    port: 3001,
-    protocol: "Vercel AI data stream (v7)",
-    topology: "browser → backend",
-    note: "Tool calls collapse behind a disclosure",
+    id: "assistant-ui", name: "assistant-ui", port: 3001, speaks: "vercel-ai",
+    why: "Vercel v7 · direct",
+    long: "Vercel AI data stream (v7), straight to the backend. Tool calls collapse behind a disclosure.",
   },
   {
-    id: "copilotkit",
-    name: "CopilotKit",
-    port: 3002,
-    protocol: "AG-UI",
-    topology: "browser → Next runtime → backend",
-    note: "Tool renderers are opt-in",
+    id: "copilotkit", name: "CopilotKit", port: 3002, speaks: "ag-ui",
+    why: "AG-UI · via a runtime",
+    long: "AG-UI via a Next runtime — somewhere for auth to live, and a process to keep up. Tool renderers are opt-in.",
   },
   {
-    id: "ai-elements",
-    name: "AI Elements",
-    port: 3003,
-    protocol: "Vercel AI data stream (v7)",
-    topology: "browser → backend",
-    note: "Vercel's own component registry",
+    id: "ai-elements", name: "AI Elements", port: 3003, speaks: "vercel-ai",
+    why: "Vercel v7 · direct",
+    long: "Vercel AI data stream (v7), straight to the backend, drawn with Vercel's own registry.",
   },
   {
-    id: "shadcn",
-    name: "shadcn",
-    port: 3004,
-    protocol: "Vercel AI data stream (v7)",
-    topology: "browser → backend",
-    note: "A component per tool, hand-written",
+    id: "shadcn", name: "shadcn", port: 3004, speaks: "vercel-ai",
+    why: "Vercel v7 · direct",
+    long: "Vercel AI data stream (v7), straight to the backend, a hand-written component per tool.",
   },
 ];
+
+// Not a square: one process, agent included, so there is no backend axis to
+// put it on.
+const OUTSIDE = {
+  id: "jinja", name: "FastAPI + Jinja", port: 3005,
+  why: "one process — agent, templates, and NDJSON DOM patches. No protocol, no backend to pick.",
+};
 
 const PROBES = [
   ["What's the weather in Tokyo?", "fast structured tool"],
@@ -179,108 +269,317 @@ const PROBES = [
   ["Analyze assistant-ui as a chat frontend.", "slow (~3s) call"],
 ];
 
-// The choice lives in the URL — ?backend= — so a reload keeps it, a cell's
-// "← matrix" link brings it back, and the address bar is shareable. The first
-// backend is the default and stays unlabelled so links stay readable.
-const params = new URLSearchParams(window.location.search);
-let BACKEND = BACKENDS.find((b) => b.url === params.get("backend")) ?? BACKENDS[0];
-const isDefault = (b) => b.url === BACKENDS[0].url;
-const query = (b) => (isDefault(b) ? "" : `?backend=${encodeURIComponent(b.url)}`);
+// ---- topology -------------------------------------------------------------
 
-const cellUrl = (c) => HOSTED?.cells?.[c.id] ?? `http://localhost:${c.port}`;
-const cellHref = (c) => cellUrl(c) + query(BACKEND);
-const cellUp = {};
+// A hosted build publishes a subset. The other backends stay on the grid and
+// say so, because "you'd get this from a clone" is the point of showing them.
+const hostedBackend = (b) => HOSTED?.backends?.find((h) => h.name === b.name);
+const backendUrl = (b) => hostedBackend(b)?.url ?? `http://localhost:${b.port}`;
+const frontendUrl = (f) => HOSTED?.cells?.[f.id] ?? `http://localhost:${f.port}`;
+const localOnly = (b) => Boolean(HOSTED) && !hostedBackend(b);
 
-function select(b) {
-  BACKEND = b;
-  history.replaceState(null, "", `./${query(b)}`);
-  document.getElementById("using").textContent = b.name;
-  CELLS.forEach(renderCellState);
-}
+const health = {};   // backend name -> /health body, or null
+const up = {};       // frontend id  -> boolean
 
-function renderCellState(c) {
-  const el = document.getElementById(`cell-${c.id}`);
-  const up = cellUp[c.id] === true;
-  el.href = cellHref(c);
-  el.setAttribute("aria-disabled", up ? "false" : "true");
-  el.querySelector(".dot").classList.toggle("up", up);
-  el.querySelector(".state").innerHTML = up
-    ? `open with <span class="pair"></span> →`
-    : "not running";
-  if (up) el.querySelector(".pair").textContent = BACKEND.name;
-}
+// What a square actually is: the endpoint this frontend's protocol resolves to
+// on this backend, which /health advertises. No entry, no square.
+const endpoint = (f, b) => health[b.name]?.protocols?.[f.speaks]?.split(" ")[0];
+const live = (f, b) => up[f.id] === true && Boolean(endpoint(f, b));
+const href = (f, b) =>
+  frontendUrl(f) + (b === BACKENDS[0] ? "" : `?backend=${encodeURIComponent(backendUrl(b))}`);
 
-// ---- backends: a radio group, every entry health-checked ----------------
+// ---- the grid -------------------------------------------------------------
 
-const backendsEl = document.getElementById("backends");
-BACKENDS.forEach((b) => {
-  const row = document.createElement("label");
-  row.className = "opt";
-  row.id = `backend-${b.name}`;
-  row.innerHTML = `
-    <input type="radio" name="backend" />
-    <span class="dot"></span>
-    <span class="name"></span>
-    <span class="detail"><span class="state">checking…</span></span>
-    <span class="right"><span class="threads"></span><span class="mono host"></span></span>`;
-  const input = row.querySelector("input");
-  input.value = b.url;
-  input.checked = b === BACKEND;
-  input.addEventListener("change", () => select(b));
-  row.querySelector(".name").textContent = b.name;
-  row.querySelector(".host").textContent = new URL(b.url).host;
-  backendsEl.appendChild(row);
+const headEl = document.getElementById("head");
+const rowsEl = document.getElementById("rows");
+const matrixEl = document.getElementById("matrix");
+
+headEl.innerHTML = `<th class="corner"><span class="b">backend →</span><span class="f">frontend ↓</span></th>`;
+BACKENDS.forEach((b, c) => {
+  const th = document.createElement("th");
+  th.className = "b";
+  th.scope = "col";
+  th.dataset.c = c;
+  th.innerHTML = `<span class="hdr"><span class="dot"></span><span class="name"></span></span><span class="why"></span><select class="model" hidden></select><span class="err"></span>`;
+  th.querySelector(".name").textContent = b.name;
+  th.querySelector(".why").textContent = b.why;
+  th.querySelector("select.model").addEventListener("change", (e) => chooseModel(b, e.target));
+  headEl.appendChild(th);
 });
-if (HOSTED && BACKENDS.length === 1) {
-  const hint = document.getElementById("hint");
-  hint.hidden = false;
-  hint.textContent = "The hosted matrix runs one backend; a local clone runs them all, and this becomes a choice.";
-}
-document.getElementById("using").textContent = BACKEND.name;
 
-async function refreshBackend(b) {
-  const row = document.getElementById(`backend-${b.name}`);
-  const detail = row.querySelector(".detail");
-  const threads = row.querySelector(".threads");
-  try {
-    const res = await fetch(`${b.url}/health`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const h = await res.json();
-    row.querySelector(".dot").classList.add("up");
-    detail.innerHTML = `<span class="chip mono"></span><span class="tools"></span>`;
-    detail.querySelector(".chip").textContent = h.model;
-    detail.querySelector(".tools").textContent = (h.tools || []).join(" · ");
-    threads.textContent = `${h.threads} stored ${h.threads === 1 ? "thread" : "threads"}`;
-  } catch {
-    row.querySelector(".dot").classList.remove("up");
-    detail.innerHTML = `<span class="state">not running</span>`;
-    threads.textContent = "";
+FRONTENDS.forEach((f, r) => {
+  const tr = document.createElement("tr");
+  const th = document.createElement("th");
+  th.className = "f";
+  th.scope = "row";
+  th.dataset.r = r;
+  th.innerHTML = `<span class="hdr"><span class="dot"></span><span class="name"></span></span><span class="why"></span>`;
+  th.querySelector(".name").textContent = f.name;
+  th.querySelector(".why").textContent = f.why;
+  tr.appendChild(th);
+  BACKENDS.forEach((b, c) => {
+    const td = document.createElement("td");
+    td.dataset.r = r;
+    td.dataset.c = c;
+    td.id = `sq-${f.id}-${b.name}`;
+    tr.appendChild(td);
+  });
+  rowsEl.appendChild(tr);
+});
+
+function renderSquare(f, b) {
+  const td = document.getElementById(`sq-${f.id}-${b.name}`);
+  const ok = live(f, b);
+  const tag = ok ? "a" : "span";
+  const el = document.createElement(tag);
+  el.className = "sq";
+  el.innerHTML = `<span class="on"></span><span class="path mono"></span><span class="mark"></span>`;
+  el.querySelector(".on").textContent = b.name;
+  el.querySelector(".path").textContent = ok ? endpoint(f, b) : "";
+  el.querySelector(".mark").textContent = ok ? "→" : localOnly(b) ? "local" : "·";
+  if (ok) {
+    el.href = href(f, b);
+    el.setAttribute("aria-label", `open ${f.name} with ${b.name} over ${endpoint(f, b)}`);
+  }
+  td.replaceChildren(el);
+}
+
+function renderState() {
+  BACKENDS.forEach((b, c) => {
+    const th = headEl.querySelector(`th[data-c="${c}"]`);
+    th.querySelector(".dot").classList.toggle("up", Boolean(health[b.name]));
+    FRONTENDS.forEach((f) => renderSquare(f, b));
+  });
+  FRONTENDS.forEach((f, r) => {
+    rowsEl.querySelector(`th[data-r="${r}"] .dot`).classList.toggle("up", up[f.id] === true);
+  });
+
+  const total = FRONTENDS.length * BACKENDS.length;
+  const n = FRONTENDS.reduce((sum, f) => sum + BACKENDS.filter((b) => live(f, b)).length, 0);
+  idle = !probed
+    ? `<span class="pair">Checking what's up…</span><span class="say">Each square is one frontend against one backend; the grid fills in as they answer.</span>`
+    : n === total
+      ? `<span class="pair">${total} of ${total} squares live.</span><span class="say">Every backend serves both protocols, so every frontend reaches every backend — that is what <code>protocol/conformance.sh</code> is checking.<span class="wide"> Hover a square for the stack it opens.</span></span>`
+      : `<span class="pair">${n} of ${total} squares live.</span><span class="say">A square runs when its frontend is up and its backend advertises the protocol that frontend speaks.<span class="wide"> Hover one for the stack it opens.</span></span>`;
+  if (!hovering) readout.innerHTML = idle;
+  reserve();
+
+  const nothing = probed && n === 0 && up[OUTSIDE.id] !== true;
+  banner.hidden = !nothing && !HOSTED;
+  if (nothing) banner.innerHTML = `Nothing is running yet — <code>./scripts/setup.sh</code>, then <code>./scripts/run.sh</code> brings the matrix up.`;
+  else if (HOSTED) {
+    const nb = HOSTED.backends.length, nf = Object.keys(HOSTED.cells ?? {}).length;
+    banner.innerHTML = `The hosted matrix publishes ${nb} backend${nb === 1 ? "" : "s"} and ${nf} frontend${nf === 1 ? "" : "s"}. The rest of the grid is what a local clone gives you.`;
   }
 }
 
-// ---- cells ----------------------------------------------------------------
+// ---- the model, per backend ----------------------------------------------
+// What a stack can reach is a question only that stack can answer — pi sees
+// logins the others can't, the Worker carries one provider — so the options
+// come from each backend's own /models rather than from a list here. Entries it
+// can't serve still appear, carrying the reason: "no key" and "not wired" look
+// identical once something is merely absent. A backend without the endpoint
+// keeps working with the control hidden.
 
-const cellsEl = document.getElementById("cells");
-CELLS.forEach((c) => {
-  const a = document.createElement("a");
-  a.className = "cell";
-  a.id = `cell-${c.id}`;
-  a.innerHTML = `
-    <div class="top"><span class="dot"></span><span class="title"></span></div>
-    <div class="meta">
-      <span><b>protocol</b> · <span class="proto"></span></span>
-      <span><b>topology</b> · <span class="topo"></span></span>
-      <span class="note"></span>
-    </div>
-    <div class="go"><span class="mono host"></span><span class="state">checking…</span></div>`;
-  a.querySelector(".title").textContent = c.name;
-  a.querySelector(".proto").textContent = c.protocol;
-  a.querySelector(".topo").textContent = c.topology;
-  a.querySelector(".note").textContent = c.note;
-  a.querySelector(".host").textContent = new URL(cellUrl(c)).host;
-  cellsEl.appendChild(a);
-  renderCellState(c);
+const modelSig = {};   // backend name -> last /models body, to avoid rebuilding
+const modelVia = {};   // backend name -> how the current model is reached
+
+async function refreshModels(b, c) {
+  const th = headEl.querySelector(`th[data-c="${c}"]`);
+  const select = th.querySelector("select.model");
+  let data;
+  try {
+    const res = await fetch(`${backendUrl(b)}/models`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    data = await res.json();
+  } catch {
+    select.hidden = true;
+    delete modelVia[b.name];
+    return;
+  }
+  select.hidden = false;
+  // Leave an open menu alone, and don't rebuild a list that hasn't moved.
+  const sig = JSON.stringify(data);
+  if (sig === modelSig[b.name] || document.activeElement === select) return;
+  modelSig[b.name] = sig;
+  select.replaceChildren(...data.models.map((m) => {
+    const option = document.createElement("option");
+    option.value = m.id;
+    option.textContent = m.available ? m.label : `${m.label} — ${m.why}`;
+    option.disabled = !m.available && m.id !== data.current;
+    option.selected = m.id === data.current;
+    return option;
+  }));
+  modelVia[b.name] = data.models.find((m) => m.id === data.current)?.via ?? "";
+  th.querySelector(".err").textContent = "";
+}
+
+async function chooseModel(b, select) {
+  const err = select.parentElement.querySelector(".err");
+  select.disabled = true;
+  err.classList.remove("bad");
+  err.textContent = "switching…";
+  try {
+    const res = await fetch(`${backendUrl(b)}/model`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: select.value }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.detail ?? `HTTP ${res.status}`);
+    err.textContent = "";
+  } catch (error) {
+    err.textContent = error.message;
+    err.classList.add("bad");
+  } finally {
+    select.disabled = false;
+    modelSig[b.name] = null;   // whatever happened, re-read the truth from the backend
+    refresh();
+  }
+}
+
+// ---- the readout, which is where a square's detail lives ------------------
+
+const readout = document.getElementById("readout");
+const banner = document.getElementById("banner");
+let idle = "";
+let hovering = false;
+let probed = false;   // "nothing is running" and "nobody has answered yet" are different
+
+function say(f, b) {
+  const parts = [];
+  if (f && b) {
+    const state = live(f, b)
+      ? `<code>${new URL(frontendUrl(f)).host} → ${new URL(backendUrl(b)).host}${endpoint(f, b)}</code>`
+      : localOnly(b)
+      ? `${b.name} isn't hosted — a local clone runs it`
+      : up[f.id] !== true
+      ? `${f.name} isn't running`
+      : !health[b.name]
+      ? `${b.name} isn't running`
+      : `${b.name} doesn't serve ${f.speaks}`;
+    parts.push(`<span class="pair">${f.name} × ${b.name}</span>`, `<span class="say">${f.long} ${b.long}<br>${state}</span>`);
+  } else if (f) {
+    parts.push(`<span class="pair">${f.name}</span>`, `<span class="say">${f.long}</span>`);
+  } else if (b) {
+    const h = health[b.name];
+    const via = modelVia[b.name] ? ` via ${modelVia[b.name]}` : "";
+    const detail = h ? `model <code>${h.model}</code>${via} · ${h.tools.join(" · ")} · ${h.threads} stored ${h.threads === 1 ? "thread" : "threads"} · ${new URL(backendUrl(b)).host}` : localOnly(b) ? "not hosted — a local clone runs it" : "not running";
+    parts.push(`<span class="pair">${b.name}</span>`, `<span class="say">${b.long}<br>${detail}</span>`);
+  }
+  return parts.join("");
+}
+
+// Hovering the grid rewrites the readout, and a taller line would shove the
+// page down under the cursor. So reserve the tallest thing it can currently
+// say — measured at this width, since wrapping decides the height — and let
+// every shorter state sit inside that.
+const ghost = document.createElement("p");
+ghost.className = "readout";
+ghost.style.cssText = "position:absolute;visibility:hidden;pointer-events:none;min-height:0;left:0";
+readout.after(ghost);
+
+const stacked = matchMedia("(max-width: 700px)");   // no hover there, nothing to reserve
+let reserved = "";
+function reserve() {
+  const key = `${readout.clientWidth}:${signature()}:${stacked.matches}`;
+  if (key === reserved) return;
+  reserved = key;
+  if (stacked.matches) return void (readout.style.minHeight = "");
+  ghost.style.width = `${readout.clientWidth}px`;
+  let tallest = 0;
+  const variants = [idle, ...FRONTENDS.map((f) => say(f, null)), ...BACKENDS.map((b) => say(null, b))];
+  for (const f of FRONTENDS) for (const b of BACKENDS) variants.push(say(f, b));
+  for (const html of variants) {
+    ghost.innerHTML = html;
+    tallest = Math.max(tallest, ghost.offsetHeight);
+  }
+  readout.style.minHeight = `${tallest}px`;
+}
+addEventListener("resize", () => { reserved = ""; reserve(); });
+
+function focus(el) {
+  const cell = el?.closest("td, th");
+  const r = cell?.dataset.r, c = cell?.dataset.c;
+  if (r === undefined && c === undefined) return blur();
+  hovering = true;
+  matrixEl.dataset.hr = r ?? "";
+  matrixEl.dataset.hc = c ?? "";
+  readout.innerHTML = say(r === undefined ? null : FRONTENDS[r], c === undefined ? null : BACKENDS[c]);
+}
+
+function blur() {
+  hovering = false;
+  delete matrixEl.dataset.hr;
+  delete matrixEl.dataset.hc;
+  readout.innerHTML = idle;
+}
+
+matrixEl.addEventListener("mouseover", (e) => focus(e.target));
+matrixEl.addEventListener("focusin", (e) => focus(e.target));
+matrixEl.addEventListener("mouseleave", blur);
+matrixEl.addEventListener("focusout", (e) => { if (!matrixEl.contains(e.relatedTarget)) blur(); });
+
+// ---- the frontend outside the matrix --------------------------------------
+
+const outsideEl = document.getElementById("outside");
+outsideEl.innerHTML = `<span class="name"></span><span class="why"></span><span class="go"></span>`;
+outsideEl.querySelector(".name").textContent = OUTSIDE.name;
+outsideEl.querySelector(".why").textContent = OUTSIDE.why;
+
+function renderOutside() {
+  const ok = up[OUTSIDE.id] === true;
+  outsideEl.hidden = Boolean(HOSTED) && !HOSTED.cells?.[OUTSIDE.id];
+  outsideEl.href = ok ? frontendUrl(OUTSIDE) : "";
+  outsideEl.querySelector(".go").textContent = ok
+    ? `${new URL(frontendUrl(OUTSIDE)).host} — open →`
+    : "not running";
+}
+
+// ---- probes ---------------------------------------------------------------
+
+const probesEl = document.getElementById("probes");
+PROBES.forEach(([text, why]) => {
+  const b = document.createElement("button");
+  b.className = "probe";
+  b.innerHTML = `<span class="txt"></span><span class="why"></span>`;
+  b.querySelector(".txt").textContent = text;
+  b.querySelector(".why").textContent = why;
+  b.title = "copy";
+  b.addEventListener("click", async () => {
+    const el = b.querySelector(".why");
+    const prev = el.textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+      el.textContent = "copied";
+      el.classList.add("copied");
+      setTimeout(() => { el.textContent = prev; el.classList.remove("copied"); }, 1200);
+    } catch { /* clipboard blocked; the text is right there to select */ }
+  });
+  probesEl.appendChild(b);
 });
+
+// ---- links ----------------------------------------------------------------
+
+const DOCS = [
+  ["docs/architecture.md", "architecture"],
+  ["docs/reflection.md", "what it showed"],
+  ["protocol/CONTRACT.md", "the contract"],
+];
+const docLink = (path, label) =>
+  REPO ? `<a href="${REPO}/blob/main/${path}">${label}</a>` : `<code>${path}</code>`;
+
+const navEl = document.getElementById("nav");
+navEl.hidden = !REPO;
+navEl.innerHTML = REPO
+  ? [`<a href="${REPO}">the repo</a>`, ...DOCS.map(([p, l]) => docLink(p, l))].join("")
+  : "";
+document.getElementById("footer").innerHTML =
+  `Same three prompts in each square, then compare. ` +
+  (REPO ? `Read ${DOCS.map(([p, l]) => docLink(p, l)).join(", ")}. ` : `Docs live in the repo: ${DOCS.map(([p]) => docLink(p)).join(", ")}. `) +
+  `Start and stop everything with <code>./scripts/run.sh</code> and <code>./scripts/stop.sh</code>.`;
+
+// ---- polling --------------------------------------------------------------
 
 // Cross-origin dev servers won't allow a readable response, but a no-cors
 // request still distinguishes "listening" from "connection refused".
@@ -293,39 +592,60 @@ async function isUp(url) {
   }
 }
 
-async function refreshCell(c) {
-  cellUp[c.id] = await isUp(cellUrl(c));
-  renderCellState(c);
+async function refresh() {
+  await Promise.all([
+    ...BACKENDS.map(async (b, c) => {
+      // A hosted page never probes localhost. The backends it doesn't publish
+      // are somebody else's machine, and claiming they're up because they
+      // happen to run on the author's would be a lie in every other browser.
+      if (localOnly(b)) return void (health[b.name] = null);
+      try {
+        const res = await fetch(`${backendUrl(b)}/health`, { cache: "no-store" });
+        health[b.name] = res.ok ? await res.json() : null;
+      } catch {
+        health[b.name] = null;
+      }
+      if (health[b.name]) await refreshModels(b, c);
+      else headEl.querySelector(`th[data-c="${c}"] select.model`).hidden = true;
+    }),
+    ...[...FRONTENDS, OUTSIDE].map(async (f) => { up[f.id] = await isUp(frontendUrl(f)); }),
+  ]);
+  probed = true;
+  renderState();
+  renderOutside();
 }
 
-// ---- probes ---------------------------------------------------------------
+// Poll briskly while the picture is still changing, then back off, and not at
+// all in a tab nobody is looking at — a hosted backend shouldn't pay for an
+// idle window left open.
+const signature = () =>
+  JSON.stringify([
+    BACKENDS.map((b) => `${health[b.name]?.model ?? ""}/${modelVia[b.name] ?? ""}`),
+    [...FRONTENDS, OUTSIDE].map((f) => up[f.id]),
+  ]);
 
-const probesEl = document.getElementById("probes");
-PROBES.forEach(([text, why]) => {
-  const b = document.createElement("button");
-  b.className = "probe";
-  b.innerHTML = `<span class="txt"></span><span class="why"></span>`;
-  b.querySelector(".txt").textContent = text;
-  b.querySelector(".why").textContent = why;
-  b.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      const why = b.querySelector(".why");
-      const prev = why.textContent;
-      why.textContent = "copied";
-      why.classList.add("copied");
-      setTimeout(() => { why.textContent = prev; why.classList.remove("copied"); }, 1200);
-    } catch { /* clipboard blocked; the text is right there to select */ }
-  });
-  probesEl.appendChild(b);
+let delay = 4000, last = "", timer = null;
+async function loop() {
+  if (!document.hidden) {
+    await refresh();
+    const now = signature();
+    delay = now === last ? Math.min(delay * 2, 30000) : 4000;
+    last = now;
+  }
+  timer = setTimeout(loop, document.hidden ? 15000 : delay);
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) return;
+  clearTimeout(timer);
+  delay = 4000;
+  loop();
 });
 
-function refresh() {
-  BACKENDS.forEach(refreshBackend);
-  CELLS.forEach(refreshCell);
-}
-refresh();
-setInterval(refresh, 4000);
+// Paint the grid before the first probes answer, so a slow backend leaves an
+// honest "nothing known yet" rather than an empty table.
+renderState();
+renderOutside();
+loop();
 </script>
 </body>
 </html>

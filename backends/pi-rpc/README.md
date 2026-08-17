@@ -20,7 +20,7 @@ bun run dev            # :8004 — or PORT=… bun run src/main.ts
 
 | Env | Default | |
 |---|---|---|
-| `DEMO_MODEL` | `scripted` | pi's `provider/model[:thinking]`, e.g. `anthropic/claude-opus-4-5:high` |
+| `DEMO_MODEL` | `scripted` | boot default: a shared id, `auto`, or pi's `provider/model[:thinking]` (`anthropic/claude-opus-4-5:high`) |
 | `DEMO_SESSIONS` | `data/sessions` | where the pi children write their session files |
 | `DEMO_IDLE_SECONDS` | `60` | how long an idle child stays warm before it is shut down |
 | `DEMO_MAX_CHILDREN` | `4` | resident children before the oldest idle one is evicted (each idles at ~200 MB) |
@@ -30,6 +30,14 @@ and credentials — the same `~/.pi/agent/auth.json` the `pi` CLI uses — so a
 provider you have logged into with pi needs no key here. The server checks the
 spelling at boot by asking a throwaway child what `--model` resolved to, so a
 typo fails on start rather than on the first message.
+
+`GET /models` and `POST /model {"id": …}` are the hub's dropdown. Switching is
+sharper here than anywhere else in the matrix: a child's `--model` is an argv
+entry, so a new model can't be handed to a running process. Idle children are
+replaced on the switch and a busy one is retired when its turn ends, which is
+why the child count drops to zero the moment you choose. The parent answers the
+availability question itself, from pi's credential store, because the answer has
+to exist before a child is spawned to use it.
 
 ## Layout
 

@@ -3,7 +3,7 @@
  * management. Same six routes as every backend — see protocol/CONTRACT.md.
  */
 
-import { BACKEND_NAME, MODEL_SPEC, openSession, TOOL_NAMES } from "./agent.ts";
+import { BACKEND_NAME, currentModel, models, MODEL_SPEC, openSession, TOOL_NAMES, useModel } from "./agent.ts";
 import { aguiProtocol, turnFromRun, type RunAgentInput } from "./agui.ts";
 import { streamTurn, type Protocol, type Turn } from "./protocol.ts";
 import { ThreadStore } from "./store.ts";
@@ -48,11 +48,28 @@ async function handle(request: Request): Promise<Response> {
   if (request.method === "GET" && path === "/health") {
     return json({
       backend: BACKEND_NAME,
-      model: MODEL_SPEC,
+      model: currentModel(),
       protocols: { "vercel-ai": "/chat (sdk v7)", "ag-ui": "/ag-ui" },
       tools: TOOL_NAMES,
       threads: (await store.list()).length,
     });
+  }
+
+  /** Every model this backend knows about, available or not, each with its reason. */
+  if (request.method === "GET" && path === "/models") {
+    return json({ current: currentModel(), models: models() });
+  }
+
+  /** Switch the running model. Process-wide on purpose: the model is the control variable. */
+  if (request.method === "POST" && path === "/model") {
+    const { id } = (await request.json()) as { id?: unknown };
+    if (typeof id !== "string") return problem(400, "body must be {\"id\": \"…\"}");
+    try {
+      useModel(id);
+    } catch (error) {
+      return problem(400, error instanceof Error ? error.message : String(error));
+    }
+    return json({ model: currentModel() });
   }
 
   if (request.method === "POST" && path === "/chat") {

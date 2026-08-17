@@ -1,9 +1,10 @@
 import { RunAgentInputSchema } from "@ag-ui/core";
 import { Agent, getAgentByName, type AgentContext } from "agents";
-import { convertToModelMessages, type ModelMessage, type UIMessage } from "ai";
-import { modelFor, runAgent } from "./agent";
+import { convertToModelMessages, type LanguageModel, type ModelMessage, type UIMessage } from "ai";
+import { runAgent } from "./agent";
 import { agUiResponse } from "./agui";
 import { fromAgUiMessages } from "./messages";
+import { modelFor } from "./models";
 import { registryStub } from "./registry";
 
 type Row = { title: string; created_at: string; updated_at: string; messages: string };
@@ -44,25 +45,33 @@ export class Thread extends Agent<Env> {
   async onRequest(request: Request): Promise<Response> {
     const { pathname } = new URL(request.url);
     if (request.method !== "POST") return new Response("method not allowed", { status: 405 });
-    if (pathname === "/chat") return this.chat(await request.json());
-    if (pathname === "/ag-ui") return this.agUi(await request.json());
+    // The model is resolved per request, from the one row that holds it, so a
+    // switch at the hub reaches every thread without restarting anything.
+    let model: LanguageModel;
+    try {
+      model = modelFor(this.env, await (await registryStub(this.env)).model());
+    } catch (error) {
+      return Response.json({ detail: error instanceof Error ? error.message : String(error) }, { status: 503 });
+    }
+    if (pathname === "/chat") return this.chat(model, await request.json());
+    if (pathname === "/ag-ui") return this.agUi(model, await request.json());
     return new Response("not found", { status: 404 });
   }
 
   /** Vercel AI data stream protocol — what assistant-ui's useChat speaks. */
-  private async chat(body: { messages: UIMessage[] }): Promise<Response> {
+  private async chat(model: LanguageModel, body: { messages: UIMessage[] }): Promise<Response> {
     const history = await convertToModelMessages(body.messages, { ignoreIncompleteToolCalls: true });
-    return this.run(history).toUIMessageStreamResponse();
+    return this.run(model, history).toUIMessageStreamResponse();
   }
 
   /** AG-UI protocol — the same agent, a different wire format. */
-  private agUi(body: unknown): Response {
+  private agUi(model: LanguageModel, body: unknown): Response {
     const input = RunAgentInputSchema.parse(body);
-    return agUiResponse(input, this.run(fromAgUiMessages(input.messages)));
+    return agUiResponse(input, this.run(model, fromAgUiMessages(input.messages)));
   }
 
-  private run(history: ModelMessage[]) {
-    return runAgent(modelFor(this.env.DEMO_MODEL ?? "scripted"), history, (responseMessages) =>
+  private run(model: LanguageModel, history: ModelMessage[]) {
+    return runAgent(model, history, (responseMessages) =>
       this.ctx.waitUntil(this.persist([...history, ...responseMessages])),
     );
   }

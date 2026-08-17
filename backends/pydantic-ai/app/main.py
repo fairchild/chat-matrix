@@ -13,13 +13,15 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from pydantic_ai.run import AgentRunResult
 from pydantic_ai.ui.ag_ui import AGUIAdapter
 from pydantic_ai.ui.vercel_ai import VercelAIAdapter
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .agent import BACKEND_NAME, MODEL_SPEC, TOOL_NAMES, agent
+from .agent import BACKEND_NAME, TOOL_NAMES, agent, current_model, use_model
+from .models import catalogue, unavailable
 from .store import ThreadStore
 
 SDK_VERSION = 7
@@ -47,11 +49,30 @@ def _persist(thread_id: str):
 async def health() -> dict[str, Any]:
     return {
         "backend": BACKEND_NAME,
-        "model": MODEL_SPEC,
+        "model": current_model(),
         "protocols": {"vercel-ai": f"/chat (sdk v{SDK_VERSION})", "ag-ui": "/ag-ui"},
         "tools": list(TOOL_NAMES),
         "threads": len(store.list()),
     }
+
+
+class ModelChoice(BaseModel):
+    id: str
+
+
+@app.get("/models")
+async def list_models() -> dict[str, Any]:
+    """Every model this backend knows about, available or not, each with its reason."""
+    return {"current": current_model(), "models": catalogue(current_model())}
+
+
+@app.post("/model")
+async def select_model(choice: ModelChoice) -> dict[str, str]:
+    """Switch the running model. Process-wide on purpose: the model is the control variable."""
+    if reason := unavailable(choice.id):
+        raise HTTPException(status_code=400, detail=reason)
+    use_model(choice.id)
+    return {"model": current_model()}
 
 
 @app.post("/chat")

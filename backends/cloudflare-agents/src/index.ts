@@ -9,6 +9,7 @@
 
 import { BACKEND_NAME, SDK_VERSION, TOOL_NAMES } from "./agent";
 import { toAgUiMessages, toUIMessages } from "./messages";
+import { catalogue, unavailable } from "./models";
 import { Registry, registryStub } from "./registry";
 import { Thread, threadStub } from "./thread";
 
@@ -33,11 +34,27 @@ async function route(request: Request, env: Env): Promise<Response> {
   if (request.method === "GET" && url.pathname === "/health") {
     return json({
       backend: BACKEND_NAME,
-      model: env.DEMO_MODEL ?? "scripted",
+      model: await registry.model(),
       protocols: { "vercel-ai": `/chat (sdk v${SDK_VERSION})`, "ag-ui": "/ag-ui" },
       tools: TOOL_NAMES,
       threads: await registry.count(),
     });
+  }
+
+  /** Every model this backend knows about, available or not, each with its reason. */
+  if (request.method === "GET" && url.pathname === "/models") {
+    const current = await registry.model();
+    return json({ current, models: catalogue(env, current) });
+  }
+
+  /** Switch the running model. Backend-wide on purpose: the model is the control variable. */
+  if (request.method === "POST" && url.pathname === "/model") {
+    const { id } = (await request.json()) as { id?: unknown };
+    if (typeof id !== "string") return json({ detail: 'body must be {"id": "…"}' }, 400);
+    const reason = unavailable(env, id);
+    if (reason) return json({ detail: reason }, 400);
+    await registry.setModel(id);
+    return json({ model: id });
   }
 
   if (request.method === "POST" && (url.pathname === "/chat" || url.pathname === "/ag-ui")) {

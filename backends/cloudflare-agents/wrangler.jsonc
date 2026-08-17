@@ -4,6 +4,10 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-08-01",
   "compatibility_flags": ["nodejs_compat"],
+  // Provider keys are deliberately absent here: a plain-text `var` of the same
+  // name can shadow a real secret on a deployed Worker. Locally they come from
+  // `.dev.vars` (gitignored, see `.dev.vars.example`); in production from
+  // `wrangler secret put OPENAI_API_KEY`.
   "vars": { "DEMO_MODEL": "scripted" },
   // One Durable Object per thread, plus a singleton that indexes them for /threads.
   "durable_objects": {

@@ -23,11 +23,11 @@ import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
 import type { Model } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 
+import { catalogue as modelCatalogue, initial, spec, unavailable, type Entry } from "./models.ts";
 import { py } from "./pyrepr.ts";
 import { scriptedProvider, SCRIPTED } from "./scripted.ts";
 
 export const BACKEND_NAME = "pi";
-export const MODEL_SPEC = process.env.DEMO_MODEL ?? "scripted";
 
 export const INSTRUCTIONS = `
 You are the demo agent for a chat-UI comparison harness. Use the tools when they
@@ -155,24 +155,54 @@ export const TOOL_NAMES = TOOLS.map((tool) => tool.name);
 const modelRuntime = await ModelRuntime.create();
 modelRuntime.registerNativeProvider(scriptedProvider());
 
+export const MODEL_SPEC = initial(modelRuntime, process.env.DEMO_MODEL ?? SCRIPTED);
+/** The boot default. The running model is `currentModel()` — the hub can change it. */
+
 /** `scripted` is registered above; anything else is pi's `provider/model[:thinking]`. */
-export function resolveModel(spec: string): { model: Model<string>; thinkingLevel: ThinkingLevel } {
-  if (spec === SCRIPTED)
-    return { model: modelRuntime.getModel(SCRIPTED, SCRIPTED)!, thinkingLevel: "off" };
-  const resolved = resolveCliModel({ cliModel: spec, modelRuntime });
-  if (resolved.error || !resolved.model) {
-    console.error(
-      `DEMO_MODEL=${spec}: ${resolved.error ?? "not found"}\n` +
+export function resolveModel(id: string): { model: Model<string>; thinkingLevel: ThinkingLevel } {
+  if (id === SCRIPTED) return { model: modelRuntime.getModel(SCRIPTED, SCRIPTED)!, thinkingLevel: "off" };
+  const resolved = resolveCliModel({ cliModel: spec(modelRuntime, id), modelRuntime });
+  if (resolved.error || !resolved.model)
+    throw new Error(
+      `${id}: ${resolved.error ?? "not found"}\n` +
         "pi spells models provider/model[:thinking], e.g. anthropic/claude-opus-4-5; `pi --list-models` lists them.",
     );
-    process.exit(1);
-  }
-  if (!modelRuntime.hasConfiguredAuth(resolved.model.provider))
-    console.warn(`DEMO_MODEL=${spec}: no credentials for ${resolved.model.provider} — \`pi\` can log in, or set the provider's env var.`);
   return { model: resolved.model, thinkingLevel: resolved.thinkingLevel ?? "off" };
 }
 
-const { model, thinkingLevel } = resolveModel(MODEL_SPEC);
+let { model, thinkingLevel } = ((): { model: Model<string>; thinkingLevel: ThinkingLevel } => {
+  try {
+    const resolved = resolveModel(MODEL_SPEC);
+    // `DEMO_MODEL` takes any pi model string, catalogue or not, so a boot-time
+    // model can be one nothing has credentials for. Say so rather than fail —
+    // the picker is there to choose another without a restart.
+    if (MODEL_SPEC !== SCRIPTED && !modelRuntime.hasConfiguredAuth(resolved.model.provider))
+      console.warn(
+        `DEMO_MODEL=${MODEL_SPEC}: no credentials for ${resolved.model.provider} — \`pi\` can log in, or set the provider's env var.`,
+      );
+    return resolved;
+  } catch (error) {
+    console.error(`DEMO_MODEL=${MODEL_SPEC}: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
+})();
+
+let current = MODEL_SPEC;
+
+export const currentModel = (): string => current;
+
+export const models = (): Entry[] => modelCatalogue(modelRuntime, current);
+
+/**
+ * Swap the running model. Sessions read it when they open, so the next turn
+ * picks it up; a turn already streaming finishes on the model it started with.
+ */
+export function useModel(id: string): void {
+  const reason = unavailable(modelRuntime, id);
+  if (reason) throw new Error(reason);
+  ({ model, thinkingLevel } = resolveModel(id));
+  current = id;
+}
 
 const settingsManager = SettingsManager.inMemory({ compaction: { enabled: false } });
 

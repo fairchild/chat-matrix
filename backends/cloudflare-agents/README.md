@@ -18,7 +18,43 @@ bun run deploy         # publish the Worker
 
 | Env / var | Default | |
 |---|---|---|
-| `DEMO_MODEL` | `scripted` | only `scripted` is wired here so far |
+| `DEMO_MODEL` | `scripted` | boot default: `scripted`, `openai/gpt-5.6-luna`, or `auto` |
+| `OPENAI_API_KEY` | — | a **binding**, not an environment variable — see below |
+
+`GET /models` and `POST /model {"id": …}` are the hub's dropdown, and this
+backend is the one where the distinction the list draws matters: Anthropic and
+Google appear as *not wired* rather than *no key*, because this Worker carries
+the OpenAI provider only. The chosen model is a row in the Registry Durable
+Object — a Worker has no process to hold it, and one durable row is what makes
+every thread agree.
+
+### Credentials
+
+A Worker has no ambient environment. A key exported in your shell is invisible
+inside it, and only a binding reaches `env` — which is the one place this cell
+differs from the other three backends, where `mise env` alone is enough.
+
+Locally the binding comes from `.dev.vars`, wrangler's own local-secrets file.
+`scripts/setup.sh` writes it from [`.dev.vars.example`](.dev.vars.example); put
+your key in it, or let mise hand its own over:
+
+```sh
+mise run dev-vars     # writes .dev.vars from $OPENAI_API_KEY, 0600
+```
+
+`.dev.vars` is gitignored. It is also what `wrangler types` reads the secret
+names from, so it wants to exist before `bun run types` — setup does them in
+that order.
+
+In production the same name comes from `wrangler secret put OPENAI_API_KEY`.
+Note that no provider key is declared in `wrangler.jsonc`: a plain-text `var`
+can shadow a secret of the same name on a deployed Worker, so the config carries
+`DEMO_MODEL` and nothing else.
+
+Two things to weigh before putting a real key on the deployed Worker: `POST
+/model` is unauthenticated and CORS is `*`, so anyone who can reach the public
+URL can switch it onto your key and spend it. The deployment is fine on
+`scripted`, which is why it has no secret set.
 
 Deployed at `https://chat-stack-backend-cloudflare-agents.irons-in-the-fire8698.workers.dev` — conformance passes against it from the edge.
 
@@ -27,6 +63,7 @@ Deployed at `https://chat-stack-backend-cloudflare-agents.irons-in-the-fire8698.
 | File | |
 |---|---|
 | `src/agent.ts` | the reference agent and its three tools, on the AI SDK |
+| `src/models.ts` | what this backend can reach, and why — the picker's data |
 | `src/scripted.ts` | deterministic model — a `LanguageModelV4` that follows the same script as `scripted.py` |
 | `src/thread.ts` | one Agent (Durable Object) per thread: runs stream from inside it, its SQLite is the store |
 | `src/registry.ts` | singleton Agent that indexes threads, because Durable Objects can't enumerate themselves |

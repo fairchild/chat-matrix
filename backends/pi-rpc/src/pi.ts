@@ -159,23 +159,43 @@ export type PoolOptions = { model: string; sessionDir: string; idleMs: number; m
 export class Pool {
   private readonly children = new Map<string, PiChild>();
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
+  /** What each warm child was spawned with. `--model` is fixed at spawn, so a switch can't reuse it. */
+  private readonly spawnedWith = new Map<string, string>();
+  private model: string;
 
-  constructor(private readonly options: PoolOptions) {}
+  constructor(private readonly options: PoolOptions) {
+    this.model = options.model;
+  }
 
   get size() {
     return this.children.size;
   }
 
+  /**
+   * Point new children at a different model. Idle children go now; a child
+   * mid-turn finishes on the model it started with and is dropped on release,
+   * because its `--model` was decided when it was spawned.
+   */
+  setModel(model: string) {
+    if (model === this.model) return;
+    this.model = model;
+    for (const [threadId, child] of [...this.children]) if (!child.busy) this.evict(threadId);
+  }
+
   /** The thread's child, warm or freshly spawned and ready — i.e. it has answered its first command. */
   async acquire(threadId: string, sessionId: string): Promise<PiChild> {
     const warm = this.children.get(threadId);
-    if (warm) {
+    // A stale warm child is only reusable while it's busy — evicting one mid-turn
+    // would kill the stream it's serving. Idle stale ones were dropped by setModel.
+    if (warm && (warm.busy || this.spawnedWith.get(threadId) === this.model)) {
       clearTimeout(this.timers.get(threadId));
       warm.lastUsed = Date.now();
       return warm;
     }
+    if (warm) this.evict(threadId);
     this.makeRoom();
-    const child = new PiChild(threadId, childArgs({ ...this.options, sessionId }));
+    const child = new PiChild(threadId, childArgs({ ...this.options, model: this.model, sessionId }));
+    this.spawnedWith.set(threadId, this.model);
     // Busy from spawn until handed over: a concurrent acquire's makeRoom() would
     // otherwise see a child that is still starting as idle and evict it mid-start.
     child.busy = true;
@@ -194,10 +214,11 @@ export class Pool {
     return child;
   }
 
-  /** Back to the pool; the idle clock starts now. */
+  /** Back to the pool; the idle clock starts now, unless the model moved on under it. */
   release(child: PiChild) {
     child.busy = false;
     child.lastUsed = Date.now();
+    if (this.spawnedWith.get(child.threadId) !== this.model) return this.evict(child.threadId);
     clearTimeout(this.timers.get(child.threadId));
     this.timers.set(
       child.threadId,
@@ -211,6 +232,7 @@ export class Pool {
     const child = this.children.get(threadId);
     if (!child) return;
     this.children.delete(threadId);
+    this.spawnedWith.delete(threadId);
     child.kill();
   }
 

@@ -19,6 +19,16 @@ if [ "$missing" -eq 1 ]; then
   printf '\nstart the matrix first: ./scripts/run.sh\n'; exit 1
 fi
 
+# The gallery is a side-by-side of four frontends rendering the same work, which
+# holds only while every backend answers the same way. The model is switchable
+# at the hub, so say when one has been moved off scripted.
+for entry in "${BACKENDS[@]}"; do
+  name="$(name_of "$entry")"; port="$(port_of "$entry")"
+  model="$(curl -sf "http://localhost:$port/health" | python3 -c 'import json,sys;print(json.load(sys.stdin).get("model",""))' 2>/dev/null || true)"
+  [ -z "$model" ] || [ "$model" = "scripted" ] ||
+    printf '  \033[33m⚠\033[0m backend %s is on %s — captures across cells stop being comparable\n' "$name" "$model"
+done
+
 bunx playwright test "$@"
 status=$?
 
