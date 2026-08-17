@@ -18,6 +18,7 @@ from typing import Any
 from urllib.parse import quote
 
 from fastapi import FastAPI, Form, HTTPException
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic_ai.run import AgentRunResult
@@ -27,8 +28,9 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
 
 from . import stream
-from .agent import BACKEND_NAME, MODEL_SPEC, TOOL_NAMES, agent
+from .agent import BACKEND_NAME, TOOL_NAMES, agent, current_model, use_model
 from .html import STATIC, patch, render
+from .models import catalogue, unavailable
 from .store import ThreadStore
 from .views import from_ui_messages
 
@@ -42,7 +44,6 @@ app.add_middleware(
 )
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
-BADGE = f"{BACKEND_NAME} · {MODEL_SPEC} · agent in-process"
 SUGGESTIONS = (
     ("What's the weather in Tokyo?", "fast structured tool"),
     ("Search notes for streaming protocols.", "a list to render"),
@@ -90,7 +91,7 @@ def _page_context(thread_id: str) -> dict[str, Any]:
     return {
         "thread_id": thread_id,
         "threads": store.list(),
-        "badge": BADGE,
+        "badge": f"{BACKEND_NAME} · {current_model()} · agent in-process",
         "suggestions": SUGGESTIONS,
     }
 
@@ -152,12 +153,31 @@ async def app_js(request: Request) -> Response:
 async def health() -> dict[str, Any]:
     return {
         "backend": BACKEND_NAME,
-        "model": MODEL_SPEC,
+        "model": current_model(),
         "protocols": {"vercel-ai": f"/chat (sdk v{SDK_VERSION})", "ag-ui": "/ag-ui"},
         "tools": list(TOOL_NAMES),
         "threads": len(store.list()),
         "ui": "server-rendered",
     }
+
+
+class ModelChoice(BaseModel):
+    id: str
+
+
+@app.get("/models")
+async def list_models() -> dict[str, Any]:
+    """Every model this backend knows about, available or not, each with its reason."""
+    return {"current": current_model(), "models": catalogue(current_model())}
+
+
+@app.post("/model")
+async def select_model(choice: ModelChoice) -> dict[str, str]:
+    """Switch the running model. Process-wide on purpose: the model is the control variable."""
+    if reason := unavailable(choice.id):
+        raise HTTPException(status_code=400, detail=reason)
+    use_model(choice.id)
+    return {"model": current_model()}
 
 
 @app.post("/chat")

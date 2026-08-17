@@ -12,12 +12,12 @@ import os
 from dataclasses import dataclass
 
 from pydantic_ai import Agent
-from pydantic_ai.models import Model
 
-from .scripted import scripted_model
+from .models import SCRIPTED, build, initial
 
 BACKEND_NAME = "pydantic-ai"
-MODEL_SPEC = os.getenv("DEMO_MODEL", "scripted")
+MODEL_SPEC = initial(os.getenv("DEMO_MODEL", SCRIPTED))
+"""The boot default. The running model is `current_model()` — the hub can change it."""
 
 INSTRUCTIONS = """
 You are the demo agent for a chat-UI comparison harness. Use the tools when they
@@ -71,12 +71,24 @@ NOTES: tuple[Note, ...] = (
 _CONDITIONS = ("clear", "overcast", "drizzle", "windy", "crisp and sunny")
 
 
-def build_model(spec: str) -> Model | str:
-    """`scripted` gives deterministic runs; anything else is a pydantic-ai model string."""
-    return scripted_model() if spec == "scripted" else spec
+agent = Agent(build(MODEL_SPEC), instructions=INSTRUCTIONS)
+
+_current = MODEL_SPEC
 
 
-agent = Agent(build_model(MODEL_SPEC), instructions=INSTRUCTIONS)
+def current_model() -> str:
+    return _current
+
+
+def use_model(model_id: str) -> None:
+    """Swap the running model. `Agent.model` is read per run, so the next turn picks it up.
+
+    Building the model here rather than storing the string means a bad provider
+    raises now, at the moment someone chose it, instead of mid-stream later.
+    """
+    global _current
+    agent.model = build(model_id)
+    _current = model_id
 
 
 @agent.tool_plain

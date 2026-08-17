@@ -63,16 +63,19 @@ about it. The agent came over as a verbatim copy, held to the original by a
 `diff` rather than by good intentions:
 
 ```sh
-diff <(cd backends/pydantic-ai && cat app/agent.py app/scripted.py app/store.py) \
-     <(cd frontends/jinja      && cat app/agent.py app/scripted.py app/store.py)
+diff <(cd backends/pydantic-ai && cat app/agent.py app/scripted.py app/store.py app/models.py) \
+     <(cd frontends/jinja      && cat app/agent.py app/scripted.py app/store.py app/models.py)
 ```
 
-That `diff` is this cell's standing maintenance cost, and against the committed
-reference it comes back empty as of this commit. It has work queued already: a
-model picker is in flight in another session — a new `app/models.py` and a
-`use_model()` on the reference's `agent.py` — so syncing that over here, new
-file included, is the follow-up once it lands. The plan named this cost when it
-chose copying over importing, and it arrived on day one.
+That `diff` is this cell's standing maintenance cost, and it fired on day one:
+between this cell's first commit and its next, the reference grew a model
+picker — a new `app/models.py`, `current_model()` / `use_model()` on
+`agent.py`, and `GET /models` + `POST /model` in `main.py` — so the copy was
+re-synced (a fourth file now rides along) and the two routes are mirrored here,
+which is what keeps `/health`'s `model` honest when someone switches it. The
+plan named this cost when it chose copying over importing; the price is one
+`diff` and a copy per reference change, and the payoff is that the agent under
+this UI is provably the one under the other four.
 
 ## Layout
 
@@ -110,8 +113,8 @@ chose copying over importing, and it arrived on day one.
 
 The axis this cell is being judged on, recorded while it was fresh.
 
-**The weight is in the CSS, not the framework.** New Python is 608 lines —
-`main.py` 211, `stream.py` 228, `views.py` 105, `html.py` 64 — on top of the 395
+**The weight is in the CSS, not the framework.** New Python is 628 lines —
+`main.py` 231, `stream.py` 228, `views.py` 105, `html.py` 64 — on top of the 518
 copied verbatim from the reference backend. Templates are 195 lines across 15
 files, the client is 62, and `static/app.css` is 834, more than everything else
 put together. That's what it costs to sit next to four React cells with no design

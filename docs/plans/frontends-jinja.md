@@ -267,8 +267,8 @@ Run these before calling any phase done; report the output, not a summary.
 ```sh
 cd frontends/jinja && uv sync && uv run uvicorn app.main:app --port 3005          # starts
 ./protocol/conformance.sh http://localhost:3005                                   # green, same count as :8001
-diff <(cd backends/pydantic-ai && cat app/agent.py app/scripted.py app/store.py) \
-     <(cd frontends/jinja      && cat app/agent.py app/scripted.py app/store.py)  # empty
+diff <(cd backends/pydantic-ai && cat app/agent.py app/scripted.py app/store.py app/models.py) \
+     <(cd frontends/jinja      && cat app/agent.py app/scripted.py app/store.py app/models.py)  # empty
 # stream identity, ids aside:
 for p in 8001 3005; do curl -sN -X POST localhost:$p/chat -H 'content-type: application/json' \
   -d '{"id":"diff-'$p'","trigger":"submit-message","messages":[{"id":"m1","role":"user","parts":[{"type":"text","text":"What is the weather in Tokyo?"}]}]}' \
