@@ -118,12 +118,15 @@ const ADAPTERS: Record<string, Adapter> = {
 export type Frontend = { name: string; port: number; url: string; adapter: Adapter };
 
 /** `PROBE_BACKEND=http://localhost:8002` drives every cell against that backend
- *  instead of its default — the hub's `?backend=` carried through the open step. */
+ *  instead of its default — the hub's `?backend=` carried through the open step.
+ *  `PROBE_PORT_OFFSET=1000` drives the hosted preview (scripts/preview.sh),
+ *  which serves each cell's static export at its port plus the offset. */
 const cellUrl = (port: number): string => {
   const backend = process.env.PROBE_BACKEND;
+  const at = port + Number(process.env.PROBE_PORT_OFFSET ?? 0);
   return backend
-    ? `http://localhost:${port}/?backend=${encodeURIComponent(backend)}`
-    : `http://localhost:${port}`;
+    ? `http://localhost:${at}/?backend=${encodeURIComponent(backend)}`
+    : `http://localhost:${at}`;
 };
 
 /** Read the matrix from scripts/stacks.sh so this file never has to be updated

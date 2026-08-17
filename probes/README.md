@@ -80,7 +80,9 @@ PROBE_BACKEND=http://localhost:8002 ./scripts/probe.sh --grep "weather|notes"
 ```
 
 It carries the hub's `?backend=` through the `open the chat` step, and nothing
-else changes. The per-cell wiring differs (the three direct cells read the param
+else changes. `PROBE_PORT_OFFSET=1000` drives the hosted preview instead
+(`scripts/preview.sh` serves each cell's static export at its port plus 1000),
+which is how the production artifacts get the same flows before they deploy. The per-cell wiring differs (the three direct cells read the param
 in the browser; CopilotKit forwards the choice server-side as a header), and
 both mechanisms were exercised: the command above ran 8/8 green against
 `backends/cloudflare-agents/` on 2026-08-16, with the Worker's log showing six

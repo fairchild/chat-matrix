@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
-# Stop everything scripts/run.sh started.
+# Stop everything scripts/run.sh (and scripts/preview.sh) started.
+#
+#   ./scripts/stop.sh           everything in .run/
+#   ./scripts/stop.sh hosted    only the hosted preview (pidfiles hosted-*.pid)
+#   ./scripts/stop.sh backend   only backends — any pidfile prefix works
 set -uo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/stacks.sh"
 
 [ -d "$RUN_DIR" ] || { echo "nothing running"; exit 0; }
+prefix="${1:-}"
 
 shopt -s nullglob
 found=0
-for pidfile in "$RUN_DIR"/*.pid; do
+for pidfile in "$RUN_DIR"/${prefix:+$prefix-}*.pid; do
   found=1
   pid="$(cat "$pidfile")"
   label="$(basename "$pidfile" .pid)"

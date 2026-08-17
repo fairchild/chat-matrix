@@ -11,6 +11,13 @@ node_modules/
 .next/
 *.tsbuildinfo
 
+# hosted builds: static exports, OpenNext output, wrangler state, generated types
+out/
+.open-next/
+.wrangler/
+worker-configuration.d.ts
+index/dist/
+
 # local config and data
 .env.local
 data/

@@ -37,6 +37,21 @@ path that has to be running and healthy. For the matrix specifically it's a
 small wrinkle: `BACKEND_URL` is read server-side, so switching backends is still
 one env var, just not a client-side one.
 
+### The hosted shape
+
+The runtime hop is what keeps this cell from being a static site, so hosting
+splits it in two: `STATIC_EXPORT=1 bun run build` writes the page to `out/`
+with the API route left out (route files are `.ts`, pages `.tsx`; narrowing
+`pageExtensions` is what drops it), and `worker/index.ts` answers
+`/api/copilotkit` on the same origin, so `runtimeUrl="/api/copilotkit"` holds in
+both shapes. Both build the runtime from `lib/runtime.ts`. `wrangler.jsonc` ties
+them together — and carries two workarounds the runtime package needs on
+Workers: `express` and `cors` aliased to a stub, because `@copilotkit/runtime/v2`
+imports them eagerly and express does code generation at load, which workerd
+forbids (this is also why OpenNext couldn't host the app whole); and
+`import.meta.url` defined, because the package's module shim calls
+`createRequire(import.meta.url)` at load and never uses the result.
+
 ## Ergonomics notes
 
 **Tool calls render as nothing until you opt in.** This was the biggest

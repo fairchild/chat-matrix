@@ -69,21 +69,40 @@ message from a request and lets its session file supply the rest, where the
 other two record what the client sent. That is the divergence
 `protocol/CONTRACT.md` predicted, and it now says so.
 
-### What's public
+### Hosting a subset
 
-The cloudflare-agents backend is deployed:
+A local clone runs everything. Cloudflare runs a subset: the cloudflare-agents
+backend, the four cells, and the hub — each its own Worker, all on the free
+tier. Three cells are pure static exports; CopilotKit is its static export plus
+a small Worker for its runtime hop on the same origin (`frontends/copilotkit/worker/`),
+because `@copilotkit/runtime` can't run under OpenNext on Workers — it imports
+`express` eagerly, and express does code generation at load, which the runtime
+forbids. `scripts/hosted.sh` is the topology as data; two scripts use it:
+
+```sh
+./scripts/preview.sh    # or: mise run preview — build with localhost URLs, serve under wrangler dev
+./scripts/publish.sh    # or: mise run publish — build with production URLs, deploy
+```
+
+Preview is the hosted subset served locally by workerd, exactly as it would
+deploy: cells at `:4001`–`:4004`, hub at `:4000`, pointed at the local `:8002`
+backend or, with `PREVIEW_BACKEND=<url>`, at the deployed one. It's what lets
+you run the probes against the production artifacts before anything is public:
+`PROBE_PORT_OFFSET=1000 ./scripts/probe.sh` ran all twenty flows green against
+the preview with the deployed backend behind it. `./scripts/preview.sh --stop`
+takes it down without touching the matrix.
+
+The backend is already deployed:
 
 ```
 https://chat-stack-backend-cloudflare-agents.irons-in-the-fire8698.workers.dev
 ```
 
-Conformance passes against it from the edge, and any local cell can drive it —
-`http://localhost:3004/?backend=https://chat-stack-backend-cloudflare-agents.irons-in-the-fire8698.workers.dev`
-— which is how the shadcn and AI Elements weather flows were run against it.
-(CopilotKit's runtime forwards only localhost backends, so that cell stays on
-its default when pointed at a hosted one.) The frontends aren't hosted yet: the
-three direct cells build fully static and would sit on Workers static assets;
-CopilotKit's `/api/copilotkit` needs a Node runtime somewhere.
+Conformance passes against it from the edge. The cells aren't published yet —
+that's `./scripts/publish.sh`, once the preview looks right. Two things to know
+about the hosted cells: CopilotKit's runtime forwards only localhost backends,
+so `?backend=` can't move that cell off its configured backend once hosted; and
+`/threads` on a public backend lists every visitor's thread.
 
 The topology column is a real difference, not a detail. assistant-ui and
 AI Elements talk straight to Python; CopilotKit requires a server-side runtime

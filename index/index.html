@@ -112,9 +112,14 @@
 </div>
 
 <script>
+// A hosted build replaces this line with the public topology — see
+// scripts/hosted.sh. null means everything is on localhost, which is what a
+// local clone runs.
+const HOSTED = null;
+
 // The backend axis. Add a line when a new backend lands; everything else here
 // keys off it, and cells receive the choice as ?backend=.
-const BACKENDS = [
+const BACKENDS = HOSTED?.backends ?? [
   { name: "pydantic-ai", url: "http://localhost:8001" },
   { name: "cloudflare-agents", url: "http://localhost:8002" },
   { name: "pi", url: "http://localhost:8003" },
@@ -125,9 +130,11 @@ const selected =
   BACKENDS.find((b) => b.url === params.get("backend")) ?? BACKENDS[0];
 const BACKEND = selected.url;
 
+const cellUrl = (c) => HOSTED?.cells?.[c.id] ?? `http://localhost:${c.port}`;
+
 /** Cells only need ?backend= when it isn't the default, so links stay readable. */
-function cellHref(port) {
-  const base = `http://localhost:${port}`;
+function cellHref(c) {
+  const base = cellUrl(c);
   return BACKEND === BACKENDS[0].url
     ? base
     : `${base}?backend=${encodeURIComponent(BACKEND)}`;
@@ -135,6 +142,7 @@ function cellHref(port) {
 
 const CELLS = [
   {
+    id: "assistant-ui",
     name: "assistant-ui",
     port: 3001,
     protocol: "Vercel AI data stream (v7)",
@@ -142,6 +150,7 @@ const CELLS = [
     note: "Tool calls collapse behind a disclosure",
   },
   {
+    id: "copilotkit",
     name: "CopilotKit",
     port: 3002,
     protocol: "AG-UI",
@@ -149,6 +158,7 @@ const CELLS = [
     note: "Tool renderers are opt-in",
   },
   {
+    id: "ai-elements",
     name: "AI Elements",
     port: 3003,
     protocol: "Vercel AI data stream (v7)",
@@ -156,6 +166,7 @@ const CELLS = [
     note: "Vercel's own component registry",
   },
   {
+    id: "shadcn",
     name: "shadcn",
     port: 3004,
     protocol: "Vercel AI data stream (v7)",
@@ -174,8 +185,8 @@ const cellsEl = document.getElementById("cells");
 CELLS.forEach((c) => {
   const a = document.createElement("a");
   a.className = "cell";
-  a.href = cellHref(c.port);
-  a.id = `cell-${c.port}`;
+  a.href = cellHref(c);
+  a.id = `cell-${c.id}`;
   a.setAttribute("aria-disabled", "true");
   a.innerHTML = `
     <div class="top"><span class="dot"></span><span class="title"></span></div>
@@ -184,7 +195,7 @@ CELLS.forEach((c) => {
       <span><b>topology</b> · <span class="topo"></span></span>
       <span class="note"></span>
     </div>
-    <div class="go">localhost:${c.port} — <span class="state">checking…</span></div>`;
+    <div class="go">${new URL(cellUrl(c)).host} — <span class="state">checking…</span></div>`;
   a.querySelector(".title").textContent = c.name;
   a.querySelector(".proto").textContent = c.protocol;
   a.querySelector(".topo").textContent = c.topology;
@@ -236,9 +247,9 @@ async function refreshBackend() {
 
 // Cross-origin dev servers won't allow a readable response, but a no-cors
 // request still distinguishes "listening" from "connection refused".
-async function isUp(port) {
+async function isUp(url) {
   try {
-    await fetch(`http://localhost:${port}/`, { mode: "no-cors", cache: "no-store" });
+    await fetch(`${url}/`, { mode: "no-cors", cache: "no-store" });
     return true;
   } catch {
     return false;
@@ -247,8 +258,8 @@ async function isUp(port) {
 
 async function refreshCells() {
   await Promise.all(CELLS.map(async (c) => {
-    const up = await isUp(c.port);
-    const el = document.getElementById(`cell-${c.port}`);
+    const up = await isUp(cellUrl(c));
+    const el = document.getElementById(`cell-${c.id}`);
     el.setAttribute("aria-disabled", up ? "false" : "true");
     el.querySelector(".dot").classList.toggle("up", up);
     el.querySelector(".state").textContent = up ? "open →" : "not running";

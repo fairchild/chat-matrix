@@ -24,6 +24,9 @@ for entry in "${FRONTENDS[@]}"; do
   fi
 done
 
+printf '\033[1m→ index\033[0m\n'
+(cd "$ROOT/index" && bun install)   # wrangler, for the hosted preview and publish
+
 printf '\033[1m→ probes\033[0m\n'
 (cd "$ROOT/probes" && bun install && bunx playwright install chromium)
 

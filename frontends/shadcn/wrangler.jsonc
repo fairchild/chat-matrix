@@ -1,0 +1,7 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Assets-only Worker: the static export in out/, nothing server-side.
+  "name": "chat-stack-shadcn",
+  "compatibility_date": "2026-08-01",
+  "assets": { "directory": "./out", "not_found_handling": "404-page" }
+}

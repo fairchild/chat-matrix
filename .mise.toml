@@ -14,6 +14,14 @@ run = "./scripts/run.sh"
 description = "Stop everything"
 run = "./scripts/stop.sh"
 
+[tasks.preview]
+description = "Build the hosted subset with localhost URLs and serve it under wrangler dev"
+run = "./scripts/preview.sh"
+
+[tasks.publish]
+description = "Build the hosted subset with production URLs and deploy it to Cloudflare"
+run = "./scripts/publish.sh"
+
 [tasks.probe]
 description = "Drive every flow against every frontend, then build the gallery"
 run = "./scripts/probe.sh"

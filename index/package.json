@@ -1,0 +1,8 @@
+{
+  "name": "chat-stack-index",
+  "version": "0.0.0",
+  "private": true,
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

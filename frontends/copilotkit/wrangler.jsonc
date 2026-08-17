@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // The one cell that isn't only a static site: the page is the export in out/,
+  // and worker/index.ts is CopilotKit's runtime hop at /api/copilotkit.
+  "name": "chat-stack-copilotkit",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": { "directory": "./out", "binding": "ASSETS", "not_found_handling": "404-page" },
+  "alias": { "express": "./worker/stub.ts", "cors": "./worker/stub.ts" },
+  // The runtime package's module shim calls createRequire(import.meta.url) at
+  // load, and never uses the result; the bundle has no import.meta.url, so give
+  // it one.
+  "define": { "import.meta.url": "\"file:///worker.js\"" },
+  // Server-side default backend for the runtime hop; the browser's ?backend=
+  // only ever reaches localhost backends (see lib/runtime.ts).
+  "vars": { "BACKEND_URL": "http://localhost:8001" }
+}
