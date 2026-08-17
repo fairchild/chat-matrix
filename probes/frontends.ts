@@ -113,6 +113,21 @@ const ADAPTERS: Record<string, Adapter> = {
     // Nothing collapses — every tool renders a bespoke component per state,
     // so there is no disclosure to open.
   },
+
+  // Server-rendered: every selector below is a Jinja template's handwriting,
+  // written to this file's interface on purpose (frontends/jinja, plan §3.3).
+  // The Stop button exists only while a run is in flight, which is the busy
+  // tell; the tool name is visible text in the card header, so toolNamed's
+  // default works. Nothing collapses. This cell rehydrates on reload, so the
+  // `resume` flow's "expect 0 user messages" fails here by design.
+  jinja: {
+    composer: (p) => p.locator('textarea[data-slot="input"]'),
+    stop: (p) => p.locator('button[aria-label="Stop generating"]'),
+    userMessages: (p) => p.locator('[data-role="user"]'),
+    assistantMessages: (p) => p.locator('[data-role="assistant"]'),
+    toolCalls: (p) => p.locator('[data-part="tool"]'),
+    transcript: (p) => p.locator('[data-slot="transcript"]'),
+  },
 };
 
 export type Frontend = { name: string; port: number; url: string; adapter: Adapter };

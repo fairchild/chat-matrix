@@ -15,6 +15,7 @@ FRONTENDS=(
   "copilotkit:3002"
   "ai-elements:3003"
   "shadcn:3004"
+  "jinja:3005"
 )
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
