@@ -17,10 +17,14 @@ done
 for entry in "${FRONTENDS[@]}"; do
   name="$(name_of "$entry")"
   printf '\033[1m→ frontend %s\033[0m\n' "$name"
-  (cd "$ROOT/frontends/$name" && bun install)
-  if [ ! -f "$ROOT/frontends/$name/.env.local" ] && [ -f "$ROOT/frontends/$name/.env.example" ]; then
-    cp "$ROOT/frontends/$name/.env.example" "$ROOT/frontends/$name/.env.local"
-    printf '  wrote .env.local from .env.example\n'
+  if [ -f "$ROOT/frontends/$name/pyproject.toml" ]; then
+    (cd "$ROOT/frontends/$name" && uv sync)
+  else
+    (cd "$ROOT/frontends/$name" && bun install)
+    if [ ! -f "$ROOT/frontends/$name/.env.local" ] && [ -f "$ROOT/frontends/$name/.env.example" ]; then
+      cp "$ROOT/frontends/$name/.env.example" "$ROOT/frontends/$name/.env.local"
+      printf '  wrote .env.local from .env.example\n'
+    fi
   fi
 done
 

@@ -38,7 +38,12 @@ done
 printf '\033[1mstarting frontends\033[0m\n'
 for entry in "${FRONTENDS[@]}"; do
   name="$(name_of "$entry")"; port="$(port_of "$entry")"
-  start frontend "$name" "$port" "$ROOT/frontends/$name" bun run dev
+  if [ -f "$ROOT/frontends/$name/pyproject.toml" ]; then
+    start frontend "$name" "$port" "$ROOT/frontends/$name" \
+      uv run uvicorn app.main:app --port "$port" --log-level warning
+  else
+    start frontend "$name" "$port" "$ROOT/frontends/$name" bun run dev
+  fi
 done
 
 # The hub isn't a cell in the matrix, so it lives here rather than in stacks.sh.
