@@ -1,0 +1,31 @@
+{"runId":"#1","threadId":"#2","timestamp":"~","type":"RUN_STARTED"}
+{"parentMessageId":"#3","timestamp":"~","toolCallId":"#4","toolCallName":"get_weather","type":"TOOL_CALL_START"}
+{"delta":"{\"city\":","timestamp":"~","toolCallId":"#4","type":"TOOL_CALL_ARGS"}
+{"delta":" \"Tokyo\"}","timestamp":"~","toolCallId":"#4","type":"TOOL_CALL_ARGS"}
+{"timestamp":"~","toolCallId":"#4","type":"TOOL_CALL_END"}
+{"content":"{\"city\":\"Tokyo\",\"conditions\":\"crisp and sunny\",\"temperature_c\":18,\"humidity_pct\":69}","messageId":"#5","role":"tool","timestamp":"~","toolCallId":"#4","type":"TOOL_CALL_RESULT"}
+{"messageId":"#6","role":"assistant","timestamp":"~","type":"TEXT_MESSAGE_START"}
+{"delta":"Here's ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"what ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"I ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"found ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"(via ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"get_weather).\n\n","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"- ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"**get_weather** ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"returned: ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"Weather(city='Tokyo', ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"conditions='crisp ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"and ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"sunny', ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"temperature_c=18, ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"humidity_pct=69)\n\n","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"Ask ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"a ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"follow-up ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"and ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"I'll ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"keep ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"going.","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_END"}
+{"outcome":{"type":"success"},"runId":"#1","threadId":"#2","timestamp":"~","type":"RUN_FINISHED"}

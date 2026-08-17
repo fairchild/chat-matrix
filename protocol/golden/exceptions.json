@@ -1,0 +1,10 @@
+{
+  "cloudflare-agents": [
+    {
+      "protocol": "chat",
+      "event": "finish",
+      "field": "finishReason",
+      "why": "The AI SDK stamps finishReason on the finish chunk unconditionally (sendFinish:false drops the whole chunk); the reference's adapter sends none. No cell reads it; stripping it would mean post-processing the SDK's stream to remove information."
+    }
+  ]
+}

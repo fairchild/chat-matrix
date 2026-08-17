@@ -1,0 +1,117 @@
+{"type":"start"}
+{"type":"start-step"}
+{"toolCallId":"#1","toolName":"search_notes","type":"tool-input-start"}
+{"inputTextDelta":"{\"query\": \"Search notes ","toolCallId":"#1","type":"tool-input-delta"}
+{"inputTextDelta":"for streaming protocols\"}","toolCallId":"#1","type":"tool-input-delta"}
+{"input":{"query":"Search notes for streaming protocols"},"toolCallId":"#1","toolName":"search_notes","type":"tool-input-available"}
+{"output":[{"body":"The Vercel AI data stream and AG-UI both ride SSE, but AG-UI carries explicit state-delta events where the AI SDK stream carries UI message parts.","tags":["protocol","streaming"],"title":"Streaming protocols"},{"body":"Frontends differ most in the gap between a tool being called and its result arriving — some show args streaming in, some show only a spinner.","tags":["ui","tools"],"title":"Tool-call rendering"},{"body":"Backend-driven components are where protocols diverge: AG-UI models it natively, the AI SDK route leans on typed tool results the client maps to components.","tags":["ui","protocol"],"title":"Generative UI"}],"toolCallId":"#1","type":"tool-output-available"}
+{"type":"finish-step"}
+{"type":"start-step"}
+{"id":"#2","type":"text-start"}
+{"delta":"Here's ","id":"#2","type":"text-delta"}
+{"delta":"what ","id":"#2","type":"text-delta"}
+{"delta":"I ","id":"#2","type":"text-delta"}
+{"delta":"found ","id":"#2","type":"text-delta"}
+{"delta":"(via ","id":"#2","type":"text-delta"}
+{"delta":"search_notes).\n\n","id":"#2","type":"text-delta"}
+{"delta":"- ","id":"#2","type":"text-delta"}
+{"delta":"**search_notes** ","id":"#2","type":"text-delta"}
+{"delta":"returned: ","id":"#2","type":"text-delta"}
+{"delta":"[Note(title='Streaming ","id":"#2","type":"text-delta"}
+{"delta":"protocols', ","id":"#2","type":"text-delta"}
+{"delta":"body='The ","id":"#2","type":"text-delta"}
+{"delta":"Vercel ","id":"#2","type":"text-delta"}
+{"delta":"AI ","id":"#2","type":"text-delta"}
+{"delta":"data ","id":"#2","type":"text-delta"}
+{"delta":"stream ","id":"#2","type":"text-delta"}
+{"delta":"and ","id":"#2","type":"text-delta"}
+{"delta":"AG-UI ","id":"#2","type":"text-delta"}
+{"delta":"both ","id":"#2","type":"text-delta"}
+{"delta":"ride ","id":"#2","type":"text-delta"}
+{"delta":"SSE, ","id":"#2","type":"text-delta"}
+{"delta":"but ","id":"#2","type":"text-delta"}
+{"delta":"AG-UI ","id":"#2","type":"text-delta"}
+{"delta":"carries ","id":"#2","type":"text-delta"}
+{"delta":"explicit ","id":"#2","type":"text-delta"}
+{"delta":"state-delta ","id":"#2","type":"text-delta"}
+{"delta":"events ","id":"#2","type":"text-delta"}
+{"delta":"where ","id":"#2","type":"text-delta"}
+{"delta":"the ","id":"#2","type":"text-delta"}
+{"delta":"AI ","id":"#2","type":"text-delta"}
+{"delta":"SDK ","id":"#2","type":"text-delta"}
+{"delta":"stream ","id":"#2","type":"text-delta"}
+{"delta":"carries ","id":"#2","type":"text-delta"}
+{"delta":"UI ","id":"#2","type":"text-delta"}
+{"delta":"message ","id":"#2","type":"text-delta"}
+{"delta":"parts.', ","id":"#2","type":"text-delta"}
+{"delta":"tags=('protocol', ","id":"#2","type":"text-delta"}
+{"delta":"'streaming')), ","id":"#2","type":"text-delta"}
+{"delta":"Note(title='Tool-call ","id":"#2","type":"text-delta"}
+{"delta":"rendering', ","id":"#2","type":"text-delta"}
+{"delta":"body='Frontends ","id":"#2","type":"text-delta"}
+{"delta":"differ ","id":"#2","type":"text-delta"}
+{"delta":"most ","id":"#2","type":"text-delta"}
+{"delta":"in ","id":"#2","type":"text-delta"}
+{"delta":"the ","id":"#2","type":"text-delta"}
+{"delta":"gap ","id":"#2","type":"text-delta"}
+{"delta":"between ","id":"#2","type":"text-delta"}
+{"delta":"a ","id":"#2","type":"text-delta"}
+{"delta":"tool ","id":"#2","type":"text-delta"}
+{"delta":"being ","id":"#2","type":"text-delta"}
+{"delta":"called ","id":"#2","type":"text-delta"}
+{"delta":"and ","id":"#2","type":"text-delta"}
+{"delta":"its ","id":"#2","type":"text-delta"}
+{"delta":"result ","id":"#2","type":"text-delta"}
+{"delta":"arriving ","id":"#2","type":"text-delta"}
+{"delta":"— ","id":"#2","type":"text-delta"}
+{"delta":"some ","id":"#2","type":"text-delta"}
+{"delta":"show ","id":"#2","type":"text-delta"}
+{"delta":"args ","id":"#2","type":"text-delta"}
+{"delta":"streaming ","id":"#2","type":"text-delta"}
+{"delta":"in, ","id":"#2","type":"text-delta"}
+{"delta":"some ","id":"#2","type":"text-delta"}
+{"delta":"show ","id":"#2","type":"text-delta"}
+{"delta":"only ","id":"#2","type":"text-delta"}
+{"delta":"a ","id":"#2","type":"text-delta"}
+{"delta":"spinner.', ","id":"#2","type":"text-delta"}
+{"delta":"tags=('ui', ","id":"#2","type":"text-delta"}
+{"delta":"'tools')), ","id":"#2","type":"text-delta"}
+{"delta":"Note(title='Generative ","id":"#2","type":"text-delta"}
+{"delta":"UI', ","id":"#2","type":"text-delta"}
+{"delta":"body='Backend-driven ","id":"#2","type":"text-delta"}
+{"delta":"components ","id":"#2","type":"text-delta"}
+{"delta":"are ","id":"#2","type":"text-delta"}
+{"delta":"where ","id":"#2","type":"text-delta"}
+{"delta":"protocols ","id":"#2","type":"text-delta"}
+{"delta":"diverge: ","id":"#2","type":"text-delta"}
+{"delta":"AG-UI ","id":"#2","type":"text-delta"}
+{"delta":"models ","id":"#2","type":"text-delta"}
+{"delta":"it ","id":"#2","type":"text-delta"}
+{"delta":"natively, ","id":"#2","type":"text-delta"}
+{"delta":"the ","id":"#2","type":"text-delta"}
+{"delta":"AI ","id":"#2","type":"text-delta"}
+{"delta":"SDK ","id":"#2","type":"text-delta"}
+{"delta":"route ","id":"#2","type":"text-delta"}
+{"delta":"leans ","id":"#2","type":"text-delta"}
+{"delta":"on ","id":"#2","type":"text-delta"}
+{"delta":"typed ","id":"#2","type":"text-delta"}
+{"delta":"tool ","id":"#2","type":"text-delta"}
+{"delta":"results ","id":"#2","type":"text-delta"}
+{"delta":"the ","id":"#2","type":"text-delta"}
+{"delta":"client ","id":"#2","type":"text-delta"}
+{"delta":"maps ","id":"#2","type":"text-delta"}
+{"delta":"to ","id":"#2","type":"text-delta"}
+{"delta":"components.', ","id":"#2","type":"text-delta"}
+{"delta":"tags=('ui', ","id":"#2","type":"text-delta"}
+{"delta":"'protocol'))]\n\n","id":"#2","type":"text-delta"}
+{"delta":"Ask ","id":"#2","type":"text-delta"}
+{"delta":"a ","id":"#2","type":"text-delta"}
+{"delta":"follow-up ","id":"#2","type":"text-delta"}
+{"delta":"and ","id":"#2","type":"text-delta"}
+{"delta":"I'll ","id":"#2","type":"text-delta"}
+{"delta":"keep ","id":"#2","type":"text-delta"}
+{"delta":"going.","id":"#2","type":"text-delta"}
+{"id":"#2","type":"text-end"}
+{"type":"finish-step"}
+{"type":"finish"}
+[DONE]

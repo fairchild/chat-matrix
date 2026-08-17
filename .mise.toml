@@ -30,6 +30,10 @@ run = "./scripts/probe.sh"
 description = "Check a backend against the reference contract"
 run = "./protocol/conformance.sh"
 
+[tasks.golden]
+description = "Diff every backend's streams against the fixtures captured from the reference"
+run = "./scripts/golden.sh"
+
 [tasks.logs]
 description = "Tail all running stack logs"
 run = "tail -f .run/*.log"

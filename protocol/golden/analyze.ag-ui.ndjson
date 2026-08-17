@@ -1,0 +1,59 @@
+{"runId":"#1","threadId":"#2","timestamp":"~","type":"RUN_STARTED"}
+{"parentMessageId":"#3","timestamp":"~","toolCallId":"#4","toolCallName":"analyze","type":"TOOL_CALL_START"}
+{"delta":"{\"topic\": \"assistant-u","timestamp":"~","toolCallId":"#4","type":"TOOL_CALL_ARGS"}
+{"delta":"i as a chat frontend\"}","timestamp":"~","toolCallId":"#4","type":"TOOL_CALL_ARGS"}
+{"timestamp":"~","toolCallId":"#4","type":"TOOL_CALL_END"}
+{"content":"Analysis of 'assistant-ui as a chat frontend': three factors dominate — how the protocol frames streaming, how much glue the frontend needs, and whether state survives a reload. This backend took ~3s on purpose.","messageId":"#5","role":"tool","timestamp":"~","toolCallId":"#4","type":"TOOL_CALL_RESULT"}
+{"messageId":"#6","role":"assistant","timestamp":"~","type":"TEXT_MESSAGE_START"}
+{"delta":"Here's ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"what ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"I ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"found ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"(via ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"analyze).\n\n","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"- ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"**analyze** ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"returned: ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"Analysis ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"of ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"'assistant-ui ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"as ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"a ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"chat ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"frontend': ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"three ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"factors ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"dominate ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"— ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"how ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"the ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"protocol ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"frames ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"streaming, ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"how ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"much ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"glue ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"the ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"frontend ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"needs, ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"and ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"whether ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"state ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"survives ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"a ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"reload. ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"This ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"backend ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"took ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"~3s ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"on ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"purpose.\n\n","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"Ask ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"a ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"follow-up ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"and ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"I'll ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"keep ","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"going.","messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"messageId":"#6","timestamp":"~","type":"TEXT_MESSAGE_END"}
+{"outcome":{"type":"success"},"runId":"#1","threadId":"#2","timestamp":"~","type":"RUN_FINISHED"}

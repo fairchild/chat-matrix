@@ -1,0 +1,154 @@
+{"type":"start"}
+{"type":"start-step"}
+{"toolCallId":"#1","toolName":"get_weather","type":"tool-input-start"}
+{"inputTextDelta":"{\"city\":","toolCallId":"#1","type":"tool-input-delta"}
+{"inputTextDelta":" \"Tokyo\"}","toolCallId":"#1","type":"tool-input-delta"}
+{"toolCallId":"#2","toolName":"search_notes","type":"tool-input-start"}
+{"inputTextDelta":"{\"query\": \"What's the weather in Tok","toolCallId":"#2","type":"tool-input-delta"}
+{"inputTextDelta":"yo, and search notes for streaming\"}","toolCallId":"#2","type":"tool-input-delta"}
+{"input":{"city":"Tokyo"},"toolCallId":"#1","toolName":"get_weather","type":"tool-input-available"}
+{"input":{"query":"What's the weather in Tokyo, and search notes for streaming"},"toolCallId":"#2","toolName":"search_notes","type":"tool-input-available"}
+{"output":{"city":"Tokyo","conditions":"crisp and sunny","humidity_pct":69,"temperature_c":18},"toolCallId":"#1","type":"tool-output-available"}
+{"output":[{"body":"The Vercel AI data stream and AG-UI both ride SSE, but AG-UI carries explicit state-delta events where the AI SDK stream carries UI message parts.","tags":["protocol","streaming"],"title":"Streaming protocols"},{"body":"Frontends differ most in the gap between a tool being called and its result arriving — some show args streaming in, some show only a spinner.","tags":["ui","tools"],"title":"Tool-call rendering"},{"body":"Client-authoritative history is the AI SDK default; the server keeps its own copy so a reload can rehydrate.","tags":["state","persistence"],"title":"Thread persistence"},{"body":"Backend-driven components are where protocols diverge: AG-UI models it natively, the AI SDK route leans on typed tool results the client maps to components.","tags":["ui","protocol"],"title":"Generative UI"}],"toolCallId":"#2","type":"tool-output-available"}
+{"type":"finish-step"}
+{"type":"start-step"}
+{"id":"#3","type":"text-start"}
+{"delta":"Here's ","id":"#3","type":"text-delta"}
+{"delta":"what ","id":"#3","type":"text-delta"}
+{"delta":"I ","id":"#3","type":"text-delta"}
+{"delta":"found ","id":"#3","type":"text-delta"}
+{"delta":"(via ","id":"#3","type":"text-delta"}
+{"delta":"get_weather, ","id":"#3","type":"text-delta"}
+{"delta":"search_notes).\n\n","id":"#3","type":"text-delta"}
+{"delta":"- ","id":"#3","type":"text-delta"}
+{"delta":"**get_weather** ","id":"#3","type":"text-delta"}
+{"delta":"returned: ","id":"#3","type":"text-delta"}
+{"delta":"Weather(city='Tokyo', ","id":"#3","type":"text-delta"}
+{"delta":"conditions='crisp ","id":"#3","type":"text-delta"}
+{"delta":"and ","id":"#3","type":"text-delta"}
+{"delta":"sunny', ","id":"#3","type":"text-delta"}
+{"delta":"temperature_c=18, ","id":"#3","type":"text-delta"}
+{"delta":"humidity_pct=69)\n","id":"#3","type":"text-delta"}
+{"delta":"- ","id":"#3","type":"text-delta"}
+{"delta":"**search_notes** ","id":"#3","type":"text-delta"}
+{"delta":"returned: ","id":"#3","type":"text-delta"}
+{"delta":"[Note(title='Streaming ","id":"#3","type":"text-delta"}
+{"delta":"protocols', ","id":"#3","type":"text-delta"}
+{"delta":"body='The ","id":"#3","type":"text-delta"}
+{"delta":"Vercel ","id":"#3","type":"text-delta"}
+{"delta":"AI ","id":"#3","type":"text-delta"}
+{"delta":"data ","id":"#3","type":"text-delta"}
+{"delta":"stream ","id":"#3","type":"text-delta"}
+{"delta":"and ","id":"#3","type":"text-delta"}
+{"delta":"AG-UI ","id":"#3","type":"text-delta"}
+{"delta":"both ","id":"#3","type":"text-delta"}
+{"delta":"ride ","id":"#3","type":"text-delta"}
+{"delta":"SSE, ","id":"#3","type":"text-delta"}
+{"delta":"but ","id":"#3","type":"text-delta"}
+{"delta":"AG-UI ","id":"#3","type":"text-delta"}
+{"delta":"carries ","id":"#3","type":"text-delta"}
+{"delta":"explicit ","id":"#3","type":"text-delta"}
+{"delta":"state-delta ","id":"#3","type":"text-delta"}
+{"delta":"events ","id":"#3","type":"text-delta"}
+{"delta":"where ","id":"#3","type":"text-delta"}
+{"delta":"the ","id":"#3","type":"text-delta"}
+{"delta":"AI ","id":"#3","type":"text-delta"}
+{"delta":"SDK ","id":"#3","type":"text-delta"}
+{"delta":"stream ","id":"#3","type":"text-delta"}
+{"delta":"carries ","id":"#3","type":"text-delta"}
+{"delta":"UI ","id":"#3","type":"text-delta"}
+{"delta":"message ","id":"#3","type":"text-delta"}
+{"delta":"parts.', ","id":"#3","type":"text-delta"}
+{"delta":"tags=('protocol', ","id":"#3","type":"text-delta"}
+{"delta":"'streaming')), ","id":"#3","type":"text-delta"}
+{"delta":"Note(title='Tool-call ","id":"#3","type":"text-delta"}
+{"delta":"rendering', ","id":"#3","type":"text-delta"}
+{"delta":"body='Frontends ","id":"#3","type":"text-delta"}
+{"delta":"differ ","id":"#3","type":"text-delta"}
+{"delta":"most ","id":"#3","type":"text-delta"}
+{"delta":"in ","id":"#3","type":"text-delta"}
+{"delta":"the ","id":"#3","type":"text-delta"}
+{"delta":"gap ","id":"#3","type":"text-delta"}
+{"delta":"between ","id":"#3","type":"text-delta"}
+{"delta":"a ","id":"#3","type":"text-delta"}
+{"delta":"tool ","id":"#3","type":"text-delta"}
+{"delta":"being ","id":"#3","type":"text-delta"}
+{"delta":"called ","id":"#3","type":"text-delta"}
+{"delta":"and ","id":"#3","type":"text-delta"}
+{"delta":"its ","id":"#3","type":"text-delta"}
+{"delta":"result ","id":"#3","type":"text-delta"}
+{"delta":"arriving ","id":"#3","type":"text-delta"}
+{"delta":"— ","id":"#3","type":"text-delta"}
+{"delta":"some ","id":"#3","type":"text-delta"}
+{"delta":"show ","id":"#3","type":"text-delta"}
+{"delta":"args ","id":"#3","type":"text-delta"}
+{"delta":"streaming ","id":"#3","type":"text-delta"}
+{"delta":"in, ","id":"#3","type":"text-delta"}
+{"delta":"some ","id":"#3","type":"text-delta"}
+{"delta":"show ","id":"#3","type":"text-delta"}
+{"delta":"only ","id":"#3","type":"text-delta"}
+{"delta":"a ","id":"#3","type":"text-delta"}
+{"delta":"spinner.', ","id":"#3","type":"text-delta"}
+{"delta":"tags=('ui', ","id":"#3","type":"text-delta"}
+{"delta":"'tools')), ","id":"#3","type":"text-delta"}
+{"delta":"Note(title='Thread ","id":"#3","type":"text-delta"}
+{"delta":"persistence', ","id":"#3","type":"text-delta"}
+{"delta":"body='Client-authoritative ","id":"#3","type":"text-delta"}
+{"delta":"history ","id":"#3","type":"text-delta"}
+{"delta":"is ","id":"#3","type":"text-delta"}
+{"delta":"the ","id":"#3","type":"text-delta"}
+{"delta":"AI ","id":"#3","type":"text-delta"}
+{"delta":"SDK ","id":"#3","type":"text-delta"}
+{"delta":"default; ","id":"#3","type":"text-delta"}
+{"delta":"the ","id":"#3","type":"text-delta"}
+{"delta":"server ","id":"#3","type":"text-delta"}
+{"delta":"keeps ","id":"#3","type":"text-delta"}
+{"delta":"its ","id":"#3","type":"text-delta"}
+{"delta":"own ","id":"#3","type":"text-delta"}
+{"delta":"copy ","id":"#3","type":"text-delta"}
+{"delta":"so ","id":"#3","type":"text-delta"}
+{"delta":"a ","id":"#3","type":"text-delta"}
+{"delta":"reload ","id":"#3","type":"text-delta"}
+{"delta":"can ","id":"#3","type":"text-delta"}
+{"delta":"rehydrate.', ","id":"#3","type":"text-delta"}
+{"delta":"tags=('state', ","id":"#3","type":"text-delta"}
+{"delta":"'persistence')), ","id":"#3","type":"text-delta"}
+{"delta":"Note(title='Generative ","id":"#3","type":"text-delta"}
+{"delta":"UI', ","id":"#3","type":"text-delta"}
+{"delta":"body='Backend-driven ","id":"#3","type":"text-delta"}
+{"delta":"components ","id":"#3","type":"text-delta"}
+{"delta":"are ","id":"#3","type":"text-delta"}
+{"delta":"where ","id":"#3","type":"text-delta"}
+{"delta":"protocols ","id":"#3","type":"text-delta"}
+{"delta":"diverge: ","id":"#3","type":"text-delta"}
+{"delta":"AG-UI ","id":"#3","type":"text-delta"}
+{"delta":"models ","id":"#3","type":"text-delta"}
+{"delta":"it ","id":"#3","type":"text-delta"}
+{"delta":"natively, ","id":"#3","type":"text-delta"}
+{"delta":"the ","id":"#3","type":"text-delta"}
+{"delta":"AI ","id":"#3","type":"text-delta"}
+{"delta":"SDK ","id":"#3","type":"text-delta"}
+{"delta":"route ","id":"#3","type":"text-delta"}
+{"delta":"leans ","id":"#3","type":"text-delta"}
+{"delta":"on ","id":"#3","type":"text-delta"}
+{"delta":"typed ","id":"#3","type":"text-delta"}
+{"delta":"tool ","id":"#3","type":"text-delta"}
+{"delta":"results ","id":"#3","type":"text-delta"}
+{"delta":"the ","id":"#3","type":"text-delta"}
+{"delta":"client ","id":"#3","type":"text-delta"}
+{"delta":"maps ","id":"#3","type":"text-delta"}
+{"delta":"to ","id":"#3","type":"text-delta"}
+{"delta":"components.', ","id":"#3","type":"text-delta"}
+{"delta":"tags=('ui', ","id":"#3","type":"text-delta"}
+{"delta":"'protocol'))]\n\n","id":"#3","type":"text-delta"}
+{"delta":"Ask ","id":"#3","type":"text-delta"}
+{"delta":"a ","id":"#3","type":"text-delta"}
+{"delta":"follow-up ","id":"#3","type":"text-delta"}
+{"delta":"and ","id":"#3","type":"text-delta"}
+{"delta":"I'll ","id":"#3","type":"text-delta"}
+{"delta":"keep ","id":"#3","type":"text-delta"}
+{"delta":"going.","id":"#3","type":"text-delta"}
+{"id":"#3","type":"text-end"}
+{"type":"finish-step"}
+{"type":"finish"}
+[DONE]

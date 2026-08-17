@@ -1,0 +1,149 @@
+{"runId":"#1","threadId":"#2","timestamp":"~","type":"RUN_STARTED"}
+{"parentMessageId":"#3","timestamp":"~","toolCallId":"#4","toolCallName":"get_weather","type":"TOOL_CALL_START"}
+{"delta":"{\"city\":","timestamp":"~","toolCallId":"#4","type":"TOOL_CALL_ARGS"}
+{"delta":" \"Tokyo\"}","timestamp":"~","toolCallId":"#4","type":"TOOL_CALL_ARGS"}
+{"timestamp":"~","toolCallId":"#4","type":"TOOL_CALL_END"}
+{"parentMessageId":"#3","timestamp":"~","toolCallId":"#5","toolCallName":"search_notes","type":"TOOL_CALL_START"}
+{"delta":"{\"query\": \"What's the weather in Tok","timestamp":"~","toolCallId":"#5","type":"TOOL_CALL_ARGS"}
+{"delta":"yo, and search notes for streaming\"}","timestamp":"~","toolCallId":"#5","type":"TOOL_CALL_ARGS"}
+{"timestamp":"~","toolCallId":"#5","type":"TOOL_CALL_END"}
+{"content":"{\"city\":\"Tokyo\",\"conditions\":\"crisp and sunny\",\"temperature_c\":18,\"humidity_pct\":69}","messageId":"#6","role":"tool","timestamp":"~","toolCallId":"#4","type":"TOOL_CALL_RESULT"}
+{"content":"[{\"title\":\"Streaming protocols\",\"body\":\"The Vercel AI data stream and AG-UI both ride SSE, but AG-UI carries explicit state-delta events where the AI SDK stream carries UI message parts.\",\"tags\":[\"protocol\",\"streaming\"]},{\"title\":\"Tool-call rendering\",\"body\":\"Frontends differ most in the gap between a tool being called and its result arriving — some show args streaming in, some show only a spinner.\",\"tags\":[\"ui\",\"tools\"]},{\"title\":\"Thread persistence\",\"body\":\"Client-authoritative history is the AI SDK default; the server keeps its own copy so a reload can rehydrate.\",\"tags\":[\"state\",\"persistence\"]},{\"title\":\"Generative UI\",\"body\":\"Backend-driven components are where protocols diverge: AG-UI models it natively, the AI SDK route leans on typed tool results the client maps to components.\",\"tags\":[\"ui\",\"protocol\"]}]","messageId":"#7","role":"tool","timestamp":"~","toolCallId":"#5","type":"TOOL_CALL_RESULT"}
+{"messageId":"#8","role":"assistant","timestamp":"~","type":"TEXT_MESSAGE_START"}
+{"delta":"Here's ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"what ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"I ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"found ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"(via ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"get_weather, ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"search_notes).\n\n","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"- ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"**get_weather** ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"returned: ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"Weather(city='Tokyo', ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"conditions='crisp ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"and ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"sunny', ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"temperature_c=18, ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"humidity_pct=69)\n","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"- ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"**search_notes** ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"returned: ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"[Note(title='Streaming ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"protocols', ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"body='The ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"Vercel ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"AI ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"data ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"stream ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"and ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"AG-UI ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"both ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"ride ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"SSE, ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"but ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"AG-UI ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"carries ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"explicit ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"state-delta ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"events ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"where ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"the ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"AI ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"SDK ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"stream ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"carries ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"UI ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"message ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"parts.', ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"tags=('protocol', ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"'streaming')), ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"Note(title='Tool-call ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"rendering', ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"body='Frontends ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"differ ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"most ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"in ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"the ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"gap ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"between ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"a ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"tool ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"being ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"called ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"and ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"its ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"result ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"arriving ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"— ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"some ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"show ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"args ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"streaming ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"in, ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"some ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"show ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"only ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"a ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"spinner.', ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"tags=('ui', ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"'tools')), ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"Note(title='Thread ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"persistence', ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"body='Client-authoritative ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"history ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"is ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"the ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"AI ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"SDK ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"default; ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"the ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"server ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"keeps ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"its ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"own ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"copy ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"so ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"a ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"reload ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"can ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"rehydrate.', ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"tags=('state', ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"'persistence')), ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"Note(title='Generative ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"UI', ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"body='Backend-driven ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"components ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"are ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"where ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"protocols ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"diverge: ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"AG-UI ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"models ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"it ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"natively, ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"the ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"AI ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"SDK ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"route ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"leans ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"on ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"typed ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"tool ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"results ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"the ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"client ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"maps ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"to ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"components.', ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"tags=('ui', ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"'protocol'))]\n\n","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"Ask ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"a ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"follow-up ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"and ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"I'll ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"keep ","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"delta":"going.","messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_CONTENT"}
+{"messageId":"#8","timestamp":"~","type":"TEXT_MESSAGE_END"}
+{"outcome":{"type":"success"},"runId":"#1","threadId":"#2","timestamp":"~","type":"RUN_FINISHED"}

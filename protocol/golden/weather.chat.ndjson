@@ -1,0 +1,36 @@
+{"type":"start"}
+{"type":"start-step"}
+{"toolCallId":"#1","toolName":"get_weather","type":"tool-input-start"}
+{"inputTextDelta":"{\"city\":","toolCallId":"#1","type":"tool-input-delta"}
+{"inputTextDelta":" \"Tokyo\"}","toolCallId":"#1","type":"tool-input-delta"}
+{"input":{"city":"Tokyo"},"toolCallId":"#1","toolName":"get_weather","type":"tool-input-available"}
+{"output":{"city":"Tokyo","conditions":"crisp and sunny","humidity_pct":69,"temperature_c":18},"toolCallId":"#1","type":"tool-output-available"}
+{"type":"finish-step"}
+{"type":"start-step"}
+{"id":"#2","type":"text-start"}
+{"delta":"Here's ","id":"#2","type":"text-delta"}
+{"delta":"what ","id":"#2","type":"text-delta"}
+{"delta":"I ","id":"#2","type":"text-delta"}
+{"delta":"found ","id":"#2","type":"text-delta"}
+{"delta":"(via ","id":"#2","type":"text-delta"}
+{"delta":"get_weather).\n\n","id":"#2","type":"text-delta"}
+{"delta":"- ","id":"#2","type":"text-delta"}
+{"delta":"**get_weather** ","id":"#2","type":"text-delta"}
+{"delta":"returned: ","id":"#2","type":"text-delta"}
+{"delta":"Weather(city='Tokyo', ","id":"#2","type":"text-delta"}
+{"delta":"conditions='crisp ","id":"#2","type":"text-delta"}
+{"delta":"and ","id":"#2","type":"text-delta"}
+{"delta":"sunny', ","id":"#2","type":"text-delta"}
+{"delta":"temperature_c=18, ","id":"#2","type":"text-delta"}
+{"delta":"humidity_pct=69)\n\n","id":"#2","type":"text-delta"}
+{"delta":"Ask ","id":"#2","type":"text-delta"}
+{"delta":"a ","id":"#2","type":"text-delta"}
+{"delta":"follow-up ","id":"#2","type":"text-delta"}
+{"delta":"and ","id":"#2","type":"text-delta"}
+{"delta":"I'll ","id":"#2","type":"text-delta"}
+{"delta":"keep ","id":"#2","type":"text-delta"}
+{"delta":"going.","id":"#2","type":"text-delta"}
+{"id":"#2","type":"text-end"}
+{"type":"finish-step"}
+{"type":"finish"}
+[DONE]

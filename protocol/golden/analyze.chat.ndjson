@@ -1,0 +1,64 @@
+{"type":"start"}
+{"type":"start-step"}
+{"toolCallId":"#1","toolName":"analyze","type":"tool-input-start"}
+{"inputTextDelta":"{\"topic\": \"assistant-u","toolCallId":"#1","type":"tool-input-delta"}
+{"inputTextDelta":"i as a chat frontend\"}","toolCallId":"#1","type":"tool-input-delta"}
+{"input":{"topic":"assistant-ui as a chat frontend"},"toolCallId":"#1","toolName":"analyze","type":"tool-input-available"}
+{"output":"Analysis of 'assistant-ui as a chat frontend': three factors dominate — how the protocol frames streaming, how much glue the frontend needs, and whether state survives a reload. This backend took ~3s on purpose.","toolCallId":"#1","type":"tool-output-available"}
+{"type":"finish-step"}
+{"type":"start-step"}
+{"id":"#2","type":"text-start"}
+{"delta":"Here's ","id":"#2","type":"text-delta"}
+{"delta":"what ","id":"#2","type":"text-delta"}
+{"delta":"I ","id":"#2","type":"text-delta"}
+{"delta":"found ","id":"#2","type":"text-delta"}
+{"delta":"(via ","id":"#2","type":"text-delta"}
+{"delta":"analyze).\n\n","id":"#2","type":"text-delta"}
+{"delta":"- ","id":"#2","type":"text-delta"}
+{"delta":"**analyze** ","id":"#2","type":"text-delta"}
+{"delta":"returned: ","id":"#2","type":"text-delta"}
+{"delta":"Analysis ","id":"#2","type":"text-delta"}
+{"delta":"of ","id":"#2","type":"text-delta"}
+{"delta":"'assistant-ui ","id":"#2","type":"text-delta"}
+{"delta":"as ","id":"#2","type":"text-delta"}
+{"delta":"a ","id":"#2","type":"text-delta"}
+{"delta":"chat ","id":"#2","type":"text-delta"}
+{"delta":"frontend': ","id":"#2","type":"text-delta"}
+{"delta":"three ","id":"#2","type":"text-delta"}
+{"delta":"factors ","id":"#2","type":"text-delta"}
+{"delta":"dominate ","id":"#2","type":"text-delta"}
+{"delta":"— ","id":"#2","type":"text-delta"}
+{"delta":"how ","id":"#2","type":"text-delta"}
+{"delta":"the ","id":"#2","type":"text-delta"}
+{"delta":"protocol ","id":"#2","type":"text-delta"}
+{"delta":"frames ","id":"#2","type":"text-delta"}
+{"delta":"streaming, ","id":"#2","type":"text-delta"}
+{"delta":"how ","id":"#2","type":"text-delta"}
+{"delta":"much ","id":"#2","type":"text-delta"}
+{"delta":"glue ","id":"#2","type":"text-delta"}
+{"delta":"the ","id":"#2","type":"text-delta"}
+{"delta":"frontend ","id":"#2","type":"text-delta"}
+{"delta":"needs, ","id":"#2","type":"text-delta"}
+{"delta":"and ","id":"#2","type":"text-delta"}
+{"delta":"whether ","id":"#2","type":"text-delta"}
+{"delta":"state ","id":"#2","type":"text-delta"}
+{"delta":"survives ","id":"#2","type":"text-delta"}
+{"delta":"a ","id":"#2","type":"text-delta"}
+{"delta":"reload. ","id":"#2","type":"text-delta"}
+{"delta":"This ","id":"#2","type":"text-delta"}
+{"delta":"backend ","id":"#2","type":"text-delta"}
+{"delta":"took ","id":"#2","type":"text-delta"}
+{"delta":"~3s ","id":"#2","type":"text-delta"}
+{"delta":"on ","id":"#2","type":"text-delta"}
+{"delta":"purpose.\n\n","id":"#2","type":"text-delta"}
+{"delta":"Ask ","id":"#2","type":"text-delta"}
+{"delta":"a ","id":"#2","type":"text-delta"}
+{"delta":"follow-up ","id":"#2","type":"text-delta"}
+{"delta":"and ","id":"#2","type":"text-delta"}
+{"delta":"I'll ","id":"#2","type":"text-delta"}
+{"delta":"keep ","id":"#2","type":"text-delta"}
+{"delta":"going.","id":"#2","type":"text-delta"}
+{"id":"#2","type":"text-end"}
+{"type":"finish-step"}
+{"type":"finish"}
+[DONE]

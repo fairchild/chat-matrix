@@ -114,3 +114,22 @@ It asserts the streams contain the events a frontend actually depends on —
 including `tool-input-start` / `tool-input-delta`, which are what let a UI show
 arguments arriving rather than just a spinner — then checks the thread was
 persisted and rehydrates in both protocols.
+
+## Golden
+
+```sh
+bun protocol/golden.ts                             # defaults to :8001
+bun protocol/golden.ts http://localhost:8002       # one backend
+bun protocol/golden.ts --update                    # recapture the fixtures from :8001
+```
+
+Conformance says the events exist; golden says the backends agree. It captures
+each backend's `/chat` and `/ag-ui` streams for five fixed prompts and reduces
+them to a canonical form: id values renamed by first appearance so only their
+pairing is checked, timestamps erased, pydantic-ai's `message-metadata`
+timestamp stamp dropped, keys sorted. Event order, delta boundaries, tool names,
+argument JSON, tool results, and finish state are kept and compared as-is.
+Fixtures captured from pydantic-ai live in `protocol/golden/`; a backend that
+drifts either gets fixed, or gets a per-backend, per-field exception with a
+reason in `protocol/golden/exceptions.json` — every exception applied is printed
+on the run.

@@ -8,7 +8,7 @@ protocol, so any frontend can be pointed at any backend by changing a URL. The
 first cell was **assistant-ui × pydantic-ai**; there are four now.
 
 ```
-protocol/        the contract every stack implements, and a conformance check
+protocol/        the contract every stack implements, a conformance check, and the golden check that holds every backend to the reference's streams
 backends/        one process per agent framework
 frontends/       one process per chat UI
 scripts/         setup / run / stop
@@ -61,14 +61,16 @@ as `?backend=`:
 | pi (`:8003`) | Bun, the [pi](https://pi.dev/) coding-agent SDK | pi's own session files | an agent that already owns its model runtime, tool loop and sessions — what does a chat UI cost in front of that? |
 | pi-rpc (`:8004`) | Bun, driving `pi --mode rpc` as a child process per thread | pi's own session files, written by the child | the same agent from outside the process — the way you'd drive pi from Python or a shell; what does the process boundary cost? |
 
-All four pass `protocol/conformance.sh`. pi's `/chat` stream is byte-identical
-to pydantic-ai's for the probe prompts (ids aside), and pi-rpc's is
-byte-identical to pi's — pi's wire format carries everything its SDK events do
-except the live tool-call id, so the one thing the process boundary costs is
-that tool arguments arrive in a burst rather than streaming; cloudflare-agents
-differs only in the summary's tool-result formatting and a `finishReason`
-field — the frontend gets the same work either way. A local clone runs all
-four; Cloudflare runs the second, which is the point of it.
+All four pass `protocol/conformance.sh` and `protocol/golden.ts`, the check
+that holds every backend's `/chat` and `/ag-ui` streams, for five fixed
+prompts, to bytes captured from pydantic-ai after erasing only ids and
+timestamps. The one recorded exception is cloudflare-agents' `finishReason`
+field, which the AI SDK stamps on the finish chunk unconditionally and no cell
+reads. What golden can't see is timing: pi-rpc's process boundary means tool
+arguments arrive in a burst at `toolcall_end` rather than streaming, since
+pi's RPC wire drops partials until the call id is known — same bytes,
+different pacing. A local clone runs all four; Cloudflare runs the second,
+which is the point of it.
 
 The two pi backends are also the ones that own their history: they read only
 the latest user message from a request and let the session file supply the
@@ -174,14 +176,24 @@ below now say plainly.
 
 1. Build it against `protocol/CONTRACT.md`.
 2. `./protocol/conformance.sh http://localhost:PORT` until it's green.
-3. Add one line to `scripts/stacks.sh`.
-4. Give it an adapter in `probes/frontends.ts` so the flows run against it.
-5. Write the ergonomics notes before you forget them.
+3. `bun protocol/golden.ts http://localhost:PORT` until it's green, or record
+   an exception with a reason in `protocol/golden/exceptions.json`.
+4. Add one line to `scripts/stacks.sh`.
+5. Give it an adapter in `probes/frontends.ts` so the flows run against it.
+6. Write the ergonomics notes before you forget them.
 
 A backend that passes conformance can be driven by any frontend here. Backends
 are picked at the hub and travel to a cell as `?backend=`, so a second backend
 needs no frontend changes — add it to `scripts/stacks.sh` and to the `BACKENDS`
 list in `index/index.html`, and every cell can already reach it.
+
+Conformance proves the events a frontend depends on exist; golden proves two
+backends agree on the bytes. It replaces three hand diffs done by one session
+and recorded in READMEs instead of fixed. `./scripts/golden.sh` (or
+`mise run golden`) runs it over every backend in `scripts/stacks.sh`;
+`bun protocol/golden.ts --update` recaptures the fixtures from the reference.
+A recorded run against the live matrix:
+[docs/recordings/golden-check.gif](docs/recordings/golden-check.gif).
 
 ## Known gaps
 
