@@ -73,19 +73,23 @@ flows drive whichever backend a cell resolves. That much is verified — the who
 matrix was re-run green against `c61c351`, which made the backend switchable, with
 no edit here.
 
-What isn't done is using that. The `open the chat` step navigates to the bare cell
-URL, so every run exercises whatever each cell defaults to. Driving a *chosen*
-backend means carrying `?backend=` through that step — a small change to
-`runner.ts` and `frontends.ts`, but a real one, and unverified. The per-cell
-wiring differs (the three direct cells read the param in the browser; CopilotKit
-forwards the choice server-side as a header), so check `docs/architecture.md`
-before assuming one mechanism covers all four.
+Driving a *chosen* backend is `PROBE_BACKEND`:
 
-**When the second backend lands** — `backends/cloudflare-agents/` was in progress
-and untracked as of 2026-08-16, with a `pi`-agent session also active — run
-`./protocol/conformance.sh` until green, then re-run these flows against it. The
-scripted model makes the work identical across backends, so the gallery becomes a
-rendering diff: same five flows, same moments, one variable changed.
+```sh
+PROBE_BACKEND=http://localhost:8002 ./scripts/probe.sh --grep "weather|notes"
+```
+
+It carries the hub's `?backend=` through the `open the chat` step, and nothing
+else changes. The per-cell wiring differs (the three direct cells read the param
+in the browser; CopilotKit forwards the choice server-side as a header), and
+both mechanisms were exercised: the command above ran 8/8 green against
+`backends/cloudflare-agents/` on 2026-08-16, with the Worker's log showing six
+`/chat` and two `/ag-ui` requests. Screenshots overwrite the default set — the
+gallery shows whichever backend ran last, and says so nowhere yet.
+
+The scripted model makes the work identical across backends, so the gallery
+becomes a rendering diff: same flows, same moments, one variable changed. A
+`pi`-backed backend was in progress as of the same date.
 
 The assertion to watch is `resume`'s `expect 0 user messages`. It pins the
 current behaviour, and a backend that owns its own sessions — as a `pi`-backed one

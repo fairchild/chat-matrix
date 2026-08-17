@@ -27,8 +27,12 @@ start() { # start <kind> <name> <port> <dir> <cmd...>
 printf '\033[1mstarting backends\033[0m\n'
 for entry in "${BACKENDS[@]}"; do
   name="$(name_of "$entry")"; port="$(port_of "$entry")"
-  start backend "$name" "$port" "$ROOT/backends/$name" \
-    uv run uvicorn app.main:app --port "$port" --log-level warning
+  if [ -f "$ROOT/backends/$name/package.json" ]; then
+    start backend "$name" "$port" "$ROOT/backends/$name" bun run dev
+  else
+    start backend "$name" "$port" "$ROOT/backends/$name" \
+      uv run uvicorn app.main:app --port "$port" --log-level warning
+  fi
 done
 
 printf '\033[1mstarting frontends\033[0m\n'

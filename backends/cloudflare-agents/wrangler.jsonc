@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "chat-stack-backend-cloudflare-agents",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": { "DEMO_MODEL": "scripted" },
+  // One Durable Object per thread, plus a singleton that indexes them for /threads.
+  "durable_objects": {
+    "bindings": [
+      { "name": "Thread", "class_name": "Thread" },
+      { "name": "Registry", "class_name": "Registry" }
+    ]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Thread", "Registry"] }],
+  "observability": { "enabled": true }
+}

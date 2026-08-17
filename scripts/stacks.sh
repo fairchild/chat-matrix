@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # The matrix, as data. Adding a stack is a line here — nothing else knows the list.
 #
-#   name:port  — backends are uv projects, frontends are bun projects
+#   name:port  — a backend is a uv project (pyproject.toml) or a bun project
+#   (package.json with a `dev` script); frontends are bun projects
 BACKENDS=(
   "pydantic-ai:8001"
+  "cloudflare-agents:8002"
 )
 
 FRONTENDS=(

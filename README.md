@@ -49,6 +49,19 @@ Every cell runs the same agent, so the differences you see are the stack. The
 pydantic-ai backend serves both protocols from one agent — that was one line of
 difference — which is why neither of the later cells needed backend work.
 
+There are two backends now, and the hub's picker sends the choice to a cell as
+`?backend=`:
+
+| Backend | Runtime | Store | Why it's here |
+|---|---|---|---|
+| pydantic-ai (`:8001`) | Python, uvicorn | SQLite file | the reference implementation |
+| cloudflare-agents (`:8002`) | Cloudflare Workers, Agents SDK | one Durable Object per thread | the one that gets published — a single Worker, no server to keep up |
+
+Both pass `protocol/conformance.sh`, and their `/chat` streams for the weather
+probe differ only in the summary's tool-result formatting and a `finishReason`
+field — the frontend gets the same work either way. A local clone runs both;
+Cloudflare runs the second, which is the point of it.
+
 The topology column is a real difference, not a detail. assistant-ui and
 AI Elements talk straight to Python; CopilotKit requires a server-side runtime
 in the middle, which is a place to put auth and rate limiting, and also a Node

@@ -46,7 +46,7 @@ flowchart LR
   end
   subgraph B["backends/"]
     B1["pydantic-ai<br/>:8001"]
-    B2["next backend<br/>:8002"]
+    B2["cloudflare-agents<br/>:8002"]
   end
 
   H -->|"?backend="| A1 & A2 & A3 & A4
@@ -57,12 +57,13 @@ flowchart LR
   A2R --> P2
   P1 --> B1
   P2 --> B1
-  P1 -.-> B2
+  P1 --> B2
+  P2 --> B2
 
-  style B2 stroke-dasharray: 4 4
 ```
 
-Four cells are live; the dashed backend is where the next one goes.
+Four cells and two backends are live; the hub's picker chooses the backend and
+every cell reaches either.
 
 The asymmetry in that diagram is worth reading carefully. Three of the four
 frontends speak their protocol from the browser, so the arrow goes straight to

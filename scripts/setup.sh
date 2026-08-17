@@ -6,7 +6,11 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/stacks.sh"
 for entry in "${BACKENDS[@]}"; do
   name="$(name_of "$entry")"
   printf '\033[1m→ backend %s\033[0m\n' "$name"
-  (cd "$ROOT/backends/$name" && uv sync)
+  if [ -f "$ROOT/backends/$name/package.json" ]; then
+    (cd "$ROOT/backends/$name" && bun install && bun run types)
+  else
+    (cd "$ROOT/backends/$name" && uv sync)
+  fi
 done
 
 for entry in "${FRONTENDS[@]}"; do

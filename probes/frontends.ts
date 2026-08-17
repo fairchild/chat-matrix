@@ -117,6 +117,15 @@ const ADAPTERS: Record<string, Adapter> = {
 
 export type Frontend = { name: string; port: number; url: string; adapter: Adapter };
 
+/** `PROBE_BACKEND=http://localhost:8002` drives every cell against that backend
+ *  instead of its default — the hub's `?backend=` carried through the open step. */
+const cellUrl = (port: number): string => {
+  const backend = process.env.PROBE_BACKEND;
+  return backend
+    ? `http://localhost:${port}/?backend=${encodeURIComponent(backend)}`
+    : `http://localhost:${port}`;
+};
+
 /** Read the matrix from scripts/stacks.sh so this file never has to be updated
  *  when a cell is added — only when a cell needs new selectors. */
 export const frontends = (): { supported: Frontend[]; unsupported: string[] } => {
@@ -133,7 +142,7 @@ export const frontends = (): { supported: Frontend[]; unsupported: string[] } =>
   const unsupported: string[] = [];
   for (const { name, port } of entries) {
     const adapter = ADAPTERS[name];
-    if (adapter) supported.push({ name, port, url: `http://localhost:${port}`, adapter });
+    if (adapter) supported.push({ name, port, url: cellUrl(port), adapter });
     else unsupported.push(name);
   }
   return { supported, unsupported };
