@@ -77,6 +77,15 @@ registry — one CSS import and the chat looks finished. `app/globals.css` here 
 ~30 lines of page shell and badge, versus assistant-ui's ~3,300 lines of
 components you own. Same tradeoff inverted: less to maintain, less to change.
 
+**Dark mode is included too, and the seam is where you'd expect.** CopilotKit's
+stylesheet scopes its dark palette to `.dark *`, the same class `next-themes`
+writes on `<html>`, so the entire chat flipped for free. What didn't was the
+~30 lines of shell and badge in `app/globals.css`, because those were literal
+hex — five colours became `:root` custom properties with a `.dark` block, and
+that is the whole cost. The tradeoff from the styling note holds in both
+directions: the part the library owns needed nothing, the part you own needed
+all of it.
+
 **Dependency weight.** 777 packages against assistant-ui's 259. `@copilotkit/runtime`
 declares peer deps on openai, groq, langchain, and `@anthropic-ai/sdk` — optional
 in practice, but the install is heavy for a frontend that only proxies to AG-UI.

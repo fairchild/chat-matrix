@@ -1,11 +1,32 @@
 /* Deliberately minimal: CopilotKit ships its own chat styles, so the only CSS
-   here is the layout shell and the backend badge that both frontends share. */
+   here is the layout shell and the backend badge that both frontends share.
+
+   The two palettes are the hub's, so the shell reads as the same product in
+   either scheme. next-themes puts `.dark` on <html>; CopilotKit's own
+   stylesheet scopes its dark palette to the same class, so the chat below the
+   badge flips with the badge. */
+:root {
+  --ink: #18181b;
+  --dim: #71717a;
+  --line: #e4e4e7;
+  --chip: #f4f4f5;
+  --panel: #fff;
+}
+
+.dark {
+  --ink: #ededee;
+  --dim: #8b8b93;
+  --line: #27272a;
+  --chip: #1f1f23;
+  --panel: #0c0c0d;
+}
+
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  color: #18181b;
-  background: #fff;
+  color: var(--ink);
+  background: var(--panel);
 }
 
 .shell { display: flex; flex-direction: column; height: 100dvh; }
@@ -17,21 +38,21 @@ body {
   align-items: center;
   gap: 4px 12px;
   padding: 8px 16px;
-  border-bottom: 1px solid #e4e4e7;
+  border-bottom: 1px solid var(--line);
   font-size: 12px;
 }
 .badge-name { font-weight: 500; }
-.badge-dim { color: #71717a; }
+.badge-dim { color: var(--dim); }
 .badge-model {
   padding: 2px 6px;
   border-radius: 4px;
-  background: #f4f4f5;
+  background: var(--chip);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-.badge-right { margin-left: auto; color: #71717a; }
+.badge-right { margin-left: auto; color: var(--dim); }
 
 .badge-back {
-  color: #71717a;
+  color: var(--dim);
   text-decoration: none;
 }
-.badge-back:hover { color: #18181b; }
+.badge-back:hover { color: var(--ink); }

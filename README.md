@@ -51,6 +51,14 @@ Every cell runs the same agent, so the differences you see are the stack. The
 pydantic-ai backend serves both protocols from one agent — that was one line of
 difference — which is why neither of the later cells needed backend work.
 
+Every cell also follows the OS colour scheme. The four React cells reach that
+through `next-themes`, which writes `.dark` onto `<html>` before first paint —
+the class the shadcn tokens, CopilotKit's own stylesheet and shiki's dual theme
+all key off — and `d` overrides it without leaving the page. The jinja cell and
+the hub reach it with a `prefers-color-scheme` block in a hand-written
+stylesheet and no JavaScript, which is why they follow the OS and offer nothing
+to override it with.
+
 There are four backends now, and the hub's picker sends the choice to a cell
 as `?backend=`:
 

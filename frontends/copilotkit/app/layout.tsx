@@ -12,7 +12,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    // next-themes writes the class before paint; without this React complains
+    // that the server's <html> and the client's don't match.
+    <html lang="en" suppressHydrationWarning>
       <body>
         <Providers>{children}</Providers>
       </body>

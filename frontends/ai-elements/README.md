@@ -75,6 +75,15 @@ Watch the version here. AI Elements 1.9.0 removed the `PromptInputAttachments` /
 imports from `prompt-input`; they're now the separate `attachments` registry
 item plus the hook. Importing what the docs show fails to resolve.
 
+**Dark mode reaches further than the tokens.** The generated components read
+the shadcn `.dark` block like any registry output, so following the OS is
+`next-themes` in the layout and nothing else. The part worth noting is
+`code-block.tsx`: it asks shiki for `github-light` and `github-dark` together
+and renders both palettes as CSS variables behind `dark:!bg-[var(--shiki-dark-bg)]`,
+so the JSON in a tool card re-highlights with the page rather than staying on a
+light theme in a dark card. That came shipped — a registry that hands you the
+file is also a registry that already thought about this.
+
 **`Suggestions` and `Actions` are inert on their own.** They're buttons. You
 supply `onClick={(text) => sendMessage({ text })}` and
 `onClick={() => regenerate()}` yourself. assistant-ui's `Suggestions([...])` is

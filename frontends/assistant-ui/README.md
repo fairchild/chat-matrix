@@ -33,6 +33,13 @@ shadcn-style components pulled from the registry — you own them, which is eith
 the appeal or the cost depending on your taste. They aren't counted as glue,
 but they are the thing you'd be maintaining.
 
+**Dark mode was already paid for.** The registry components read the shadcn
+tokens, and the scaffold's `globals.css` ships a `.dark` block for all of them,
+so following the OS is `next-themes` in the layout and nothing else —
+`components/theme-provider.tsx` is the whole change. Every generated component
+flipped without being touched, which is the upside of owning 3,300 lines that
+were written against one token set.
+
 **Tool calls collapse by default.** Streamed arguments and results render behind
 a `1 tool call ›` disclosure rather than inline. During the slow `analyze` call
 you get a spinner on that row and nothing else. This is a genuine design
