@@ -78,16 +78,17 @@ it** in the reference backend. The AI SDK sends the full message list with each
 request, so the server doesn't replay stored history into the run — it records
 the result. On reload the client refetches from `/threads/{id}` and rehydrates.
 
-The `pi` backend is the other model, and the contract admits both: it is
-**session-authoritative**. It reads only the latest user message from a request
-and lets its own session file supply prior turns, because pi already owns a
-durable record and replaying the client's copy into it would mean two sources
-of truth. A frontend can't tell the difference while its own history and the
-server's agree, which is always, today — no frontend rehydrates on reload. The
-day one does, the two models diverge exactly there: after a restart with a
-wiped store, a client-authoritative backend keeps going from what the client
-sends, and a session-authoritative one starts a fresh session behind messages
-the client still shows.
+The `pi` backends (`pi` in-process, `pi-rpc` as a child process) are the other
+model, and the contract admits both: they are **session-authoritative**. They
+read only the latest user message from a request and let pi's own session file
+supply prior turns, because pi already owns a durable record and replaying the
+client's copy into it would mean two sources of truth. A frontend can't tell
+the difference while its own history and the server's agree, which is always,
+today — no frontend rehydrates on reload. The day one does, the two models
+diverge exactly there: after a restart with a wiped store, a
+client-authoritative backend keeps going from what the client sends, and a
+session-authoritative one starts a fresh session behind messages the client
+still shows.
 
 Consequences worth knowing, per model:
 

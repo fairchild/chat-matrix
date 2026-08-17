@@ -48,6 +48,7 @@ flowchart LR
     B1["pydantic-ai<br/>:8001"]
     B2["cloudflare-agents<br/>:8002"]
     B3["pi<br/>:8003"]
+    B4["pi-rpc<br/>:8004"]
   end
 
   H -->|"?backend="| A1 & A2 & A3 & A4
@@ -62,10 +63,12 @@ flowchart LR
   P2 --> B2
   P1 --> B3
   P2 --> B3
+  P1 --> B4
+  P2 --> B4
 
 ```
 
-Four cells and three backends are live; the hub's picker chooses the backend and
+Four cells and four backends are live; the hub's picker chooses the backend and
 every cell reaches any of them.
 
 The asymmetry in that diagram is worth reading carefully. Three of the four
@@ -210,7 +213,13 @@ three tools and a scripted `Provider` registered on pi's own `ModelRuntime`. Wha
 stayed true is that pi ships an event stream and no wire format, so the two
 protocol adapters (~130 lines each) are this backend's cost, where pydantic-ai
 gets them from its library. The events map one-to-one and the adapters are
-switch statements — a good sign for pi's event model.
+switch statements — a good sign for pi's event model. The original guess then
+landed as its own cell: `pi-rpc` drives `pi --mode rpc` as a child process per
+thread, with the same scripted provider and tools loaded into the child as a pi
+extension. Its streams are byte-identical to the in-process cell's; the one
+thing the process boundary costs is that pi's wire format omits the live
+tool-call id, so arguments arrive in a burst rather than streaming. The
+research and the rejected alternatives are in `backends/pi-rpc/README.md`.
 
 Whatever the shape, write the ergonomics notes before moving on. That is the
 axis with no automated probe, and it is unrecoverable a week later.
@@ -224,9 +233,9 @@ at a dozen; the fix is dynamic allocation written back into the run state, and
 it isn't worth doing yet.
 
 History is client-authoritative during a turn and server-persisted after it in
-two of the three backends, following the AI SDK's default rather than fighting
-the transport. The `pi` backend is the predicted exception: it owns its
-sessions, reads only the latest user message from a request, and persists
+two of the four backends, following the AI SDK's default rather than fighting
+the transport. The two pi backends are the predicted exception: they own their
+sessions, read only the latest user message from a request, and persist
 incrementally rather than on completion. The contract now names both models
 rather than pretending there is one. It hasn't bitten yet — no frontend
 rehydrates on reload, so nobody has seen the two disagree — but the day one
