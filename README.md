@@ -29,7 +29,9 @@ change.
 ./scripts/run.sh       # or: mise run run
 ```
 
-Then open **http://localhost:3000** — the index lists every cell and links into it.
+Then open **http://localhost:3000** — the hub lists the backends as a radio
+group and the cells as cards; pick a backend, then click into a cell and it
+opens against that backend.
 Stop with `./scripts/stop.sh`; logs are in
 `.run/`.
 

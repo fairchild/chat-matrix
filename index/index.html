@@ -34,25 +34,37 @@
   .lede { color: var(--dim); margin: 0 0 32px; max-width: 62ch; }
   h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em;
        color: var(--dim); margin: 40px 0 14px; font-weight: 600; }
+  h2 .step { display: inline-block; width: 18px; height: 18px; line-height: 18px; text-align: center;
+             border-radius: 50%; background: var(--accent); color: var(--bg); font-size: 11px;
+             margin-right: 8px; letter-spacing: 0; }
   a { color: inherit; }
-
-  .backend {
-    display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px;
-    padding: 14px 18px; border: 1px solid var(--line); border-radius: 10px;
-    background: var(--panel); font-size: 13px;
-  }
-  .backend .name { font-weight: 600; }
   .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
   .chip { background: var(--chip); padding: 2px 7px; border-radius: 5px; font-size: 12px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--down); flex: none; }
+  .dot.up { background: var(--up); }
 
-  .picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-  .picker a {
-    padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px;
-    background: var(--panel); text-decoration: none; font-size: 12.5px; color: var(--dim);
+  /* The backend axis: one radio per backend, all health-checked, one chosen. */
+  fieldset.backends {
+    margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--panel); overflow: hidden;
   }
-  .picker a:hover { border-color: var(--accent); color: var(--ink); }
-  .picker a[aria-current="true"] { border-color: var(--accent); color: var(--ink); font-weight: 600; }
-  .picker .hint { align-self: center; color: var(--dim); font-size: 12px; }
+  .opt {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
+    padding: 12px 18px 12px 15px; font-size: 13px; cursor: pointer;
+    border-top: 1px solid var(--line); border-left: 3px solid transparent;
+  }
+  .opt:first-child { border-top: 0; }
+  .opt:hover { background: var(--chip); }
+  .opt:has(input:checked) { border-left-color: var(--accent); background: var(--chip); }
+  .opt input { accent-color: var(--accent); margin: 0 4px 0 0; width: 14px; height: 14px; }
+  .opt .name { font-weight: 600; }
+  .opt .detail { display: flex; align-items: center; gap: 10px; color: var(--dim); }
+  .opt .right { margin-left: auto; display: flex; gap: 14px; color: var(--dim); font-size: 12.5px; }
+  .opt:not(:has(input:checked)):not(:hover) .name { color: var(--dim); }
+  .hint { color: var(--dim); font-size: 12.5px; margin: 10px 0 0; }
+
+  .using { color: var(--dim); font-size: 13px; margin: -6px 0 14px; }
+  .using b { color: var(--ink); font-weight: 600; }
 
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
   .cell {
@@ -65,11 +77,10 @@
   .cell[aria-disabled="true"] { opacity: .55; pointer-events: none; }
   .cell .top { display: flex; align-items: center; gap: 8px; }
   .cell .title { font-weight: 600; font-size: 16px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--down); flex: none; }
-  .dot.up { background: var(--up); }
   .meta { display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; color: var(--dim); }
   .meta b { color: var(--ink); font-weight: 500; }
-  .go { margin-top: auto; font-size: 12.5px; color: var(--dim); }
+  .go { margin-top: auto; font-size: 12.5px; color: var(--dim); display: flex; gap: 2px 6px; flex-wrap: wrap; }
+  .go .pair { color: var(--ink); font-weight: 500; }
   .cell:hover .go { color: var(--ink); }
 
   .probes { display: grid; gap: 8px; }
@@ -89,15 +100,16 @@
 <div class="wrap">
   <h1>chat-stack matrix</h1>
   <p class="lede">
-    Pick a cell. Every one runs the same agent against the same backend, so the
+    Pick a backend, then a frontend. Every cell runs the same agent, so the
     differences you see are the stack rather than the answer.
   </p>
 
-  <h2>Backend</h2>
-  <div class="backend" id="backend"><span class="name">checking…</span></div>
-  <div class="picker" id="picker"></div>
+  <h2><span class="step">1</span>Backend</h2>
+  <fieldset class="backends" id="backends"></fieldset>
+  <p class="hint" id="hint" hidden></p>
 
-  <h2>Frontends</h2>
+  <h2><span class="step">2</span>Frontend</h2>
+  <p class="using">Each opens with <b id="using">…</b> as its backend.</p>
   <div class="grid" id="cells"></div>
 
   <h2>What to try</h2>
@@ -126,28 +138,13 @@ const BACKENDS = HOSTED?.backends ?? [
   { name: "pi-rpc", url: "http://localhost:8004" },
 ];
 
-const params = new URLSearchParams(window.location.search);
-const selected =
-  BACKENDS.find((b) => b.url === params.get("backend")) ?? BACKENDS[0];
-const BACKEND = selected.url;
-
-const cellUrl = (c) => HOSTED?.cells?.[c.id] ?? `http://localhost:${c.port}`;
-
-/** Cells only need ?backend= when it isn't the default, so links stay readable. */
-function cellHref(c) {
-  const base = cellUrl(c);
-  return BACKEND === BACKENDS[0].url
-    ? base
-    : `${base}?backend=${encodeURIComponent(BACKEND)}`;
-}
-
 const CELLS = [
   {
     id: "assistant-ui",
     name: "assistant-ui",
     port: 3001,
     protocol: "Vercel AI data stream (v7)",
-    topology: "browser → Python",
+    topology: "browser → backend",
     note: "Tool calls collapse behind a disclosure",
   },
   {
@@ -155,7 +152,7 @@ const CELLS = [
     name: "CopilotKit",
     port: 3002,
     protocol: "AG-UI",
-    topology: "browser → Next runtime → Python",
+    topology: "browser → Next runtime → backend",
     note: "Tool renderers are opt-in",
   },
   {
@@ -163,7 +160,7 @@ const CELLS = [
     name: "AI Elements",
     port: 3003,
     protocol: "Vercel AI data stream (v7)",
-    topology: "browser → Python",
+    topology: "browser → backend",
     note: "Vercel's own component registry",
   },
   {
@@ -171,7 +168,7 @@ const CELLS = [
     name: "shadcn",
     port: 3004,
     protocol: "Vercel AI data stream (v7)",
-    topology: "browser → Python",
+    topology: "browser → backend",
     note: "A component per tool, hand-written",
   },
 ];
@@ -182,13 +179,92 @@ const PROBES = [
   ["Analyze assistant-ui as a chat frontend.", "slow (~3s) call"],
 ];
 
+// The choice lives in the URL — ?backend= — so a reload keeps it, a cell's
+// "← matrix" link brings it back, and the address bar is shareable. The first
+// backend is the default and stays unlabelled so links stay readable.
+const params = new URLSearchParams(window.location.search);
+let BACKEND = BACKENDS.find((b) => b.url === params.get("backend")) ?? BACKENDS[0];
+const isDefault = (b) => b.url === BACKENDS[0].url;
+const query = (b) => (isDefault(b) ? "" : `?backend=${encodeURIComponent(b.url)}`);
+
+const cellUrl = (c) => HOSTED?.cells?.[c.id] ?? `http://localhost:${c.port}`;
+const cellHref = (c) => cellUrl(c) + query(BACKEND);
+const cellUp = {};
+
+function select(b) {
+  BACKEND = b;
+  history.replaceState(null, "", `./${query(b)}`);
+  document.getElementById("using").textContent = b.name;
+  CELLS.forEach(renderCellState);
+}
+
+function renderCellState(c) {
+  const el = document.getElementById(`cell-${c.id}`);
+  const up = cellUp[c.id] === true;
+  el.href = cellHref(c);
+  el.setAttribute("aria-disabled", up ? "false" : "true");
+  el.querySelector(".dot").classList.toggle("up", up);
+  el.querySelector(".state").innerHTML = up
+    ? `open with <span class="pair"></span> →`
+    : "not running";
+  if (up) el.querySelector(".pair").textContent = BACKEND.name;
+}
+
+// ---- backends: a radio group, every entry health-checked ----------------
+
+const backendsEl = document.getElementById("backends");
+BACKENDS.forEach((b) => {
+  const row = document.createElement("label");
+  row.className = "opt";
+  row.id = `backend-${b.name}`;
+  row.innerHTML = `
+    <input type="radio" name="backend" />
+    <span class="dot"></span>
+    <span class="name"></span>
+    <span class="detail"><span class="state">checking…</span></span>
+    <span class="right"><span class="threads"></span><span class="mono host"></span></span>`;
+  const input = row.querySelector("input");
+  input.value = b.url;
+  input.checked = b === BACKEND;
+  input.addEventListener("change", () => select(b));
+  row.querySelector(".name").textContent = b.name;
+  row.querySelector(".host").textContent = new URL(b.url).host;
+  backendsEl.appendChild(row);
+});
+if (HOSTED && BACKENDS.length === 1) {
+  const hint = document.getElementById("hint");
+  hint.hidden = false;
+  hint.textContent = "The hosted matrix runs one backend; a local clone runs them all, and this becomes a choice.";
+}
+document.getElementById("using").textContent = BACKEND.name;
+
+async function refreshBackend(b) {
+  const row = document.getElementById(`backend-${b.name}`);
+  const detail = row.querySelector(".detail");
+  const threads = row.querySelector(".threads");
+  try {
+    const res = await fetch(`${b.url}/health`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const h = await res.json();
+    row.querySelector(".dot").classList.add("up");
+    detail.innerHTML = `<span class="chip mono"></span><span class="tools"></span>`;
+    detail.querySelector(".chip").textContent = h.model;
+    detail.querySelector(".tools").textContent = (h.tools || []).join(" · ");
+    threads.textContent = `${h.threads} stored ${h.threads === 1 ? "thread" : "threads"}`;
+  } catch {
+    row.querySelector(".dot").classList.remove("up");
+    detail.innerHTML = `<span class="state">not running</span>`;
+    threads.textContent = "";
+  }
+}
+
+// ---- cells ----------------------------------------------------------------
+
 const cellsEl = document.getElementById("cells");
 CELLS.forEach((c) => {
   const a = document.createElement("a");
   a.className = "cell";
-  a.href = cellHref(c);
   a.id = `cell-${c.id}`;
-  a.setAttribute("aria-disabled", "true");
   a.innerHTML = `
     <div class="top"><span class="dot"></span><span class="title"></span></div>
     <div class="meta">
@@ -196,13 +272,33 @@ CELLS.forEach((c) => {
       <span><b>topology</b> · <span class="topo"></span></span>
       <span class="note"></span>
     </div>
-    <div class="go">${new URL(cellUrl(c)).host} — <span class="state">checking…</span></div>`;
+    <div class="go"><span class="mono host"></span><span class="state">checking…</span></div>`;
   a.querySelector(".title").textContent = c.name;
   a.querySelector(".proto").textContent = c.protocol;
   a.querySelector(".topo").textContent = c.topology;
   a.querySelector(".note").textContent = c.note;
+  a.querySelector(".host").textContent = new URL(cellUrl(c)).host;
   cellsEl.appendChild(a);
+  renderCellState(c);
 });
+
+// Cross-origin dev servers won't allow a readable response, but a no-cors
+// request still distinguishes "listening" from "connection refused".
+async function isUp(url) {
+  try {
+    await fetch(`${url}/`, { mode: "no-cors", cache: "no-store" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function refreshCell(c) {
+  cellUp[c.id] = await isUp(cellUrl(c));
+  renderCellState(c);
+}
+
+// ---- probes ---------------------------------------------------------------
 
 const probesEl = document.getElementById("probes");
 PROBES.forEach(([text, why]) => {
@@ -224,66 +320,10 @@ PROBES.forEach(([text, why]) => {
   probesEl.appendChild(b);
 });
 
-async function refreshBackend() {
-  const el = document.getElementById("backend");
-  try {
-    const res = await fetch(`${BACKEND}/health`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const h = await res.json();
-    el.innerHTML = `
-      <span class="dot up"></span>
-      <span class="name"></span>
-      <span class="chip mono"></span>
-      <span class="tools"></span>
-      <span class="threads" style="margin-left:auto"></span>`;
-    el.querySelector(".name").textContent = h.backend;
-    el.querySelector(".chip").textContent = h.model;
-    el.querySelector(".tools").textContent = (h.tools || []).join(" · ");
-    el.querySelector(".threads").textContent =
-      `${h.threads} stored ${h.threads === 1 ? "thread" : "threads"}`;
-  } catch (err) {
-    el.innerHTML = `<span class="dot"></span><span class="name">backend unreachable at ${BACKEND}</span>`;
-  }
+function refresh() {
+  BACKENDS.forEach(refreshBackend);
+  CELLS.forEach(refreshCell);
 }
-
-// Cross-origin dev servers won't allow a readable response, but a no-cors
-// request still distinguishes "listening" from "connection refused".
-async function isUp(url) {
-  try {
-    await fetch(`${url}/`, { mode: "no-cors", cache: "no-store" });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function refreshCells() {
-  await Promise.all(CELLS.map(async (c) => {
-    const up = await isUp(cellUrl(c));
-    const el = document.getElementById(`cell-${c.id}`);
-    el.setAttribute("aria-disabled", up ? "false" : "true");
-    el.querySelector(".dot").classList.toggle("up", up);
-    el.querySelector(".state").textContent = up ? "open →" : "not running";
-  }));
-}
-
-function renderPicker() {
-  const el = document.getElementById("picker");
-  if (BACKENDS.length < 2) {
-    el.innerHTML = '<span class="hint">One backend so far — add another to backends/ and it appears here.</span>';
-    return;
-  }
-  BACKENDS.forEach((b) => {
-    const a = document.createElement("a");
-    a.href = b.url === BACKENDS[0].url ? "./" : `./?backend=${encodeURIComponent(b.url)}`;
-    a.textContent = b.name;
-    a.setAttribute("aria-current", String(b.url === BACKEND));
-    el.appendChild(a);
-  });
-}
-renderPicker();
-
-function refresh() { refreshBackend(); refreshCells(); }
 refresh();
 setInterval(refresh, 4000);
 </script>
