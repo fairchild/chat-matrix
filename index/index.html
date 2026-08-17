@@ -303,7 +303,11 @@ BACKENDS.forEach((b, c) => {
   th.innerHTML = `<span class="hdr"><span class="dot"></span><span class="name"></span></span><span class="why"></span><select class="model" hidden></select><span class="err"></span>`;
   th.querySelector(".name").textContent = b.name;
   th.querySelector(".why").textContent = b.why;
-  th.querySelector("select.model").addEventListener("change", (e) => chooseModel(b, e.target));
+  const modelSelect = th.querySelector("select.model");
+  // Four comboboxes in a header row need names of their own; the column heading
+  // is a backend, not a label for the control inside it.
+  modelSelect.setAttribute("aria-label", `model for ${b.name}`);
+  modelSelect.addEventListener("change", (e) => chooseModel(b, e.target));
   headEl.appendChild(th);
 });
 
@@ -405,7 +409,10 @@ async function refreshModels(b, c) {
   select.replaceChildren(...data.models.map((m) => {
     const option = document.createElement("option");
     option.value = m.id;
-    option.textContent = m.available ? m.label : `${m.label} — ${m.why}`;
+    // The reason belongs on entries you can't pick. The running one is what the
+    // closed control displays, so appending a sentence there just clips it.
+    option.textContent = m.available || m.id === data.current ? m.label : `${m.label} — ${m.why}`;
+    if (m.why) option.title = m.why;
     option.disabled = !m.available && m.id !== data.current;
     option.selected = m.id === data.current;
     return option;
@@ -419,6 +426,7 @@ async function chooseModel(b, select) {
   select.disabled = true;
   err.classList.remove("bad");
   err.textContent = "switching…";
+  let failure = "";
   try {
     const res = await fetch(`${backendUrl(b)}/model`, {
       method: "POST",
@@ -427,15 +435,21 @@ async function chooseModel(b, select) {
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.detail ?? `HTTP ${res.status}`);
-    err.textContent = "";
   } catch (error) {
-    err.textContent = error.message;
-    err.classList.add("bad");
-  } finally {
-    select.disabled = false;
-    modelSig[b.name] = null;   // whatever happened, re-read the truth from the backend
-    refresh();
+    failure = error.message;
   }
+  select.disabled = false;
+  modelSig[b.name] = null;   // whatever happened, re-read the truth from the backend
+  // The reason has to be written after the refresh, not before: refreshModels
+  // clears this element, so a message set first would be wiped by the very
+  // reload that proves it — and the reload is what snaps the control back to
+  // whatever the backend actually runs.
+  await refresh();
+  err.textContent = failure;
+  err.classList.toggle("bad", failure !== "");
+  // `disabled` blurred it, and this is the page's primary control: a keyboard
+  // user should not be returned to the top of the document by using it.
+  select.focus();
 }
 
 // ---- the readout, which is where a square's detail lives ------------------
