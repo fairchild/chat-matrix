@@ -140,7 +140,7 @@ so `?backend=` can't move that cell off its configured backend once hosted; and
 `/threads` on a public backend lists every visitor's thread.
 
 The topology column is a real difference, not a detail. assistant-ui and
-AI Elements talk straight to Python; CopilotKit requires a server-side runtime
+AI Elements talk straight to the backend; CopilotKit requires a server-side runtime
 in the middle, which is a place to put auth and rate limiting, and also a Node
 process that has to be up.
 
