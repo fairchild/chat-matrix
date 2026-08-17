@@ -185,22 +185,26 @@ structure or citation spans, which means feeding them from this backend would
 mean inventing data. They're on disk so the comparison can see what the registry
 offers, and left unrendered rather than faked.
 
-## A backend gap attachments expose
+## A backend gap attachments exposed
 
-Files reach the backend intact — `/chat` accepts them and answers — but
-**attaching a file turns off the scripted model's tool selection**.
-`backends/pydantic-ai/app/scripted.py` reads the prompt with
+Wiring attachments turned up a bug in the shared backend, since fixed. It's
+recorded because the shape of it generalises: `scripted.py` read the prompt with
 
 ```python
 if isinstance(part, UserPromptPart) and isinstance(part.content, str):
     return part.content
 ```
 
-and attachments make `content` a list of `str | BinaryContent`, so the guard
-fails, the keyword match sees `""`, and every prompt falls through to the canned
-intro. "What's the weather in Tokyo?" calls `get_weather` on its own and doesn't
-once a file rides along. Nothing about it is specific to this frontend — any
-cell that grows attachments will hit it — and the fix is in `backends/`.
+and attachments make `content` a list of `str | BinaryContent`. The guard failed,
+the keyword match saw `""`, and every prompt fell through to the canned intro —
+so "What's the weather in Tokyo?" called `get_weather` on its own and stopped
+doing so the moment a file rode along.
+
+It failed silently, which is the part worth remembering. The UI was correct, the
+stream was well-formed, and the only symptom was a wrong answer — so it read as a
+bug in whichever cell wired attachments first. `_latest_user_text` now joins the
+string items out of a list prompt, which leaves text-only messages on exactly the
+path they were on before; all 20 probes across all four cells pass unchanged.
 
 ## Not an AI Elements problem
 

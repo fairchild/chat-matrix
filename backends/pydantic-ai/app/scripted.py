@@ -65,12 +65,17 @@ PLANS: tuple[Plan, ...] = (
 
 
 def _latest_user_text(messages: Sequence[ModelMessage]) -> str:
+    # Attachments make `content` a list of `str | BinaryContent`, so matching on
+    # `str` alone reads an empty prompt the moment a file rides along — every
+    # keyword misses and the model falls through to its canned intro.
     for message in reversed(messages):
         if not isinstance(message, ModelRequest):
             continue
         for part in message.parts:
-            if isinstance(part, UserPromptPart) and isinstance(part.content, str):
-                return part.content
+            if isinstance(part, UserPromptPart):
+                if isinstance(part.content, str):
+                    return part.content
+                return " ".join(c for c in part.content if isinstance(c, str))
     return ""
 
 
