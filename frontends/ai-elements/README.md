@@ -21,11 +21,10 @@ from that point on. This cell was built with
 
 ```sh
 bunx ai-elements@1.9.0 add conversation message prompt-input tool suggestion \
-  shimmer reasoning sources inline-citation chain-of-thought code-block
+  shimmer reasoning sources inline-citation chain-of-thought code-block attachments
 ```
 
-which is 11 element files (~3,700 lines) plus 25 shadcn primitives (~1,670
-lines) that they depend on.
+which is 12 element files plus 25 shadcn primitives that they depend on.
 
 | Component | What it does here |
 |---|---|
@@ -34,10 +33,12 @@ lines) that they depend on.
 | `MessageResponse` | markdown via Streamdown — code highlighting, mermaid, math, incomplete-markdown repair |
 | `MessageActions` / `MessageToolbar` | copy, and regenerate on the last turn |
 | `PromptInput` | textarea, Enter-to-send, submit button that becomes a stop button mid-stream |
+| `Attachments` | staged files in the composer, sent files in the transcript |
 | `Tool` | named tool card with a status badge, parameters, and result |
 | `Suggestions` | one prompt per comparison axis |
 | `Shimmer` | the gap between "sent" and "first token" |
-| `Reasoning`, `Sources` | wired, but this backend never feeds them — see below |
+| `Reasoning` | collapsible thought trace — renders whenever the stream carries one |
+| `Sources` | wired, but this backend never feeds it — see below |
 
 Client wiring is AI SDK v7 direct:
 
@@ -59,6 +60,20 @@ hands you the AI SDK's data model unmediated; there is no runtime object in
 between that knows how to render a message. That is more code than assistant-ui
 (where `<Thread />` owns the loop) and it is also the reason the tool rendering
 below was a two-line decision rather than a hunt for a config key.
+
+**Attachments are the one place the library does real work for you.**
+`PromptInput` owns the whole staging lifecycle — file dialog, drag-and-drop
+anywhere on the page (`globalDrop`), clipboard paste, `accept` / `maxFiles` /
+`maxFileSize` validation, blob URLs revoked on unmount, and blob→data-URL
+conversion on submit so what reaches the wire is self-contained. The composer
+strip is ~15 lines against `usePromptInputAttachments()`, and `sendMessage({
+text, files })` does the rest. Verified on the wire: a message with two files
+posts `['file', 'file', 'text']` with both `url`s as `data:` URIs.
+
+Watch the version here. AI Elements 1.9.0 removed the `PromptInputAttachments` /
+`PromptInputAttachment` wrappers that the published chatbot example still
+imports from `prompt-input`; they're now the separate `attachments` registry
+item plus the hook. Importing what the docs show fails to resolve.
 
 **`Suggestions` and `Actions` are inert on their own.** They're buttons. You
 supply `onClick={(text) => sendMessage({ text })}` and
@@ -136,23 +151,56 @@ where the generative-UI axis wants a card component instead of a JSON dump —
 which AI Elements supports (`ToolOutput` takes a `ReactNode`) and this cell
 deliberately doesn't do, because the point is to compare defaults.
 
+## Reasoning
+
+`Reasoning` is wired to the `reasoning` part type and works: given a stream
+carrying `reasoning-start` / `reasoning-delta` / `reasoning-end`, it renders a
+`Thought for N seconds` disclosure that auto-opens while the trace streams,
+auto-closes a second after it ends, and expands on click to the full text above
+the answer. Verified against a stream carrying those chunks, not inferred from
+the wiring.
+
+What it does **not** get is data from this repo's default backend. The
+`scripted` model emits text and tool calls only, so on `./scripts/run.sh` the
+disclosure never appears. Two ways to see it:
+
+```sh
+DEMO_MODEL=anthropic:claude-opus-5 ./scripts/run.sh   # a model that actually reasons
+```
+
+or teach `scripted` to emit a `ThinkingPart` before it picks a tool — which
+would light `Reasoning` up in every cell at once and give the matrix a
+reasoning-rendering axis it currently has no probe for. That's a backend change
+and it isn't made here.
+
 ## Inert components
 
-Three of the installed components have nothing to show, and the reason is the
-backend, not the library. The default `scripted` model emits text and tool calls
-and nothing else.
-
-`Reasoning` and `Sources` are wired anyway, because there are real
-`UIMessagePart` types behind them (`reasoning`, `source-url`,
-`source-document`) and the mapping is the idiomatic one — they simply never
-fire. Point this cell at `DEMO_MODEL=anthropic:claude-opus-5` and `Reasoning`
-starts rendering.
+`Sources` is wired to `source-url` / `source-document` for the same reason
+`Reasoning` is — real part types, idiomatic mapping, no data behind them from
+this backend.
 
 `ChainOfThought` and `InlineCitation` are installed and not imported. Neither
 has a `UIMessagePart` behind it; they're for agents that publish their own step
 structure or citation spans, which means feeding them from this backend would
 mean inventing data. They're on disk so the comparison can see what the registry
 offers, and left unrendered rather than faked.
+
+## A backend gap attachments expose
+
+Files reach the backend intact — `/chat` accepts them and answers — but
+**attaching a file turns off the scripted model's tool selection**.
+`backends/pydantic-ai/app/scripted.py` reads the prompt with
+
+```python
+if isinstance(part, UserPromptPart) and isinstance(part.content, str):
+    return part.content
+```
+
+and attachments make `content` a list of `str | BinaryContent`, so the guard
+fails, the keyword match sees `""`, and every prompt falls through to the canned
+intro. "What's the weather in Tokyo?" calls `get_weather` on its own and doesn't
+once a file rides along. Nothing about it is specific to this frontend — any
+cell that grows attachments will hit it — and the fix is in `backends/`.
 
 ## Not an AI Elements problem
 

@@ -1,6 +1,13 @@
 "use client";
 
 import {
+  Attachment,
+  AttachmentInfo,
+  AttachmentPreview,
+  AttachmentRemove,
+  Attachments,
+} from "@/components/ai-elements/attachments";
+import {
   Conversation,
   ConversationContent,
   ConversationEmptyState,
@@ -16,12 +23,19 @@ import {
 } from "@/components/ai-elements/message";
 import {
   PromptInput,
+  PromptInputActionAddAttachments,
+  PromptInputActionAddScreenshot,
+  PromptInputActionMenu,
+  PromptInputActionMenuContent,
+  PromptInputActionMenuTrigger,
   PromptInputBody,
   PromptInputFooter,
+  PromptInputHeader,
   type PromptInputMessage,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
+  usePromptInputAttachments,
 } from "@/components/ai-elements/prompt-input";
 import {
   Reasoning,
@@ -47,6 +61,7 @@ import { useChat } from "@ai-sdk/react";
 import {
   DefaultChatTransport,
   type DynamicToolUIPart,
+  type FileUIPart,
   isToolUIPart,
   type ToolUIPart,
   type UIMessage,
@@ -150,10 +165,55 @@ function ToolCall({ part }: { part: ToolUIPart | DynamicToolUIPart }) {
   );
 }
 
+/**
+ * Staged attachments, read from the PromptInput's own context. 1.9.0 dropped the
+ * `PromptInputAttachments` wrapper the published examples still import; the hook
+ * plus the `attachments` element is what replaced it.
+ */
+function ComposerAttachments() {
+  const attachments = usePromptInputAttachments();
+
+  if (attachments.files.length === 0) {
+    return null;
+  }
+
+  return (
+    <Attachments variant="inline">
+      {attachments.files.map((file) => (
+        <Attachment
+          data={file}
+          key={file.id}
+          onRemove={() => attachments.remove(file.id)}
+        >
+          <AttachmentPreview />
+          <AttachmentInfo />
+          <AttachmentRemove />
+        </Attachment>
+      ))}
+    </Attachments>
+  );
+}
+
+/** What the user actually sent, once the turn is in the transcript. */
+function SentAttachments({ files }: { files: FileUIPart[] }) {
+  return (
+    <Attachments variant="grid">
+      {files.map((file, index) => (
+        <Attachment data={{ ...file, id: `${file.url}-${index}` }} key={index}>
+          <AttachmentPreview />
+        </Attachment>
+      ))}
+    </Attachments>
+  );
+}
+
 const sourceParts = (message: UIMessage) =>
   message.parts.filter(
     (part) => part.type === "source-url" || part.type === "source-document",
   );
+
+const fileParts = (message: UIMessage) =>
+  message.parts.filter((part): part is FileUIPart => part.type === "file");
 
 const hasVisibleText = (message: UIMessage) =>
   message.parts.some((part) => part.type === "text" && part.text.length > 0);
@@ -167,6 +227,7 @@ export default function Home() {
   const { messages, sendMessage, status, stop, regenerate } = useChat({
     transport,
   });
+  const [attachError, setAttachError] = useState<string | null>(null);
 
   const last = messages.at(-1);
   // The scripted `analyze` tool sleeps ~3s: the latency axis is what fills that gap.
@@ -175,11 +236,14 @@ export default function Home() {
     (status === "streaming" &&
       (last?.role !== "assistant" || !hasVisibleText(last)));
 
+  // Files without a prompt are a legitimate turn, so text alone isn't the gate.
   const handleSubmit = (message: PromptInputMessage) => {
-    if (!message.text.trim()) {
+    const text = message.text.trim();
+    if (!(text || message.files.length)) {
       return;
     }
-    sendMessage({ text: message.text });
+    setAttachError(null);
+    sendMessage({ files: message.files, text });
   };
 
   return (
@@ -197,10 +261,12 @@ export default function Home() {
             )}
             {messages.map((message) => {
               const sources = sourceParts(message);
+              const files = fileParts(message);
               const isLast = message.id === last?.id;
 
               return (
                 <Message from={message.role} key={message.id}>
+                  {files.length > 0 && <SentAttachments files={files} />}
                   {sources.length > 0 && (
                     <Sources>
                       <SourcesTrigger count={sources.length} />
@@ -310,12 +376,33 @@ export default function Home() {
               />
             ))}
           </Suggestions>
-          <PromptInput onSubmit={handleSubmit}>
+          {attachError && (
+            <p className="text-destructive text-xs">{attachError}</p>
+          )}
+          <PromptInput
+            globalDrop
+            maxFileSize={10 * 1024 * 1024}
+            maxFiles={5}
+            multiple
+            onError={(err) => setAttachError(err.message)}
+            onSubmit={handleSubmit}
+          >
+            <PromptInputHeader>
+              <ComposerAttachments />
+            </PromptInputHeader>
             <PromptInputBody>
               <PromptInputTextarea placeholder="Send a message…" />
             </PromptInputBody>
             <PromptInputFooter>
-              <PromptInputTools />
+              <PromptInputTools>
+                <PromptInputActionMenu>
+                  <PromptInputActionMenuTrigger />
+                  <PromptInputActionMenuContent>
+                    <PromptInputActionAddAttachments />
+                    <PromptInputActionAddScreenshot />
+                  </PromptInputActionMenuContent>
+                </PromptInputActionMenu>
+              </PromptInputTools>
               <PromptInputSubmit onStop={stop} status={status} />
             </PromptInputFooter>
           </PromptInput>
