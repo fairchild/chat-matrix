@@ -66,6 +66,32 @@ frontend can answer has stopped describing an axis and started describing a
 stack. When a cell needs the same sentence resolved differently, that belongs in
 its adapter, the way `toolNamed` does.
 
+## Adding a backend — the open follow-up
+
+A backend needs no adapter and no flow change: adapters are per-frontend, and the
+flows drive whichever backend a cell resolves. That much is verified — the whole
+matrix was re-run green against `c61c351`, which made the backend switchable, with
+no edit here.
+
+What isn't done is using that. The `open the chat` step navigates to the bare cell
+URL, so every run exercises whatever each cell defaults to. Driving a *chosen*
+backend means carrying `?backend=` through that step — a small change to
+`runner.ts` and `frontends.ts`, but a real one, and unverified. The per-cell
+wiring differs (the three direct cells read the param in the browser; CopilotKit
+forwards the choice server-side as a header), so check `docs/architecture.md`
+before assuming one mechanism covers all four.
+
+**When the second backend lands** — `backends/cloudflare-agents/` was in progress
+and untracked as of 2026-08-16, with a `pi`-agent session also active — run
+`./protocol/conformance.sh` until green, then re-run these flows against it. The
+scripted model makes the work identical across backends, so the gallery becomes a
+rendering diff: same five flows, same moments, one variable changed.
+
+The assertion to watch is `resume`'s `expect 0 user messages`. It pins the
+current behaviour, and a backend that owns its own sessions — as a `pi`-backed one
+might — is the likeliest thing to finally break it. That failure is the good
+outcome; read it as the feature landing, not the harness rotting.
+
 ## What it found on the first run
 
 **Nothing resumes on reload.** Send a message, reload, and all four come back
