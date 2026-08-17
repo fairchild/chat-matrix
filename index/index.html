@@ -302,8 +302,11 @@ const up = {};       // frontend id  -> boolean
 // on this backend, which /health advertises. No entry, no square.
 const endpoint = (f, b) => health[b.name]?.protocols?.[f.speaks]?.split(" ")[0];
 const live = (f, b) => up[f.id] === true && Boolean(endpoint(f, b));
+// Always explicit: the hub's first backend and the cells' default backend
+// agree only by convention, so an unparameterised link would silently point
+// at the wrong backend if either ordering changed.
 const href = (f, b) =>
-  frontendUrl(f) + (b === BACKENDS[0] ? "" : `?backend=${encodeURIComponent(backendUrl(b))}`);
+  frontendUrl(f) + `?backend=${encodeURIComponent(backendUrl(b))}`;
 
 // ---- the grid -------------------------------------------------------------
 
