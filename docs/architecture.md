@@ -253,9 +253,11 @@ two of the four backends, following the AI SDK's default rather than fighting
 the transport. The two pi backends are the predicted exception: they own their
 sessions, read only the latest user message from a request, and persist
 incrementally rather than on completion. The contract now names both models
-rather than pretending there is one. It hasn't bitten yet — no frontend
-rehydrates on reload, so nobody has seen the two disagree — but the day one
-does, this is where the seam is.
+rather than pretending there is one. It hasn't bitten yet, for a reason worth
+naming: the four cells don't rehydrate on reload, and the one frontend that
+does — `frontends/jinja` — reads its own store and has no `?backend=` to point
+elsewhere, so nothing in the matrix has yet held a history a pi backend
+disagrees with. The day a cell rehydrates, this is where the seam is.
 
 Threads are one JSON blob per row. Fine at demo scale and honest about being a
 demo, but it's the first thing to change if threads get long.

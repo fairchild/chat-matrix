@@ -124,12 +124,14 @@ model, and the contract admits both: they are **session-authoritative**. They
 read only the latest user message from a request and let pi's own session file
 supply prior turns, because pi already owns a durable record and replaying the
 client's copy into it would mean two sources of truth. A frontend can't tell
-the difference while its own history and the server's agree, which is always,
-today — no frontend rehydrates on reload. The day one does, the two models
-diverge exactly there: after a restart with a wiped store, a
-client-authoritative backend keeps going from what the client sends, and a
-session-authoritative one starts a fresh session behind messages the client
-still shows.
+the difference while its own history and the server's agree, which is still the
+case today: none of the four matrix cells rehydrate on reload, so none of them
+ever sends a history the server doesn't already have. `frontends/jinja` does
+rehydrate, but it reads its own store and has no `?backend=` to point elsewhere,
+so it never meets either model. The day a cell rehydrates, the two diverge
+exactly there: after a restart with a wiped store, a client-authoritative
+backend keeps going from what the client sends, and a session-authoritative one
+starts a fresh session behind messages the client still shows.
 
 Consequences worth knowing, per model:
 
