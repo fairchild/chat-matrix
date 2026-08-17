@@ -32,10 +32,13 @@ swaps in a real provider when you want to see genuine tool selection instead.
 
 ```mermaid
 flowchart LR
+  H["index hub<br/>:3000"]
   subgraph F["frontends/"]
     A1["assistant-ui<br/>:3001"]
     A2["CopilotKit<br/>:3002"]
     A2R["CopilotRuntime<br/>/api/copilotkit"]
+    A3["AI Elements<br/>:3003"]
+    A4["shadcn<br/>:3004"]
   end
   subgraph P["protocol"]
     P1["Vercel AI<br/>data stream v7"]
@@ -43,10 +46,13 @@ flowchart LR
   end
   subgraph B["backends/"]
     B1["pydantic-ai<br/>:8001"]
-    B2["pi<br/>:8002"]
+    B2["next backend<br/>:8002"]
   end
 
+  H -->|"?backend="| A1 & A2 & A3 & A4
   A1 --> P1
+  A3 --> P1
+  A4 --> P1
   A2 --> A2R
   A2R --> P2
   P1 --> B1
@@ -56,22 +62,28 @@ flowchart LR
   style B2 stroke-dasharray: 4 4
 ```
 
-Both cells are live; the dashed backend is where the next one goes.
+Four cells are live; the dashed backend is where the next one goes.
 
-The asymmetry in that diagram is worth reading carefully. assistant-ui speaks
-its protocol from the browser, so the arrow goes straight to Python. CopilotKit
-requires a **server-side runtime** in its own Next process, so the browser talks
-to that and the runtime talks AG-UI onward. Both are legitimate designs — the
-hop is a natural home for auth and rate limiting — but it means "frontend" isn't
-uniformly a pure client, and the backend axis is a server-side env var there
-rather than a browser-visible URL.
+The asymmetry in that diagram is worth reading carefully. Three of the four
+frontends speak their protocol from the browser, so the arrow goes straight to
+Python. CopilotKit requires a **server-side runtime** in its own Next process, so
+the browser talks to that and the runtime talks AG-UI onward. Both are legitimate
+designs — the hop is a natural home for auth and rate limiting — but it means
+"frontend" isn't uniformly a pure client.
+
+That asymmetry resurfaces in backend switching. The hub passes the chosen backend
+to a cell as `?backend=`, which the three direct cells read in the browser. In
+CopilotKit the hop that talks to the backend runs server-side, so the choice has
+to be forwarded: the provider sends it as an `x-demo-backend` header and the
+route's per-request agents factory builds the `HttpAgent` for it. Same axis, two
+mechanisms, because the topologies genuinely differ.
 
 ## How a request actually flows
 
-The current cell is assistant-ui talking to pydantic-ai over the Vercel AI data
-stream protocol. Nothing sits between them: the browser posts directly to the
-Python process, which is why swapping backends is a URL change rather than a
-redeploy.
+Taking assistant-ui over the Vercel AI data stream as the representative case —
+the same path AI Elements and shadcn use. Nothing sits between the two: the
+browser posts directly to the Python process, which is why swapping backends is a
+URL change rather than a redeploy.
 
 ```mermaid
 sequenceDiagram
@@ -151,6 +163,14 @@ against one that doesn't.
 arrays of `name:port`; nothing else in the repo knows the list, so registering a
 stack is one line.
 
+`index/` is the hub on :3000 — harness furniture rather than a cell, which is why
+it is started from `run.sh` instead of being registered in `stacks.sh`.
+
+`probes/` is the flows harness: the axes written as plain-sentence steps, run
+against every cell and captured at the same moments so the results sit side by
+side. It answers the question conformance can't — not "does this stack work" but
+"what did this UI actually do with the same input".
+
 `docs/` is this file. Per-stack ergonomics notes deliberately live in each
 stack's own README instead, written during the build while the friction is still
 fresh — they are the notes you reread when deciding, and they age better than
@@ -173,6 +193,9 @@ Adding CopilotKit exercised both shapes at once and confirmed the design: the
 backend needed **no changes at all**, because `/ag-ui` was already conformant.
 The work was entirely in the new frontend, and the one-line registry edit in
 `stacks.sh` was genuinely the only place the matrix had to learn about it.
+
+A new frontend also needs a `probes/frontends.ts` adapter so the flows run
+against it, and it should read `?backend=` so the hub can point it anywhere.
 
 **A new backend** is the real work: implement the reference agent's three tools,
 serve at least one protocol, expose the thread endpoints, and pass conformance.

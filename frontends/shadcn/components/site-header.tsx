@@ -2,25 +2,33 @@
 
 import * as React from "react"
 
-import { BACKEND, type Health } from "@/lib/backend"
+import { type Health, indexHref, useBackend } from "@/lib/backend"
 import { NewChatButton } from "@/components/new-chat-button"
 
 /** Same badge as the other cells, so all four are directly comparable. */
 export function SiteHeader() {
+  const backend = useBackend()
   const [health, setHealth] = React.useState<Health | null>(null)
   const [error, setError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
-    fetch(`${BACKEND}/health`)
+    fetch(`${backend}/health`)
       .then((res) =>
         res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))
       )
       .then(setHealth)
       .catch((err: Error) => setError(err.message))
-  }, [])
+  }, [backend])
 
   return (
     <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2 text-xs">
+      <a
+        href={indexHref(backend)}
+        className="text-muted-foreground hover:text-foreground"
+        title="Back to the matrix"
+      >
+        ← matrix
+      </a>
       <span className="font-medium">shadcn</span>
       <span className="text-muted-foreground">→</span>
       {health ? (
@@ -40,7 +48,7 @@ export function SiteHeader() {
       ) : (
         <span className="text-muted-foreground">
           {error
-            ? `backend unreachable at ${BACKEND} (${error})`
+            ? `backend unreachable at ${backend} (${error})`
             : "connecting…"}
         </span>
       )}

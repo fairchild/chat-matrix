@@ -13,35 +13,26 @@ import {
   useChatRuntime,
 } from "@assistant-ui/react-ai-sdk";
 import { useEffect, useMemo, useState } from "react";
-
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8001";
-const INDEX_URL = process.env.NEXT_PUBLIC_INDEX_URL ?? "http://localhost:3000";
-
-type Health = {
-  backend: string;
-  model: string;
-  tools: string[];
-  threads: number;
-};
+import { type Health, indexHref, useBackend } from "@/lib/backend";
 
 /** Which backend am I looking at? The whole point of the matrix is that this changes. */
-function BackendBadge() {
+function BackendBadge({ backend }: { backend: string }) {
   const [health, setHealth] = useState<Health | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${BACKEND}/health`)
+    fetch(`${backend}/health`)
       .then((res) =>
         res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`)),
       )
       .then(setHealth)
       .catch((err: Error) => setError(err.message));
-  }, []);
+  }, [backend]);
 
   return (
     <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2 text-xs">
       <a
-        href={INDEX_URL}
+        href={indexHref(backend)}
         className="text-muted-foreground hover:text-foreground"
         title="Back to the matrix"
       >
@@ -64,7 +55,7 @@ function BackendBadge() {
         </>
       ) : (
         <span className="text-muted-foreground">
-          {error ? `backend unreachable at ${BACKEND} (${error})` : "connecting…"}
+          {error ? `backend unreachable at ${backend} (${error})` : "connecting…"}
         </span>
       )}
     </header>
@@ -102,16 +93,17 @@ function ThreadWithSuggestions() {
 
 export default function Home() {
   // Swapping backends is this one URL. No proxy route, no server-side glue.
+  const backend = useBackend();
   const transport = useMemo(
-    () => new AssistantChatTransport({ api: `${BACKEND}/chat` }),
-    [],
+    () => new AssistantChatTransport({ api: `${backend}/chat` }),
+    [backend],
   );
   const runtime = useChatRuntime({ transport });
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <div className="flex h-full flex-col">
-        <BackendBadge />
+        <BackendBadge backend={backend} />
         <div className="min-h-0 flex-1">
           <ThreadWithSuggestions />
         </div>

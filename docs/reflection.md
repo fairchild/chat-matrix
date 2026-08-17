@@ -22,6 +22,11 @@ black box you configure.
 
 ## On the two frontends
 
+*Written when there were two. There are four now — AI Elements and shadcn each
+carry their own ergonomics notes in their READMEs, and `probes/` can re-derive
+any rendering claim below on demand. The assistant-ui/CopilotKit contrast is
+still the sharpest one, so it stays as written.*
+
 The sharpest measured difference is what happens when a tool is called and you
 haven't written any code for it. assistant-ui renders a collapsed `1 tool call ›`
 row from `tool-fallback.tsx` — automatic, unnamed, you must expand it.
@@ -139,15 +144,17 @@ would have been a client that can't parse the stream, with no server error.
 
 ## What I'd change
 
-**Add a scorecard.** This is the real gap. Conformance proves a stack *works*;
-nothing captures that assistant-ui collapses tool calls while CopilotKit needs
-opting in. That lives in prose across three READMEs, and it's already hard to
-diff. I'd want one table, per axis, per cell — filled in by hand. Not more
-automation; the observations are qualitative and that's fine.
+**~~Add a scorecard.~~ Done, and better than I proposed.** I wanted a hand-filled
+table per axis per cell, and argued against automating it because the
+observations are qualitative. `probes/` went the other way and was right to: the
+axes are written as plain-sentence flows, run against every cell, and captured at
+the same moments, so the qualitative comparison is a gallery of real screenshots
+rather than my recollection of them. The bit I had backwards is that automating
+the *driving* doesn't force you to automate the *judgement*.
 
-**Capture screenshots as artifacts.** Every conclusion above about rendering
-came from a screenshot I took and then discarded to a scratch directory. Those
-are the evidence, and they should live next to the notes.
+**~~Capture screenshots as artifacts.~~ Done** — same harness. Every rendering
+claim in this file can now be re-derived by running `./scripts/probe.sh` instead
+of trusting that I looked carefully.
 
 **Reconsider one-blob-per-thread sooner than planned.** Fine now, and I'd change
 it the moment threads get long enough to reload slowly, which will be before it

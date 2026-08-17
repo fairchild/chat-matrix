@@ -4,7 +4,7 @@ import * as React from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 
-import { BACKEND } from "@/lib/backend"
+import { useBackend } from "@/lib/backend"
 import { type ChatUIMessage } from "@/lib/messages"
 import { ChatMessage } from "@/components/chat-message"
 import { PromptForm } from "@/components/prompt-form"
@@ -30,9 +30,10 @@ export function Chat() {
   // Swapping backends is this one URL. The template's model picker is gone with
   // the API route: the model is the harness's control variable, set by
   // DEMO_MODEL on the backend, not per-request by the client.
+  const backend = useBackend()
   const transport = React.useMemo(
-    () => new DefaultChatTransport<ChatUIMessage>({ api: `${BACKEND}/chat` }),
-    []
+    () => new DefaultChatTransport<ChatUIMessage>({ api: `${backend}/chat` }),
+    [backend]
   )
   const { messages, sendMessage, status, stop, error } = useChat<ChatUIMessage>(
     {

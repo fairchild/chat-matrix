@@ -2,34 +2,26 @@
 
 import { CopilotChat } from "@copilotkit/react-core/v2";
 import { useEffect, useState } from "react";
+import { type Health, indexHref, useBackend } from "@/lib/backend";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8001";
-const INDEX_URL = process.env.NEXT_PUBLIC_INDEX_URL ?? "http://localhost:3000";
-
-type Health = {
-  backend: string;
-  model: string;
-  tools: string[];
-  threads: number;
-};
-
-/** Same badge as the assistant-ui cell, so the two are directly comparable. */
+/** Same badge as the other cells, so all four are directly comparable. */
 function BackendBadge() {
+  const backend = useBackend();
   const [health, setHealth] = useState<Health | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${BACKEND}/health`)
+    fetch(`${backend}/health`)
       .then((res) =>
         res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`)),
       )
       .then(setHealth)
       .catch((err: Error) => setError(err.message));
-  }, []);
+  }, [backend]);
 
   return (
     <header className="badge">
-      <a className="badge-back" href={INDEX_URL} title="Back to the matrix">
+      <a className="badge-back" href={indexHref(backend)} title="Back to the matrix">
         ← matrix
       </a>
       <span className="badge-name">CopilotKit</span>
@@ -45,7 +37,7 @@ function BackendBadge() {
         </>
       ) : (
         <span className="badge-dim">
-          {error ? `backend unreachable at ${BACKEND} (${error})` : "connecting…"}
+          {error ? `backend unreachable at ${backend} (${error})` : "connecting…"}
         </span>
       )}
     </header>

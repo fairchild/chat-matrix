@@ -5,7 +5,7 @@ by running them against each other instead of reading their READMEs.
 
 Frontends and backends are separate processes that meet at a documented wire
 protocol, so any frontend can be pointed at any backend by changing a URL. The
-first cell is **assistant-ui × pydantic-ai**.
+first cell was **assistant-ui × pydantic-ai**; there are four now.
 
 ```
 protocol/        the contract every stack implements, and a conformance check
@@ -113,8 +113,10 @@ below now say plainly.
 4. Give it an adapter in `probes/frontends.ts` so the flows run against it.
 5. Write the ergonomics notes before you forget them.
 
-A backend that passes conformance can be driven by any frontend here; a frontend
-only needs the backend's base URL.
+A backend that passes conformance can be driven by any frontend here. Backends
+are picked at the hub and travel to a cell as `?backend=`, so a second backend
+needs no frontend changes — add it to `scripts/stacks.sh` and to the `BACKENDS`
+list in `index/index.html`, and every cell can already reach it.
 
 ## Known gaps
 
