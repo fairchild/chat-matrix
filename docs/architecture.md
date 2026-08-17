@@ -224,6 +224,22 @@ research and the rejected alternatives are in `backends/pi-rpc/README.md`.
 Whatever the shape, write the ergonomics notes before moving on. That is the
 axis with no automated probe, and it is unrecoverable a week later.
 
+**A monolith** is the fourth shape, and it is the one the axes were designed to
+avoid: `frontends/jinja` runs the reference agent in the same process that
+renders the HTML, so there is no wire between the ends and no `?backend=` to
+honour. It's included on purpose, because it answers a question the axes can't
+put — what a chat UI costs when nothing in the stack is a chat framework — and
+that answer is only worth having if the work underneath is identical, which is
+why its `agent.py`, `scripted.py` and `store.py` are copies of the reference
+backend's held to them by a `diff`, and why it serves `/chat` and `/ag-ui` so
+`conformance.sh` gates it the way it gates a backend. It can be compared on
+everything downstream of the event stream: same three tools, same scripted
+model, same chunks, rendered into HTML on the server rather than into components
+in the browser. It can't be compared on protocol or topology, having one of each
+by construction and nowhere else to point. It also does two things none of the
+four cells do — reload resumes the thread, and there is a thread list — which
+says less about the frameworks than about where the history was already sitting.
+
 ## Where this will strain
 
 Being honest about the limits, roughly in the order they'll bite.

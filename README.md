@@ -5,7 +5,8 @@ by running them against each other instead of reading their READMEs.
 
 Frontends and backends are separate processes that meet at a documented wire
 protocol, so any frontend can be pointed at any backend by changing a URL. The
-first cell was **assistant-ui × pydantic-ai**; there are four now.
+first cell was **assistant-ui × pydantic-ai**; there are four in the matrix now,
+plus one deliberately outside it.
 
 ```
 protocol/        the contract every stack implements, a conformance check, and the golden check that holds every backend to the reference's streams
@@ -46,6 +47,7 @@ below.
 | CopilotKit (`:3002`) | pydantic-ai (`:8001`) | AG-UI | browser → Next runtime → Python | works |
 | AI Elements (`:3003`) | pydantic-ai (`:8001`) | Vercel AI data stream, AI SDK v7 | browser → Python | works |
 | shadcn (`:3004`) | pydantic-ai (`:8001`) | Vercel AI data stream, AI SDK v7 | browser → Python | works |
+| FastAPI + Jinja (`:3005`) | in-process (pydantic-ai) | none — server-rendered HTML, NDJSON DOM patches | browser → Python (monolith) | works |
 
 Every cell runs the same agent, so the differences you see are the stack. The
 pydantic-ai backend serves both protocols from one agent — that was one line of
@@ -58,6 +60,19 @@ all key off — and `d` overrides it without leaving the page. The jinja cell an
 the hub reach it with a `prefers-color-scheme` block in a hand-written
 stylesheet and no JavaScript, which is why they follow the OS and offer nothing
 to override it with.
+
+The last row is a different kind of thing, and the `none` under Protocol is the
+tell: FastAPI + Jinja runs the reference agent inside the process that renders
+the HTML, so there is no wire between the two ends and the hub's `?backend=` is
+ignored. It's here because it answers a question the other four can't put — what
+a good chat UI costs when nothing in the stack is a chat framework, just
+FastAPI, Jinja, your agent and sixty lines of JavaScript. The comparison still
+means something, because its agent, tools and scripted model are copies of the
+reference backend's held to them by a `diff`, so only the rendering approach
+differs. It's also the one cell where reload resumes the thread and a thread
+list exists, which is what having the history in the same process gets you. The
+numbers and the friction are in
+[`frontends/jinja/README.md`](frontends/jinja/README.md).
 
 There are four backends now, and the hub's picker sends the choice to a cell
 as `?backend=`:
@@ -215,12 +230,16 @@ A recorded run against the live matrix:
   four are clean: every route prerenders static, apart from CopilotKit's
   `/api/copilotkit` runtime, which is dynamic by design. A bare `next build` in
   a shell that leaks the variable still fails, so the pin is load-bearing.
-- **History is backend-only, and reload loses it.** `/threads` and `/threads/{id}`
-  exist and the store is real, but no frontend reads them: reload starts a fresh
-  thread in all four, and no thread list is rendered anywhere. The `resume` flow
-  in `probes/` pins the current behaviour so it fails the day a frontend
-  rehydrates. (An earlier draft of this line claimed reload resumed the current
-  thread — driving it is what showed otherwise.)
+- **History is backend-only in the four matrix cells, and reload loses it.**
+  `/threads` and `/threads/{id}` exist and the store is real, but none of the
+  four reads them: reload starts a fresh thread, and no thread list is rendered
+  anywhere. [FastAPI + Jinja](frontends/jinja/README.md) is the exception — it
+  rehydrates from the store on `GET /t/{id}` and renders a thread list — because
+  the history is already in its process. The `resume` flow in `probes/` was
+  written to pin the old behaviour and fail loudly the day a frontend
+  rehydrated, so it now fails for that cell by design; read the red as the
+  feature landing. (An earlier draft of this line claimed reload resumed the
+  current thread — driving it is what showed otherwise.)
 - **Human-in-the-loop approval isn't wired.** pydantic-ai supports deferred tool
   approval, and it's the sharpest test of the generative-UI axis, but it's not
   in the reference agent yet.
