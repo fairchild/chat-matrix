@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>{% block title %}FastAPI + Jinja · chat-stack{% endblock %}</title>
+<link rel="stylesheet" href="/static/app.css">
+{# The only thing JS changes about the page is that Enter sends. Say so, or don't. #}
+<noscript><style>.hint-js { display: none; }</style></noscript>
+</head>
+<body data-cell="jinja">
+<header data-slot="header">
+  <a class="back" href="{{ index_url }}">← matrix</a>
+  <span class="cell-name">FastAPI + Jinja</span>
+  <span data-slot="badge">{{ badge }}</span>
+  <a class="new" href="/">
+    <svg viewBox="0 0 14 14" width="11" height="11" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 2.5v9M2.5 7h9"/></svg>
+    New chat
+  </a>
+</header>
+{% include "partials/threads.html" %}
+<main>
+{% block main %}{% endblock %}
+</main>
+<script src="/app.js" defer></script>
+</body>
+</html>

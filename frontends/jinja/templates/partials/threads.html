@@ -1,0 +1,16 @@
+{# The whole aside is the patch target: the epilogue swaps it with `replace threads`. #}
+<aside data-slot="threads" id="threads">
+<h2>Threads{% if threads %} <span class="n">{{ threads | length }}</span>{% endif %}</h2>
+{% if threads %}
+<nav class="thread-list">
+  {% for t in threads %}
+  <a href="/t/{{ t.id | urlencode }}" aria-current="{{ 'page' if t.id == thread_id else 'false' }}">
+    <span class="title">{{ t.title }}</span>
+    <span class="meta"><time datetime="{{ t.updated_at }}">{{ t.updated_at[5:10] }}</time><small>{{ t.message_count }} msg</small></span>
+  </a>
+  {% endfor %}
+</nav>
+{% else %}
+<p class="empty">No threads yet.</p>
+{% endif %}
+</aside>

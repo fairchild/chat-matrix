@@ -1,0 +1,19 @@
+{% set city = part.input.city if part.input is mapping else none %}
+{% if part.state == "input-available" %}
+<p class="pending"><span class="spinner" aria-hidden="true"></span> Looking up <span class="topic">{{ city or "the forecast" }}</span>…</p>
+{% elif part.state == "output-available" %}
+<div class="weather">
+  <div class="temp">{{ part.output.temperature_c }}<span class="unit">°C</span></div>
+  <div class="place">
+    <div class="city">{{ part.output.city }}</div>
+    <div class="cond">{{ part.output.conditions }}</div>
+  </div>
+  {% set humidity = part.output.humidity_pct | default(0) %}
+  <div class="humidity">
+    <span class="k">Humidity</span>
+    <span class="v"><span class="track"><span style="width: {{ humidity }}%"></span></span>{{ humidity }}%</span>
+  </div>
+</div>
+{% else %}
+<p class="err">{{ part.error or "The weather lookup failed." }}</p>
+{% endif %}

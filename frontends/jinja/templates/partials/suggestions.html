@@ -1,0 +1,7 @@
+{# `formnovalidate` because the composer's textarea is `required` and empty: without
+   it the browser refuses the submit and the no-JS path never leaves the page. #}
+<div id="suggestions" data-slot="suggestions">
+  {% for text, why in suggestions %}
+  <button type="submit" form="composer" name="message" value="{{ text }}" formnovalidate><span class="txt">{{ text }}</span><span class="why">{{ why }}</span></button>
+  {% endfor %}
+</div>

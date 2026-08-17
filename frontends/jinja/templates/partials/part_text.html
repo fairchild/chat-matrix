@@ -1,0 +1,5 @@
+{% if part.done %}
+<div class="text" data-part="text" id="tx-{{ part.id }}" data-state="done">{{ part.text | markdown }}</div>
+{% else %}
+<div class="text" data-part="text" id="tx-{{ part.id }}" data-state="streaming"><pre class="raw" id="tx-{{ part.id }}-raw">{{ part.text }}</pre></div>
+{% endif %}

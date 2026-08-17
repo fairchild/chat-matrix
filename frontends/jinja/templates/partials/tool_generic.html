@@ -1,0 +1,12 @@
+{# The floor every unknown tool lands on: its name is in the header, its
+   arguments and result are here in full. Nothing is hidden by not knowing it. #}
+<div class="label">input</div>
+<pre class="args">{{ part.input | json }}</pre>
+{% if part.state == "output-available" %}
+<div class="label">output</div>
+<pre class="out">{{ part.output | json }}</pre>
+{% elif part.state == "output-error" %}
+<p class="err">{{ part.error or "The tool call failed." }}</p>
+{% else %}
+<p class="pending"><span class="spinner" aria-hidden="true"></span> Running {{ part.name }}…</p>
+{% endif %}

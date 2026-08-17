@@ -1,0 +1,16 @@
+[project]
+name = "frontend-jinja"
+version = "0.1.0"
+description = "the reference agent server-rendered from one FastAPI process — a monolith cell outside the matrix"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic-ai[ui,ag-ui]==2.31.0",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.20",
+    "markdown-it-py>=3.0",
+]
+
+[tool.uv]
+package = false

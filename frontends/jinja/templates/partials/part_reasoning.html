@@ -1,0 +1,5 @@
+{# Open while it streams so there is something to watch; collapsed once it's history. #}
+<details class="reasoning" data-part="reasoning" id="rs-{{ part.id }}" data-state="{{ 'done' if part.done else 'streaming' }}"{% if not part.done %} open{% endif %}>
+  <summary>{{ "Reasoning" if part.done else "Thinking…" }}</summary>
+  <pre id="rs-{{ part.id }}-raw">{{ part.text }}</pre>
+</details>

@@ -1,0 +1,8 @@
+{% set topic = part.input.topic if part.input is mapping else none %}
+{% if part.state == "input-available" %}
+<p class="pending"><span class="spinner" aria-hidden="true"></span> Analyzing <span class="topic">{{ topic or "the topic" }}</span>…</p>
+{% elif part.state == "output-available" %}
+<p class="analysis">{{ part.output }}</p>
+{% else %}
+<p class="err">{{ part.error or "The analysis failed." }}</p>
+{% endif %}

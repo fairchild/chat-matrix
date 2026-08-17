@@ -1,0 +1,3 @@
+<article class="msg" data-role="user" id="m-{{ turn.id }}">
+  <div class="bubble">{% for part in turn.parts if part.kind == "text" %}{{ part.text }}{% endfor %}</div>
+</article>

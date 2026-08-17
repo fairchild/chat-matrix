@@ -1,0 +1,14 @@
+{% set body = {"get_weather": "partials/tool_weather.html", "search_notes": "partials/tool_notes.html", "analyze": "partials/tool_analyze.html"}.get(part.name, "partials/tool_generic.html") %}
+{% set label = {"input-streaming": "arguments", "input-available": "running", "output-available": "done", "output-error": "failed"}.get(part.state, part.state) %}
+<section class="tool" data-part="tool" data-tool="{{ part.name }}" data-state="{{ part.state }}" id="tc-{{ part.call_id }}">
+  <header>
+    <span class="name">{{ part.name }}</span>
+    <span class="state">{{ label }}</span>
+  </header>
+  {% if part.state == "input-streaming" %}
+  <pre class="args" id="args-{{ part.call_id }}">{{ part.args_text }}</pre>
+  <p class="pending"><span class="spinner" aria-hidden="true"></span> Streaming arguments…</p>
+  {% else %}
+  {% include body %}
+  {% endif %}
+</section>

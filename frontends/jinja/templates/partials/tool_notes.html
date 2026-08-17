@@ -1,0 +1,20 @@
+{% set query = part.input.query if part.input is mapping else none %}
+{% if part.state == "input-available" %}
+<p class="pending"><span class="spinner" aria-hidden="true"></span> Searching notes{% if query %} for <span class="topic">“{{ query }}”</span>{% endif %}…</p>
+{% elif part.state == "output-available" %}
+<ul class="notes">
+  {% for note in part.output %}
+  <li class="note">
+    <div class="title">{{ note.title }}</div>
+    <p class="body">{{ note.body }}</p>
+    {% if note.tags %}
+    <div class="tags">{% for tag in note.tags %}<span class="tag">{{ tag }}</span>{% endfor %}</div>
+    {% endif %}
+  </li>
+  {% else %}
+  <li class="note"><p class="body">No notes matched.</p></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="err">{{ part.error or "The note search failed." }}</p>
+{% endif %}

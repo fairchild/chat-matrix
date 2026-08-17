@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block main %}
+<section id="transcript" data-slot="transcript" role="log" aria-live="polite">
+  {% for turn in turns %}
+    {% if turn.role == "user" %}
+      {% include "partials/message_user.html" %}
+    {% else %}
+      {% include "partials/message_assistant.html" %}
+    {% endif %}
+  {% endfor %}
+</section>
+{# The composer comes before the suggestions in the DOM on purpose: a suggestion
+   button submits `message` too, and a duplicate field resolves to the last one,
+   so it has to follow the (empty) textarea. CSS puts it back above. #}
+{% with state = state | default("idle") %}
+  {% include "partials/composer.html" %}
+{% endwith %}
+{% if not turns %}
+<div class="empty-state">
+  <div class="intro">
+    <p class="lede">
+      One FastAPI process runs the agent and renders every turn as HTML.
+      <b>Reload the page and the thread is still here.</b>
+    </p>
+    <p class="kicker">Try one</p>
+    {% include "partials/suggestions.html" %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

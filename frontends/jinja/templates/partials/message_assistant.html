@@ -1,0 +1,7 @@
+<article class="msg" data-role="assistant" id="m-{{ turn.id }}">
+  <div class="parts" id="parts-{{ turn.id }}">
+    {% for part in turn.parts %}
+      {% include "partials/part_" ~ part.kind ~ ".html" %}
+    {% endfor %}
+  </div>
+</article>

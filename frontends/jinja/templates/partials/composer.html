@@ -1,0 +1,20 @@
+<form id="composer" data-slot="composer" data-state="{{ state }}" method="post" action="/t/{{ thread_id | urlencode }}">
+  <div class="field">
+{% if state == "busy" %}
+    <textarea name="message" data-slot="input" aria-label="Message input" placeholder="Generating…" rows="1" required readonly aria-busy="true"></textarea>
+    <button type="button" data-slot="stop" aria-label="Stop generating">
+      <svg viewBox="0 0 14 14" width="12" height="12" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6" fill="currentColor"/></svg>
+    </button>
+{% else %}
+    <textarea name="message" data-slot="input" aria-label="Message input" placeholder="Send a message…" rows="1" required></textarea>
+    <button type="submit" data-slot="send" aria-label="Send">
+      <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12.75V3.6M8 3.6 4.1 7.5M8 3.6l3.9 3.9"/></svg>
+    </button>
+{% endif %}
+  </div>
+{% if state == "busy" %}
+  <p class="hint">Streaming from the server — stopping discards the turn.</p>
+{% else %}
+  <p class="hint hint-js"><span class="key">Enter</span> sends · <span class="key">Shift</span>+<span class="key">Enter</span> for a new line</p>
+{% endif %}
+</form>
