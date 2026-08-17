@@ -14,7 +14,13 @@ const { supported, unsupported } = frontends();
 
 // A frontend listed in stacks.sh with no adapter is a gap worth seeing, not a
 // silent skip — it fails one obvious test rather than quietly testing nothing.
-for (const name of unsupported) {
+// A cell the hosted preview doesn't serve is the opposite: the subset is a
+// decision, so it skips, and the title says which list made the decision.
+for (const { name, why } of unsupported) {
+  if (why === "not-hosted") {
+    test.skip(`${name} · not in HOSTED_CELLS (scripts/hosted.sh)`, () => {});
+    continue;
+  }
   test(`${name} · no adapter`, () => {
     throw new Error(
       `${name} is listed in scripts/stacks.sh but has no adapter in probes/frontends.ts, ` +

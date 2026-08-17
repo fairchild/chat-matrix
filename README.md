@@ -41,13 +41,17 @@ below.
 
 ## What's here
 
-| Frontend | Backend | Protocol | Topology | Status |
-|---|---|---|---|---|
-| assistant-ui (`:3001`) | pydantic-ai (`:8001`) | Vercel AI data stream, AI SDK v7 | browser → Python | works |
-| CopilotKit (`:3002`) | pydantic-ai (`:8001`) | AG-UI | browser → Next runtime → Python | works |
-| AI Elements (`:3003`) | pydantic-ai (`:8001`) | Vercel AI data stream, AI SDK v7 | browser → Python | works |
-| shadcn (`:3004`) | pydantic-ai (`:8001`) | Vercel AI data stream, AI SDK v7 | browser → Python | works |
-| FastAPI + Jinja (`:3005`) | in-process (pydantic-ai) | none — server-rendered HTML, NDJSON DOM patches | browser → Python (monolith) | works |
+Each cell runs against whichever backend the hub picks, so the backend isn't a
+column here — it's the other axis, listed below. The default is pydantic-ai on
+`:8001`.
+
+| Frontend | Protocol | Topology | Status |
+|---|---|---|---|
+| assistant-ui (`:3001`) | Vercel AI data stream, AI SDK v7 | browser → backend | works |
+| CopilotKit (`:3002`) | AG-UI | browser → Next runtime → backend | works |
+| AI Elements (`:3003`) | Vercel AI data stream, AI SDK v7 | browser → backend | works |
+| shadcn (`:3004`) | Vercel AI data stream, AI SDK v7 | browser → backend | works |
+| FastAPI + Jinja (`:3005`) | none — server-rendered HTML, NDJSON DOM patches | browser → the process itself | works |
 
 Every cell runs the same agent, so the differences you see are the stack. The
 pydantic-ai backend serves both protocols from one agent — that was one line of

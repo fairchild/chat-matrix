@@ -80,14 +80,36 @@ PROBE_BACKEND=http://localhost:8002 ./scripts/probe.sh --grep "weather|notes"
 ```
 
 It carries the hub's `?backend=` through the `open the chat` step, and nothing
-else changes. `PROBE_PORT_OFFSET=1000` drives the hosted preview instead
-(`scripts/preview.sh` serves each cell's static export at its port plus 1000),
-which is how the production artifacts get the same flows before they deploy. The per-cell wiring differs (the three direct cells read the param
+else changes. The per-cell wiring differs (the three direct cells read the param
 in the browser; CopilotKit forwards the choice server-side as a header), and
 both mechanisms were exercised: the command above ran 8/8 green against
 `backends/cloudflare-agents/` on 2026-08-16, with the Worker's log showing six
 `/chat` and two `/ag-ui` requests. Screenshots overwrite the default set — the
 gallery shows whichever backend ran last, and says so nowhere yet.
+
+## Probing the hosted preview
+
+`PROBE_PORT_OFFSET=1000` aims the same flows at the hosted subset instead of the
+local matrix — `scripts/preview.sh` serves each cell's static export at its port
+plus 1000 — which is how the production artifacts get driven before they deploy:
+
+```sh
+./scripts/preview.sh                       # build + serve the subset on :4000–:4004
+PROBE_PORT_OFFSET=1000 ./scripts/probe.sh
+```
+
+An offset run drives only `HOSTED_CELLS` from `scripts/hosted.sh`, because that
+is the list `preview.sh` and `publish.sh` build from — Cloudflare serves four
+static exports, and `jinja` is a Python process rather than an export, so there
+is nothing at `:4005` to photograph. It reports as skipped rather than failing,
+which is the distinction worth keeping: a cell with no adapter is a gap in
+`frontends.ts` and still fails loudly, while a cell outside the subset is a
+decision someone made in `hosted.sh`. The preflight in `probe.sh` reads the same
+two lists, so it can't ask for a cell the tests won't run. Verified 2026-08-17:
+20 flows across the four hosted cells against the preview at `:4001–:4004`, one
+skip row for jinja, no `:3005` in the run — 19 green, and the one red
+(`assistant-ui · notes`) fails identically on the local matrix, so it is the
+matrix's, not the preview's.
 
 The scripted model makes the work identical across backends, so the gallery
 becomes a rendering diff: same flows, same moments, one variable changed. A

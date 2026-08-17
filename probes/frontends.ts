@@ -4,7 +4,9 @@
 //
 // Ports are not repeated here — they come from scripts/stacks.sh, which stays the
 // single place the matrix is listed. A frontend that appears there without an
-// adapter below is reported as unsupported rather than silently skipped.
+// adapter below is reported as unsupported rather than silently skipped. The
+// hosted subset comes from scripts/hosted.sh for the same reason: a preview run
+// drives what was actually deployed, not what the matrix wishes were deployed.
 //
 // The selectors are transcribed from the running pages, not from the source, and
 // what each stack gives you to hold on to is itself a result: CopilotKit ships
@@ -132,21 +134,40 @@ const ADAPTERS: Record<string, Adapter> = {
 
 export type Frontend = { name: string; port: number; url: string; adapter: Adapter };
 
+/** Why a cell the matrix names isn't being driven. `no-adapter` is a gap in this
+ *  file. `not-hosted` is the hosted preview serving a subset on purpose, which
+ *  is a different thing and reads differently in the report. */
+export type Unsupported = { name: string; why: "no-adapter" | "not-hosted" };
+
+const portOffset = (): number => Number(process.env.PROBE_PORT_OFFSET ?? 0);
+
 /** `PROBE_BACKEND=http://localhost:8002` drives every cell against that backend
  *  instead of its default — the hub's `?backend=` carried through the open step.
  *  `PROBE_PORT_OFFSET=1000` drives the hosted preview (scripts/preview.sh),
  *  which serves each cell's static export at its port plus the offset. */
 const cellUrl = (port: number): string => {
   const backend = process.env.PROBE_BACKEND;
-  const at = port + Number(process.env.PROBE_PORT_OFFSET ?? 0);
+  const at = port + portOffset();
   return backend
     ? `http://localhost:${at}/?backend=${encodeURIComponent(backend)}`
     : `http://localhost:${at}`;
 };
 
+/** The hosted subset, read from scripts/hosted.sh — the same list preview.sh and
+ *  publish.sh build from, so a preview run can't drive a cell that was never
+ *  deployed. Only Cloudflare's subset is filtered: a local run serves the whole
+ *  matrix, and jinja is a Python process rather than a static export, so it has
+ *  nothing at port+offset to photograph. */
+const hostedCells = (): Set<string> => {
+  const hosted = readFileSync(join(ROOT, "scripts", "hosted.sh"), "utf8");
+  const block = hosted.match(/HOSTED_CELLS=\(([^)]*)\)/);
+  if (!block) throw new Error("probes: no HOSTED_CELLS=(…) block in scripts/hosted.sh");
+  return new Set([...block[1].matchAll(/[\w-]+/g)].map((m) => m[0]));
+};
+
 /** Read the matrix from scripts/stacks.sh so this file never has to be updated
  *  when a cell is added — only when a cell needs new selectors. */
-export const frontends = (): { supported: Frontend[]; unsupported: string[] } => {
+export const frontends = (): { supported: Frontend[]; unsupported: Unsupported[] } => {
   const stacks = readFileSync(join(ROOT, "scripts", "stacks.sh"), "utf8");
   const block = stacks.match(/FRONTENDS=\(([\s\S]*?)\)/);
   if (!block) throw new Error("probes: no FRONTENDS=(…) block in scripts/stacks.sh");
@@ -155,13 +176,15 @@ export const frontends = (): { supported: Frontend[]; unsupported: string[] } =>
     name: m[1],
     port: Number(m[2]),
   }));
+  const hosted = portOffset() ? hostedCells() : null;
 
   const supported: Frontend[] = [];
-  const unsupported: string[] = [];
+  const unsupported: Unsupported[] = [];
   for (const { name, port } of entries) {
     const adapter = ADAPTERS[name];
-    if (adapter) supported.push({ name, port, url: cellUrl(port), adapter });
-    else unsupported.push(name);
+    if (!adapter) unsupported.push({ name, why: "no-adapter" });
+    else if (hosted && !hosted.has(name)) unsupported.push({ name, why: "not-hosted" });
+    else supported.push({ name, port, url: cellUrl(port), adapter });
   }
   return { supported, unsupported };
 };
