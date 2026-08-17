@@ -7,7 +7,8 @@ for entry in "${BACKENDS[@]}"; do
   name="$(name_of "$entry")"
   printf '\033[1m→ backend %s\033[0m\n' "$name"
   if [ -f "$ROOT/backends/$name/package.json" ]; then
-    (cd "$ROOT/backends/$name" && bun install && bun run types)
+    # `types` is wrangler's generated bindings; only the Worker backend has it.
+    (cd "$ROOT/backends/$name" && bun install && { grep -q '"types"' package.json && bun run types || true; })
   else
     (cd "$ROOT/backends/$name" && uv sync)
   fi

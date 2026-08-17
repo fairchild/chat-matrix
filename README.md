@@ -49,18 +49,25 @@ Every cell runs the same agent, so the differences you see are the stack. The
 pydantic-ai backend serves both protocols from one agent — that was one line of
 difference — which is why neither of the later cells needed backend work.
 
-There are two backends now, and the hub's picker sends the choice to a cell as
-`?backend=`:
+There are three backends now, and the hub's picker sends the choice to a cell
+as `?backend=`:
 
 | Backend | Runtime | Store | Why it's here |
 |---|---|---|---|
 | pydantic-ai (`:8001`) | Python, uvicorn | SQLite file | the reference implementation |
 | cloudflare-agents (`:8002`) | Cloudflare Workers, Agents SDK | one Durable Object per thread | the one that gets published — a single Worker, no server to keep up |
+| pi (`:8003`) | Bun, the [pi](https://pi.dev/) coding-agent SDK | pi's own session files | an agent that already owns its model runtime, tool loop and sessions — what does a chat UI cost in front of that? |
 
-Both pass `protocol/conformance.sh`, and their `/chat` streams for the weather
-probe differ only in the summary's tool-result formatting and a `finishReason`
-field — the frontend gets the same work either way. A local clone runs both;
+All three pass `protocol/conformance.sh`. pi's `/chat` stream is byte-identical
+to pydantic-ai's for the probe prompts (ids aside); cloudflare-agents differs
+only in the summary's tool-result formatting and a `finishReason` field — the
+frontend gets the same work either way. A local clone runs all three;
 Cloudflare runs the second, which is the point of it.
+
+pi is also the backend that owns its history: it reads only the latest user
+message from a request and lets its session file supply the rest, where the
+other two record what the client sent. That is the divergence
+`protocol/CONTRACT.md` predicted, and it now says so.
 
 ### What's public
 
@@ -104,6 +111,10 @@ For real behaviour, set a provider string:
 ```sh
 DEMO_MODEL=anthropic:claude-opus-5 ./scripts/run.sh
 ```
+
+Each backend reads the string its own way — pi wants `anthropic/claude-opus-4-5`
+and can use a login you've already done with the `pi` CLI — so set it per
+backend when they differ; each backend's README has the spelling.
 
 ## What you're comparing
 

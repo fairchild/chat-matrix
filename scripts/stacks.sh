@@ -6,6 +6,7 @@
 BACKENDS=(
   "pydantic-ai:8001"
   "cloudflare-agents:8002"
+  "pi:8003"
 )
 
 FRONTENDS=(

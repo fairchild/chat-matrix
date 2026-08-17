@@ -29,9 +29,11 @@ different, and you can't compare two frontends' rendering when the thing being
 rendered changes underneath you. Scripted runs are identical every time, so any
 difference you see is the stack.
 
-Set `DEMO_MODEL` to any pydantic-ai model string (`anthropic:claude-opus-5`,
-`openai:gpt-5.2`, …) when you want to see real behaviour instead. Credentials
-resolve the normal way for that provider; nothing here needs a key.
+Set `DEMO_MODEL` when you want to see real behaviour instead. Each backend
+spells the model its own framework's way — `anthropic:claude-opus-5` for
+pydantic-ai, `anthropic/claude-opus-4-5` for pi — and credentials resolve the
+way that framework resolves them (an env var; for pi, also its own login).
+Nothing here needs a key.
 
 ## HTTP surface
 
@@ -65,27 +67,40 @@ components.
 
 ## State
 
-Threads are stored as pydantic-ai `ModelMessage`s, not as either wire format.
-Each adapter's `dump_messages` renders them on the way out, which is why
+Threads are stored in each backend's own neutral format — pydantic-ai
+`ModelMessage`s, AI SDK `ModelMessage`s, pi session entries — never as a wire
+format. Each protocol renders them on the way out, which is why
 `GET /threads/{id}` can serve the same thread as either protocol. Adding a third
 protocol adds a rendering path, not a migration.
 
 History is **client-authoritative during a turn** and **server-persisted after
-it**. The AI SDK sends the full message list with each request, so the server
-doesn't replay stored history into the run — it records the result. On reload
-the client refetches from `/threads/{id}` and rehydrates. Server-authoritative
-history is possible but means fighting the transport, which isn't worth it until
-a backend needs it (a `pi`-backed one might, since it owns its own sessions).
+it** in the reference backend. The AI SDK sends the full message list with each
+request, so the server doesn't replay stored history into the run — it records
+the result. On reload the client refetches from `/threads/{id}` and rehydrates.
 
-Two consequences worth knowing:
+The `pi` backend is the other model, and the contract admits both: it is
+**session-authoritative**. It reads only the latest user message from a request
+and lets its own session file supply prior turns, because pi already owns a
+durable record and replaying the client's copy into it would mean two sources
+of truth. A frontend can't tell the difference while its own history and the
+server's agree, which is always, today — no frontend rehydrates on reload. The
+day one does, the two models diverge exactly there: after a restart with a
+wiped store, a client-authoritative backend keeps going from what the client
+sends, and a session-authoritative one starts a fresh session behind messages
+the client still shows.
 
-- **Persistence happens on stream completion.** `on_complete` fires when the run
-  finishes, so a client that disconnects mid-stream leaves nothing behind. This
-  is easy to hit by accident: piping curl into `head` closes the stream early and
-  silently skips the write.
-- **One JSON blob per thread**, not a row per message. Fine at demo scale, and it
-  keeps the store honest about being a demo. It's the first thing to change if
-  threads get long.
+Consequences worth knowing, per model:
+
+- **When persistence happens differs.** pydantic-ai's `on_complete` fires when
+  the run finishes, so a client that disconnects mid-stream leaves nothing
+  behind — easy to hit by piping curl into `head`, which closes the stream early
+  and silently skips the write. pi appends each entry as it happens (once the
+  first assistant message has landed), so the same disconnect leaves the user
+  message and a partial assistant message marked `aborted`.
+- **One JSON blob per thread**, not a row per message, in the reference store.
+  Fine at demo scale, and it keeps the store honest about being a demo. It's the
+  first thing to change if threads get long. pi's store is one append-only file
+  per thread, which is the same trade with a different failure mode.
 
 ## Conformance
 

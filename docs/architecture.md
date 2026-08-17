@@ -47,6 +47,7 @@ flowchart LR
   subgraph B["backends/"]
     B1["pydantic-ai<br/>:8001"]
     B2["cloudflare-agents<br/>:8002"]
+    B3["pi<br/>:8003"]
   end
 
   H -->|"?backend="| A1 & A2 & A3 & A4
@@ -59,11 +60,13 @@ flowchart LR
   P2 --> B1
   P1 --> B2
   P2 --> B2
+  P1 --> B3
+  P2 --> B3
 
 ```
 
-Four cells and two backends are live; the hub's picker chooses the backend and
-every cell reaches either.
+Four cells and three backends are live; the hub's picker chooses the backend and
+every cell reaches any of them.
 
 The asymmetry in that diagram is worth reading carefully. Three of the four
 frontends speak their protocol from the browser, so the arrow goes straight to
@@ -200,10 +203,14 @@ against it, and it should read `?backend=` so the hub can point it anywhere.
 
 **A new backend** is the real work: implement the reference agent's three tools,
 serve at least one protocol, expose the thread endpoints, and pass conformance.
-The `pi`-based backend is the interesting case here, because `pi --mode rpc`
-means wrapping a subprocess and translating its event stream rather than
-importing a library — a genuinely different shape that the process-per-stack
-boundary already accommodates.
+The `pi` backend was the interesting case, and it landed differently from the
+plan: the guess was `pi --mode rpc` — a subprocess and a translated event stream
+— but pi's SDK runs in-process under Bun, so it is `createAgentSession` with the
+three tools and a scripted `Provider` registered on pi's own `ModelRuntime`. What
+stayed true is that pi ships an event stream and no wire format, so the two
+protocol adapters (~130 lines each) are this backend's cost, where pydantic-ai
+gets them from its library. The events map one-to-one and the adapters are
+switch statements — a good sign for pi's event model.
 
 Whatever the shape, write the ergonomics notes before moving on. That is the
 axis with no automated probe, and it is unrecoverable a week later.
@@ -216,11 +223,14 @@ Ports are assigned by hand in `stacks.sh`. Fine for a handful of stacks, annoyin
 at a dozen; the fix is dynamic allocation written back into the run state, and
 it isn't worth doing yet.
 
-History is client-authoritative during a turn and server-persisted after it,
-which follows the AI SDK's default rather than fighting the transport. It works,
-but a backend that owns its own sessions — `pi` again — will want to be the
-source of truth, and that's a genuine divergence in the contract rather than an
-implementation detail. Expect to revisit it when the second backend lands.
+History is client-authoritative during a turn and server-persisted after it in
+two of the three backends, following the AI SDK's default rather than fighting
+the transport. The `pi` backend is the predicted exception: it owns its
+sessions, reads only the latest user message from a request, and persists
+incrementally rather than on completion. The contract now names both models
+rather than pretending there is one. It hasn't bitten yet — no frontend
+rehydrates on reload, so nobody has seen the two disagree — but the day one
+does, this is where the seam is.
 
 Threads are one JSON blob per row. Fine at demo scale and honest about being a
 demo, but it's the first thing to change if threads get long.
