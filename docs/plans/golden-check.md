@@ -301,8 +301,10 @@ ten fixtures in `protocol/golden/` captured from `:8001` by `--update`,
 `protocol/golden/exceptions.json` with one entry, `protocol/golden.test.ts`
 (the normaliser's adversary), `scripts/golden.sh`, `mise run golden`, a
 "Golden" section in `CONTRACT.md`, a step in the README's "Adding a stack",
-and `docs/recordings/golden-check.gif` from `golden-check.tape`. It replaces
-the three hand diffs. Verified: `./scripts/golden.sh` is green on all four
+and `docs/recordings/golden-check.gif` from `golden-check.tape` (48 s, ~570 KB:
+all four green; one word edited in cloudflare-agents' scripted model → four
+fixtures red with the diff; reverted → green). It replaces the three hand
+diffs. Verified: `./scripts/golden.sh` is green on all four
 backends — 40 fixtures identical, 5 exceptions applied (cloudflare-agents'
 `finish.finishReason` on each `/chat` fixture) — in about 9 s wall clock with
 every capture concurrent; `--update` run twice changes nothing;

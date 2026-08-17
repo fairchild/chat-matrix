@@ -4,7 +4,8 @@
 #
 # Three beats: every backend green; one backend drifts (a one-word edit to
 # cloudflare-agents' scripted model, which wrangler hot-reloads) and the check
-# goes red with the diff; the edit is reverted and the check is green again.
+# goes red with the diff; the edit is reverted (by sed, so nothing else in the
+# working tree is touched) and the check is green again.
 
 Output docs/recordings/golden-check.gif
 
@@ -44,7 +45,7 @@ Type "clear"
 Enter
 Type "# revert it; green again"
 Enter
-Type "git checkout -- backends/cloudflare-agents/src/scripted.ts"
+Type `sed -i '' "s/Weather(town=/Weather(city=/" backends/cloudflare-agents/src/scripted.ts`
 Enter
 Sleep 4s
 Type "bun protocol/golden.ts http://localhost:8002"
