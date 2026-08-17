@@ -19,4 +19,7 @@ for entry in "${FRONTENDS[@]}"; do
   fi
 done
 
+printf '\033[1m→ probes\033[0m\n'
+(cd "$ROOT/probes" && bun install && bunx playwright install chromium)
+
 printf '\n\033[1mready.\033[0m  scripts/run.sh to start the matrix\n'

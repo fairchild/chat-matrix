@@ -1,0 +1,95 @@
+# The flows, in something close to English.
+#
+# One flow per comparison axis in the root README, plus the two that only show up
+# when you drive the UI rather than read it: a follow-up turn, and a reload.
+#
+# Every line is a step. The vocabulary is small on purpose — see flow.ts for the
+# whole grammar, and README.md for how to add to it. A step that mentions a
+# concrete selector belongs in frontends.ts instead; flows stay stack-agnostic so
+# the same steps run against every cell of the matrix.
+
+- flow: weather
+  axis: Streaming & tool-call UX
+  about: >
+    The baseline. One fast tool, one small struct back. What does the UI show
+    between "sent" and "answered", and does the tool call survive in the
+    transcript once it has?
+  steps:
+    - open the chat
+    - capture empty
+    - ask "What's the weather in Tokyo?"
+    - wait for the tool call
+    - capture tool-call
+    - wait for the reply
+    - expect the reply to mention "crisp and sunny"
+    - expect 1 user message
+    # Expanding comes before the name assertion on purpose: assistant-ui keeps
+    # the tool call collapsed, so which tool ran is not on screen until you open
+    # it. Reordering these two lines is what surfaced that.
+    - expand the tool call
+    - expect a tool call for get_weather
+    - capture answered
+
+- flow: notes
+  axis: Generative / custom UI
+  about: >
+    A list comes back. This is where a frontend either renders cards or dumps
+    JSON at you, and the gap between the two is the whole generative-UI pitch.
+  steps:
+    - open the chat
+    - ask "Search notes for streaming protocols."
+    - wait for the tool call
+    - wait for the reply
+    - expect the reply to mention "search_notes"
+    - expand the tool call
+    - expect a tool call for search_notes
+    - capture list-result
+
+- flow: analyze
+  axis: Latency handling
+  about: >
+    The analyze tool sleeps ~3s on purpose. Everything interesting happens in
+    that gap, so this flow captures mid-flight before it waits for the answer.
+  steps:
+    - open the chat
+    - ask "Analyze assistant-ui as a chat frontend."
+    - wait for the tool call
+    - expect the chat to be busy
+    - capture in-flight
+    - wait for the reply
+    - expect the chat to be idle
+    - expand the tool call
+    - expect a tool call for analyze
+    - capture answered
+
+- flow: follow-up
+  axis: State — history within a turn
+  about: >
+    Two turns. History is client-authoritative during a session, so this is the
+    cheap version of the state question: does turn two still know about turn one?
+  steps:
+    - open the chat
+    - ask "What's the weather in Tokyo?"
+    - wait for the reply
+    - ask "Search notes for streaming protocols."
+    - wait for the reply
+    - expect 2 user messages
+    - expect 2 tool calls
+    - capture two-turns
+
+- flow: resume
+  axis: State — history across a reload
+  about: >
+    Send a message, reload, and see what's left. The contract persists the thread
+    server-side on stream completion, so anything missing here is the frontend
+    choosing not to rehydrate it. Currently nothing rehydrates — the assertion is
+    written to describe that, and will fail loudly the day one of them fixes it.
+  steps:
+    - open the chat
+    - ask "What's the weather in Tokyo?"
+    - wait for the reply
+    - expect 1 user message
+    - capture before-reload
+    - reload the page
+    - expect 0 user messages
+    - capture after-reload

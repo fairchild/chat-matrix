@@ -14,6 +14,10 @@ run = "./scripts/run.sh"
 description = "Stop everything"
 run = "./scripts/stop.sh"
 
+[tasks.probe]
+description = "Drive every flow against every frontend, then build the gallery"
+run = "./scripts/probe.sh"
+
 [tasks.conformance]
 description = "Check a backend against the reference contract"
 run = "./protocol/conformance.sh"

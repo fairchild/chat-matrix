@@ -16,5 +16,5 @@ node_modules/
 data/
 *.db
 
-# stray playwright scratch
-probes/
+# screenshots, recordings and reports from scripts/probe.sh
+probes/artifacts/
