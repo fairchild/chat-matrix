@@ -45,6 +45,9 @@ export function vercelProtocol(): Protocol {
   // was in the `partial` snapshot pi strips — so a call's chunks are held until
   // `toolcall_end` supplies the id, then sent together in the usual order.
   let argDeltas = new Map<number, string[]>();
+  // pi emits `tool-input-available` as each call's arguments close; the reference
+  // emits them together after the model's turn. Hold them and flush on message_end.
+  let heldAvailable: Chunk[] = [];
 
   return {
     headers: { "x-vercel-ai-ui-message-stream": "v1" },
@@ -64,12 +67,17 @@ export function vercelProtocol(): Protocol {
           if (event.message.role === "assistant") {
             blockIds = new Map();
             argDeltas = new Map();
+            heldAvailable = [];
           }
           return [];
-        case "message_end":
-          return event.message.role === "assistant" && event.message.stopReason === "error"
-            ? [{ type: "error", errorText: event.message.errorMessage ?? "model error" }]
-            : [];
+        case "message_end": {
+          if (event.message.role !== "assistant") return [];
+          const available = heldAvailable;
+          heldAvailable = [];
+          return event.message.stopReason === "error"
+            ? [...available, { type: "error", errorText: event.message.errorMessage ?? "model error" }]
+            : available;
+        }
         case "tool_execution_end":
           return event.isError
             ? [
@@ -105,10 +113,10 @@ export function vercelProtocol(): Protocol {
               const { id: toolCallId, name: toolName, arguments: input } = e.toolCall;
               const deltas = argDeltas.get(e.contentIndex) ?? [];
               argDeltas.delete(e.contentIndex);
+              heldAvailable.push({ type: "tool-input-available", toolCallId, toolName, input });
               return [
                 { type: "tool-input-start", toolCallId, toolName },
                 ...deltas.map((inputTextDelta) => ({ type: "tool-input-delta", toolCallId, inputTextDelta })),
-                { type: "tool-input-available", toolCallId, toolName, input },
               ];
             }
             default:

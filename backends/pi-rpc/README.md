@@ -126,11 +126,11 @@ cell.
 
 `/chat` is byte-identical to `backends/pi`'s for the four probe prompts and the
 multi-tool one; against pydantic-ai it differs only by pydantic-ai's
-`message-metadata` chunk and, on multi-tool prompts, by emitting
-`tool-input-available` as each call closes rather than together after the
-model's turn — the same ordering `backends/pi` has. `/ag-ui` is identical to
-`backends/pi` and identical to pydantic-ai modulo JSON key order (`timestamp`
-first vs last). Conformance is 18/18.
+`message-metadata` chunk. Multi-tool ordering matches too: `tool-input-available`
+is held until the assistant message ends, the same fix `backends/pi` carries;
+`protocol/golden.ts` holds it there. `/ag-ui` is identical to `backends/pi` and
+identical to pydantic-ai modulo JSON key order (`timestamp` first vs last).
+Conformance is 18/18.
 
 **Arguments don't stream across the process boundary.** pi's wire events omit
 `partial`, and `toolcall_start` names neither the tool nor the call id — those

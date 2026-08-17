@@ -41,6 +41,9 @@ export function vercelProtocol(): Protocol {
     if (!id) blockIds.set(contentIndex, (id = crypto.randomUUID()));
     return id;
   };
+  // pi emits `tool-input-available` as each call's arguments close; the reference
+  // emits them together after the model's turn. Hold them and flush on message_end.
+  let heldAvailable: Chunk[] = [];
 
   return {
     headers: { "x-vercel-ai-ui-message-stream": "v1" },
@@ -57,12 +60,19 @@ export function vercelProtocol(): Protocol {
         case "turn_end":
           return [{ type: "finish-step" }];
         case "message_start":
-          if (event.message.role === "assistant") blockIds = new Map();
+          if (event.message.role === "assistant") {
+            blockIds = new Map();
+            heldAvailable = [];
+          }
           return [];
-        case "message_end":
-          return event.message.role === "assistant" && event.message.stopReason === "error"
-            ? [{ type: "error", errorText: event.message.errorMessage ?? "model error" }]
-            : [];
+        case "message_end": {
+          if (event.message.role !== "assistant") return [];
+          const available = heldAvailable;
+          heldAvailable = [];
+          return event.message.stopReason === "error"
+            ? [...available, { type: "error", errorText: event.message.errorMessage ?? "model error" }]
+            : available;
+        }
         case "tool_execution_end":
           return event.isError
             ? [
@@ -97,14 +107,13 @@ export function vercelProtocol(): Protocol {
               return [{ type: "tool-input-delta", toolCallId: call.id, inputTextDelta: e.delta }];
             }
             case "toolcall_end":
-              return [
-                {
-                  type: "tool-input-available",
-                  toolCallId: e.toolCall.id,
-                  toolName: e.toolCall.name,
-                  input: e.toolCall.arguments,
-                },
-              ];
+              heldAvailable.push({
+                type: "tool-input-available",
+                toolCallId: e.toolCall.id,
+                toolName: e.toolCall.name,
+                input: e.toolCall.arguments,
+              });
+              return [];
             default:
               return [];
           }

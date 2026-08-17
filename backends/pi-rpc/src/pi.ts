@@ -176,6 +176,9 @@ export class Pool {
     }
     this.makeRoom();
     const child = new PiChild(threadId, childArgs({ ...this.options, sessionId }));
+    // Busy from spawn until handed over: a concurrent acquire's makeRoom() would
+    // otherwise see a child that is still starting as idle and evict it mid-start.
+    child.busy = true;
     this.children.set(threadId, child);
     void child.exited.then(() => this.forget(threadId, child));
     // Readiness doubles as configuration: pi reads the developer's settings, and
@@ -187,6 +190,7 @@ export class Pool {
       child.kill();
       throw error;
     }
+    child.busy = false;
     return child;
   }
 

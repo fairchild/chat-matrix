@@ -50,10 +50,11 @@ is a Python dataclass `repr` leaking through pydantic-ai's script, reproduced
 here on purpose so a diff between the two backends is empty and any difference
 you see in a cell is the frontend. If `scripted.py` ever prints JSON instead,
 `RENDER` in `scripted.ts` becomes `JSON.stringify` and `pyrepr.ts` goes away.
-`/ag-ui` is identical modulo the same ids. One ordering difference on
-multi-tool prompts: pi emits `tool-input-available` as each call's arguments
-close, where pydantic-ai emits them together after the model's turn — both are
-valid, and pi's is arguably the more useful timing.
+`/ag-ui` is identical modulo the same ids. pi's event model closes each tool
+call at `toolcall_end`, as its arguments finish — arguably the more useful
+timing to expose — but the `/chat` adapter holds `tool-input-available` until
+the assistant message ends, so multi-tool prompts get the reference's ordering
+too; `protocol/golden.ts` holds it there.
 
 **History is session-authoritative here**, which is the divergence
 `CONTRACT.md` predicted. The AI SDK client sends its full message list every
