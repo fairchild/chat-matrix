@@ -120,11 +120,16 @@ list in `index/index.html`, and every cell can already reach it.
 
 ## Known gaps
 
-- **`next build` fails in every frontend**, with a null React internal during
-  prerender — `useContext` on `/_global-error` in assistant-ui and CopilotKit,
-  `useRef` on `/` in AI Elements. Three unrelated UI libraries failing the same
-  way makes it a Next 16 issue rather than a difference between them. All three
-  run fine under `next dev`, which is all the harness uses.
+- **A leaked `NODE_ENV=development` breaks production builds**, and this list
+  blamed Next 16 for it until someone ran the second control. With that variable
+  set in the shell, `next build` dies during prerender with a null React
+  internal; the page and hook vary between cells and runs — `useContext` on
+  `/_global-error`, `useRef` on `/` — which is the tell that the RSC and SSR
+  layers are resolving different React builds rather than any component being
+  wrong. Every cell's `build` script now pins `NODE_ENV=production`, and all
+  four are clean: every route prerenders static, apart from CopilotKit's
+  `/api/copilotkit` runtime, which is dynamic by design. A bare `next build` in
+  a shell that leaks the variable still fails, so the pin is load-bearing.
 - **History is backend-only, and reload loses it.** `/threads` and `/threads/{id}`
   exist and the store is real, but no frontend reads them: reload starts a fresh
   thread in all four, and no thread list is rendered anywhere. The `resume` flow

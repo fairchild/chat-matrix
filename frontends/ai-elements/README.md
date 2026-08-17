@@ -204,8 +204,11 @@ cell that grows attachments will hit it — and the fix is in `backends/`.
 
 ## Not an AI Elements problem
 
-`bun run build` fails during prerender with `Cannot read properties of null
-(reading 'useRef')` — the same null-React-internals failure the other two
-frontends hit while prerendering `/_global-error`, surfacing here on `/`
-instead. It's the Next 16 issue already in the root README's Known gaps. All
-three run fine under `next dev`, which is all the harness uses.
+`bun run build` used to fail during prerender with `Cannot read properties of
+null (reading 'useRef')` — the same null-React-internals failure the other cells
+hit, surfacing here on `/` rather than `/_global-error`. That the failing page
+and hook moved around was the clue nobody followed: it isn't a component, it's
+the RSC and SSR layers resolving different React builds, caused by a
+`NODE_ENV=development` leaking from the shell into a production build. The
+`build` script now pins `NODE_ENV=production` and this cell compiles clean,
+fully static. See the root README's Known gaps.

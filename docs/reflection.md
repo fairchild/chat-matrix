@@ -120,14 +120,35 @@ that claim to be a lie when the second frontend landed. It wasn't.
 
 ## Mistakes worth recording
 
-I nearly attributed the failing production build to CopilotKit. The error is
-real — `next build` dies prerendering `/_global-error` with a null `useContext` —
+I nearly attributed the failing production build to CopilotKit. The error was
+real — `next build` died prerendering `/_global-error` with a null `useContext` —
 and it appeared right after adding the new frontend, in the new frontend. I
 wrote most of a finding about it before running the control, and the control
-showed **assistant-ui fails identically**. It's a Next 16 problem. That would
-have been a materially wrong conclusion in a document whose whole purpose is
-helping you choose between the two, and the only thing that caught it was
-building the other one. Run the control.
+showed **assistant-ui fails identically**. That would have been a materially
+wrong conclusion in a document whose whole purpose is helping you choose between
+the two, and the only thing that caught it was building the other one. Run the
+control.
+
+Then I stopped one level too early, and this is the more interesting half. The
+control acquitted CopilotKit, and I wrote down "it's a Next 16 problem" — which
+felt safe because two unrelated frontends failed the same way, and later felt
+safer still when a third and a fourth did too. It was wrong. A
+`NODE_ENV=development` leaks from the shell on this machine, and a production
+build inheriting it resolves different React builds in the RSC and SSR layers;
+unset it and all four compile clean and static. The evidence that should have
+broken it was sitting in the error messages the whole time: the failing page and
+hook kept moving — `/_global-error` here, `/` there, `useContext` one run,
+`useRef` the next — and a genuine library bug does not wander like that.
+
+Two lessons, and the second is the one I'd keep. A control tells you what
+*isn't* the cause; it doesn't tell you what is, and the temptation is to accept
+the first shared factor that all your failing cases have in common. Four
+frontends had Next 16 in common. They also had one shell in common, and nothing
+in the experiment could distinguish those two hypotheses. Second: by the end,
+four READMEs asserted the Next 16 attribution independently, which read as
+corroboration and was nothing of the kind — they were four copies of one
+unverified claim, written by the same process. Agreement between documents is
+not evidence when a single source wrote all of them.
 
 Two smaller ones, both self-inflicted. `vars()` on a `slots=True` dataclass
 raises, so `/threads` 500'd until conformance caught it. And `run.sh` hung when

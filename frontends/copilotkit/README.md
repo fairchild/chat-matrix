@@ -95,7 +95,11 @@ Reading the shipped `.d.mts` files was faster than the docs.
 
 ## Not a CopilotKit problem
 
-`bun run build` fails while prerendering `/_global-error` with a null
-`useContext`. **The assistant-ui frontend fails identically**, so this is a
-Next 16 issue, not a difference between the two. Both run fine under `next dev`,
-which is all the harness needs. Noted in the root README's Known gaps.
+`bun run build` used to fail while prerendering `/_global-error` with a null
+`useContext`. **The assistant-ui frontend failed identically**, which acquitted
+CopilotKit — but the conclusion drawn from that, "it's a Next 16 issue", was
+wrong. The real cause is a `NODE_ENV=development` leaking from the shell into a
+production build. Each cell's `build` script now pins `NODE_ENV=production` and
+this one compiles clean; `/api/copilotkit` stays dynamic, which is correct for a
+route that proxies a stream. See the root README's Known gaps for the full
+correction.

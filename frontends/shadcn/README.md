@@ -141,10 +141,16 @@ Elements' 477 and CopilotKit's 1,325. eslint and its config were dropped on the
 way in — no other cell has them and the harness has no lint step — so that
 number is comparable to the others rather than to the upstream template.
 
-**Same Next 16 build failure as everything else here.** `bun run build` dies
-prerendering `/_global-error` with `Cannot read properties of null (reading
-'useContext')`. Identical to the assistant-ui and CopilotKit cells, unrelated to
-anything shadcn. `next dev` is fine, which is all the harness runs.
+**The build is clean, and the note that used to sit here was wrong.** This said
+"same Next 16 build failure as everything else" — repeating an attribution every
+other README carried. It isn't Next 16: a `NODE_ENV=development` leaks from the
+shell on this machine, and a production build that inherits it resolves
+different React builds in the RSC and SSR layers, which surfaces as a null
+`useContext` or `useRef` during prerender. `bun run build` now pins
+`NODE_ENV=production` and this cell comes out fully static. Worth recording as a
+research failure rather than quietly fixing: four independent READMEs agreed
+with each other, and agreement between four documents written by the same
+process is not evidence.
 
 ## Inert components
 
