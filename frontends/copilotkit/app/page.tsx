@@ -2,11 +2,12 @@
 
 import { CopilotChat } from "@copilotkit/react-core/v2";
 import { useEffect, useState } from "react";
-import { type Health, indexHref, useBackend } from "@/lib/backend";
+import { type Health, useBackend, useIndexHref } from "@/lib/backend";
 
 /** Same badge as the other cells, so all four are directly comparable. */
 function BackendBadge() {
   const backend = useBackend();
+  const hub = useIndexHref(backend);
   const [health, setHealth] = useState<Health | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +22,7 @@ function BackendBadge() {
 
   return (
     <header className="badge">
-      <a className="badge-back" href={indexHref(backend)} title="Back to the matrix">
+      <a className="badge-back" href={hub} title="Back to the matrix">
         ← matrix
       </a>
       <span className="badge-name">CopilotKit</span>

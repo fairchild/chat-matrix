@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const DEFAULT_BACKEND =
   process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8001";
@@ -36,4 +36,15 @@ export function indexHref(backend: string): string {
   return backend === DEFAULT_BACKEND
     ? INDEX_URL
     : `${INDEX_URL}?backend=${encodeURIComponent(backend)}`;
+}
+
+/**
+ * The hub link as an attribute. The server renders it for the default backend
+ * (there is no query string to read there), and hydration leaves attributes as
+ * the server wrote them, so the real value has to arrive as an update.
+ */
+export function useIndexHref(backend: string): string {
+  const [href, setHref] = useState(INDEX_URL);
+  useEffect(() => setHref(indexHref(backend)), [backend]);
+  return href;
 }

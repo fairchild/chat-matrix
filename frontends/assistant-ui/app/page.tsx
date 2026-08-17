@@ -13,12 +13,13 @@ import {
   useChatRuntime,
 } from "@assistant-ui/react-ai-sdk";
 import { useEffect, useMemo, useState } from "react";
-import { type Health, indexHref, useBackend } from "@/lib/backend";
+import { type Health, useBackend, useIndexHref } from "@/lib/backend";
 
 /** Which backend am I looking at? The whole point of the matrix is that this changes. */
 function BackendBadge({ backend }: { backend: string }) {
   const [health, setHealth] = useState<Health | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const hub = useIndexHref(backend);
 
   useEffect(() => {
     fetch(`${backend}/health`)
@@ -32,7 +33,7 @@ function BackendBadge({ backend }: { backend: string }) {
   return (
     <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2 text-xs">
       <a
-        href={indexHref(backend)}
+        href={hub}
         className="text-muted-foreground hover:text-foreground"
         title="Back to the matrix"
       >
