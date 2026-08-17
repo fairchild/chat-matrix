@@ -5,6 +5,8 @@
  * keyword, arguments streamed in two halves, a canned reply paced at a visible
  * rate. The tools still execute for real — only the model's choices are scripted,
  * so two backends given the same prompt hand a frontend the same work to render.
+ * The summary line spells tool results the way pydantic-ai's `repr` does, via
+ * `pyrepr.ts` — the same trick `backends/pi/src/scripted.ts` uses.
  */
 
 import type {
@@ -17,6 +19,7 @@ import type {
   LanguageModelV4ToolResultOutput,
   LanguageModelV4ToolResultPart,
 } from "@ai-sdk/provider";
+import { py, pyTuple } from "./pyrepr";
 
 /** Slow enough to see tokens arrive, fast enough not to be annoying. */
 export const TOKEN_DELAY_MS = 35;
@@ -95,17 +98,38 @@ function pendingToolReturns(prompt: LanguageModelV4Prompt): LanguageModelV4ToolR
   return last.content.filter((part): part is LanguageModelV4ToolResultPart => part.type === "tool-result");
 }
 
-const render = (output: LanguageModelV4ToolResultOutput): string =>
-  output.type === "text" || output.type === "error-text"
-    ? output.value
-    : JSON.stringify("value" in output ? output.value : output);
+/**
+ * How each tool's result prints in the summary — the shapes pydantic-ai's
+ * scripted model prints (`f"{part.content}"` on a dataclass), so the same
+ * prompt yields the same bytes from either backend.
+ */
+const RENDER: Record<string, (value: unknown) => string> = {
+  get_weather: (value) => {
+    const w = value as { city: string; conditions: string; temperature_c: number; humidity_pct: number };
+    return `Weather(city=${py(w.city)}, conditions=${py(w.conditions)}, temperature_c=${w.temperature_c}, humidity_pct=${w.humidity_pct})`;
+  },
+  search_notes: (value) =>
+    `[${(value as { title: string; body: string; tags: string[] }[])
+      .map((n) => `Note(title=${py(n.title)}, body=${py(n.body)}, tags=${pyTuple(n.tags)})`)
+      .join(", ")}]`,
+  analyze: (value) => String(value),
+};
+
+const unwrap = (output: LanguageModelV4ToolResultOutput): unknown =>
+  output.type === "text" || output.type === "error-text" ? output.value : "value" in output ? output.value : output;
+
+const render = (part: LanguageModelV4ToolResultPart): string => {
+  const known = RENDER[part.toolName];
+  const value = unwrap(part.output);
+  return known ? known(value) : JSON.stringify(value);
+};
 
 function summary(returns: LanguageModelV4ToolResultPart[]): string {
   const named = [...new Set(returns.map((part) => part.toolName))].sort().join(", ");
   return [
     `Here's what I found (via ${named}).`,
     "",
-    ...returns.map((part) => `- **${part.toolName}** returned: ${render(part.output)}`),
+    ...returns.map((part) => `- **${part.toolName}** returned: ${render(part)}`),
     "",
     "Ask a follow-up and I'll keep going.",
   ].join("\n");
@@ -125,19 +149,24 @@ async function* script(options: LanguageModelV4CallOptions): AsyncGenerator<Lang
     : PLANS.filter((plan) => plan.keywords.some((word) => lowered.includes(word)) && available.has(plan.tool));
 
   if (plans.length) {
-    for (const [index, plan] of plans.entries()) {
-      const id = `call_${plan.tool}_${index}`;
-      const args = dumps(plan.buildArgs(userText));
-      yield { type: "tool-input-start", id, toolName: plan.tool };
+    const calls = plans.map((plan, index) => ({
+      id: `call_${plan.tool}_${index}`,
+      toolName: plan.tool,
+      input: dumps(plan.buildArgs(userText)),
+    }));
+    for (const { id, toolName, input } of calls) {
+      yield { type: "tool-input-start", id, toolName };
       // Split the arguments so the UI has a chance to show them streaming in.
-      const midpoint = Math.floor(args.length / 2);
-      for (const chunk of [args.slice(0, midpoint), args.slice(midpoint)]) {
+      const midpoint = Math.floor(input.length / 2);
+      for (const chunk of [input.slice(0, midpoint), input.slice(midpoint)]) {
         await sleep(TOKEN_DELAY_MS);
         yield { type: "tool-input-delta", id, delta: chunk };
       }
       yield { type: "tool-input-end", id };
-      yield { type: "tool-call", toolCallId: id, toolName: plan.tool, input: args };
     }
+    // The calls close together after the model's turn, as the reference's do —
+    // `tool-call` is what becomes `tool-input-available` on the wire.
+    for (const { id, toolName, input } of calls) yield { type: "tool-call", toolCallId: id, toolName, input };
     yield finish("tool-calls");
     return;
   }

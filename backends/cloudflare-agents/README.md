@@ -38,10 +38,14 @@ Deployed at `https://chat-stack-backend-cloudflare-agents.irons-in-the-fire8698.
 
 The wire formats are byte-compatible with the pydantic-ai backend on everything
 a frontend keys off — event sequence, tool-call ids, the two argument halves,
-token pacing. Diffing the two `/chat` streams for the weather probe leaves two
-differences: pydantic-ai leaks Python's `Weather(city='Tokyo', …)` repr into
-the summary text where this one renders JSON, and AI SDK 7 puts a
-`finishReason` on `finish`. `/ag-ui` differs only in JSON key order.
+token pacing, and the summary text: it prints tool results the way
+pydantic-ai's script does, `Weather(city='Tokyo', …)`, a Python dataclass
+`repr` reproduced by `src/pyrepr.ts` (the same trick `backends/pi`'s
+`pyrepr.ts` uses) so a diff between the two backends' `/chat` streams for the
+weather probe is empty. The one remaining difference is AI SDK 7 stamping a
+`finishReason` on `finish`, which pydantic-ai's adapter never sends; the golden
+check (`protocol/golden.ts`) records it as an explicit exception rather than
+stripping information no cell reads. `/ag-ui` differs only in JSON key order.
 
 Persistence follows the contract's shape: client-authoritative during a turn,
 server-persisted after it, in a neutral format (AI SDK `ModelMessage`s) that
