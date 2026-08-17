@@ -584,10 +584,10 @@ const docLink = (path, label) =>
   REPO ? `<a href="${REPO}/blob/main/${path}">${label}</a>` : `<code>${path}</code>`;
 
 const navEl = document.getElementById("nav");
-navEl.hidden = !REPO;
-navEl.innerHTML = REPO
-  ? [`<a href="${REPO}">the repo</a>`, ...DOCS.map(([p, l]) => docLink(p, l))].join("")
-  : "";
+navEl.innerHTML = [
+  `<a href="golden.html">the golden check</a>`,
+  ...(REPO ? [`<a href="${REPO}">the repo</a>`, ...DOCS.map(([p, l]) => docLink(p, l))] : []),
+].join("");
 document.getElementById("footer").innerHTML =
   `Same three prompts in each square, then compare. ` +
   (REPO ? `Read ${DOCS.map(([p, l]) => docLink(p, l)).join(", ")}. ` : `Docs live in the repo: ${DOCS.map(([p]) => docLink(p)).join(", ")}. `) +

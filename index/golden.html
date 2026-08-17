@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>the golden check · chat-stack matrix</title>
+<meta name="description" content="How the golden check holds every backend to the reference's streams, and a recorded run against the live matrix." />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="the golden check · chat-stack matrix" />
+<meta property="og:description" content="How the golden check holds every backend to the reference's streams, and a recorded run against the live matrix." />
+<meta name="twitter:card" content="summary" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='%2371717a'%3E%3Crect x='1' y='1' width='6' height='6' rx='1.5'/%3E%3Crect x='9' y='1' width='6' height='6' rx='1.5'/%3E%3Crect x='1' y='9' width='6' height='6' rx='1.5'/%3E%3C/g%3E%3Crect x='9' y='9' width='6' height='6' rx='1.5' fill='%234ade80'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #fbfbfa; --panel: #fff; --ink: #18181b; --dim: #71717a; --faint: #a1a1aa;
+    --line: #e4e4e7; --accent: #18181b; --up: #16a34a; --down: #d4d4d8; --chip: #f4f4f5;
+    --bad: #b91c1c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0c0d; --panel: #151517; --ink: #ededee; --dim: #8b8b93; --faint: #6b6b73;
+      --line: #27272a; --accent: #ededee; --up: #4ade80; --down: #3f3f46; --chip: #1f1f23;
+      --bad: #f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 48px 24px 80px; background: var(--bg); color: var(--ink);
+    font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  .crumb { margin: 0 0 18px; font-size: 12.5px; }
+  .crumb a { color: var(--dim); text-decoration: none; border-bottom: 1px solid var(--line); padding-bottom: 1px; }
+  .crumb a:hover { color: var(--ink); border-color: var(--accent); }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .lede { color: var(--dim); margin: 0 0 10px; max-width: 66ch; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim);
+       margin: 40px 0 12px; font-weight: 600; }
+  p { max-width: 68ch; }
+  a { color: inherit; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  code { background: var(--chip); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+  pre {
+    margin: 0; padding: 13px 15px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--panel); overflow-x: auto; font-size: 12.5px; line-height: 1.6;
+  }
+  pre code { background: none; padding: 0; }
+  .comment { color: var(--faint); }
+
+  table.flows { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 4px; }
+  table.flows th, table.flows td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  table.flows th { color: var(--dim); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  table.flows td.prompt { color: var(--dim); }
+
+  figure { margin: 4px 0 0; }
+  figure img {
+    display: block; width: 100%; height: auto; border: 1px solid var(--line);
+    border-radius: 10px; background: var(--panel);
+  }
+  figcaption { margin-top: 10px; font-size: 12.5px; color: var(--dim); line-height: 1.55; }
+
+  .panel {
+    border: 1px solid var(--line); border-radius: 9px; padding: 13px 15px;
+    background: var(--panel); font-size: 13.5px;
+  }
+  .panel + .panel { margin-top: 10px; }
+  .panel .field { font-weight: 600; }
+  .panel .why { margin: 6px 0 0; color: var(--dim); font-size: 12.5px; }
+
+  .kept, .erased { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; }
+  .kept li, .erased li { margin: 2px 0; }
+
+  .not-caught { color: var(--dim); }
+
+  footer { margin-top: 48px; color: var(--dim); font-size: 12.5px; }
+  footer a { text-decoration: none; border-bottom: 1px solid var(--line); }
+  footer a:hover { color: var(--ink); border-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="crumb"><a href="./">← matrix</a></p>
+  <h1>the golden check</h1>
+  <p class="lede">
+    The comparison only means anything if every backend hands a frontend the
+    same work. <code>protocol/conformance.sh</code> checks that the events a
+    frontend depends on exist; this is the check that goes one step further
+    and asks whether the backends actually <em>agree</em>.
+  </p>
+
+  <h2>Why it exists</h2>
+  <p>
+    Every backend keeps its own copy of the scripted model and its three
+    tools — <code>backends/pydantic-ai</code> is the reference, and
+    <code>cloudflare-agents</code>, <code>pi</code> and <code>pi-rpc</code>
+    each reimplement it in a different framework. Nothing enforced that the
+    copies stayed in sync except a person, once, diffing captured streams by
+    hand after normalising the ids — which is how a real drift got found and
+    then only written down in a README instead of fixed. The golden check
+    replaces that hand diff: it runs the same comparison as a matter of
+    course, and prints the drift instead of describing it.
+  </p>
+
+  <h2>What it checks</h2>
+  <p>
+    For each backend, five prompts against both wire protocols —
+    <code>/chat</code> (the Vercel AI data stream, SDK v7) and
+    <code>/ag-ui</code> — ten streams in all. Each one is reduced to a
+    canonical form and diffed against a fixture captured from the reference,
+    <code>backends/pydantic-ai</code> at <code>:8001</code>.
+  </p>
+  <table class="flows">
+    <thead><tr><th>flow</th><th>prompt</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">weather</td><td class="prompt">What's the weather in Tokyo?</td></tr>
+      <tr><td class="mono">notes</td><td class="prompt">Search notes for streaming protocols.</td></tr>
+      <tr><td class="mono">analyze</td><td class="prompt">Analyze assistant-ui as a chat frontend.</td></tr>
+      <tr><td class="mono">follow-up</td><td class="prompt">weather, then notes, on one thread — the fixture is turn two</td></tr>
+      <tr><td class="mono">multi-tool</td><td class="prompt">What's the weather in Tokyo, and search notes for streaming?</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    The canonical form erases exactly what's allowed to differ between two
+    correct implementations, and nothing else:
+  </p>
+  <ul class="erased">
+    <li>id values (<code>id</code>, <code>toolCallId</code>, <code>messageId</code>, <code>parentMessageId</code>, <code>threadId</code>, <code>runId</code>) at a frame's top level, renamed by first appearance — so pairing is checked and the values themselves aren't</li>
+    <li>timestamps at a frame's top level</li>
+    <li>pydantic-ai's <code>message-metadata</code> timestamp stamp — that exact frame, nothing broader</li>
+  </ul>
+  <p>Everything else is compared as it streams:</p>
+  <ul class="kept">
+    <li>event order and delta boundaries — a backend that stops streaming and sends one burst instead gives a frontend different work</li>
+    <li>tool names, argument JSON, and tool results</li>
+    <li>finish state</li>
+  </ul>
+
+  <h2>Recorded run</h2>
+  <figure>
+    <img src="golden-check.gif" alt="Terminal recording: golden.sh runs green on all four backends with one exception printed; a one-word edit to cloudflare-agents' scripted model turns four fixtures red with the diff; the edit is reverted and the check is green again." loading="lazy" />
+    <figcaption>
+      Against the live matrix, start to finish. First, <code>./scripts/golden.sh</code>
+      green on all four backends — pydantic-ai, cloudflare-agents, pi, pi-rpc — with
+      the one exception below printed on every fixture it touches. Then a one-word
+      edit to <code>cloudflare-agents/src/scripted.ts</code> (wrangler hot-reloads
+      it) turns the four fixtures that carry the weather summary red, with the
+      unified diff. The edit is reverted and the check is green again.
+    </figcaption>
+  </figure>
+
+  <h2>Exceptions</h2>
+  <p>
+    A backend that drifts either gets fixed, or gets an exception — per backend,
+    per field, with a reason, in <code>protocol/golden/exceptions.json</code>.
+    Every exception applied is printed on the run rather than silently passed.
+    One today:
+  </p>
+  <div class="panel">
+    <p style="margin:0">
+      <span class="field">cloudflare-agents</span> · <code>/chat</code> ·
+      <code>finish.finishReason</code>
+    </p>
+    <p class="why">
+      The AI SDK stamps <code>finishReason</code> on the <code>finish</code> chunk
+      unconditionally — there's no way to send the chunk without it — where the
+      reference's adapter sends none. No cell reads the field; stripping it would
+      mean post-processing the SDK's own stream to remove information rather than
+      fixing a difference in behaviour.
+    </p>
+  </div>
+
+  <h2>Run it</h2>
+  <pre><code><span class="comment"># every backend in scripts/stacks.sh, needs scripts/run.sh already up</span>
+./scripts/golden.sh
+<span class="comment"># or: mise run golden</span>
+
+<span class="comment"># one backend</span>
+bun protocol/golden.ts http://localhost:8002
+
+<span class="comment"># recapture the fixtures from the reference, after a deliberate change to it</span>
+bun protocol/golden.ts --update</code></pre>
+  <p style="font-size:13px;color:var(--dim)">
+    It refuses to run against anything but the <code>scripted</code> model —
+    golden compares bytes, and a real provider writes different bytes every
+    time, so there'd be nothing in the diff to learn from.
+  </p>
+
+  <h2>What it doesn't catch</h2>
+  <p class="not-caught">
+    Timing and pacing — <code>pi-rpc</code>'s tool arguments arrive in a burst
+    at <code>toolcall_end</code> rather than streaming, because pi's RPC wire
+    drops partials until the call id is known; same bytes, different pacing.
+    HTTP headers. Rehydration (<code>GET /threads/{id}</code>), which diverges
+    by construction — pydantic-ai and cloudflare-agents are client-authoritative,
+    the two pi backends are session-authoritative, and <code>protocol/CONTRACT.md</code>
+    documents both. Whether a backend actually reads the history it's sent, as
+    opposed to merely accepting it. Id <em>values</em> — pairing is checked, not
+    the value itself. Anything a real (<code>DEMO_MODEL</code>) model does; the
+    check only means something under the scripted one.
+  </p>
+
+  <footer>
+    The plan, the design decisions, and the full outcome are in
+    <code>docs/plans/golden-check.md</code> in the repo; the contract itself is
+    <code>protocol/CONTRACT.md</code>. <a href="./">← back to the matrix</a>.
+  </footer>
+</div>
+</body>
+</html>
