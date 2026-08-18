@@ -170,8 +170,98 @@ Found while recording `docs/recordings/jinja-cell.mjs`, whose header documents
 the prompt chosen to steer around it rather than showcase it unlabelled.
 
 **Fixed:** all four backends now number the id from the calls already in the
-thread's history rather than from the run, so the ordinal is per-tool and
-per-thread. Verified live on `:3005`, `:8002`, `:8003` and `:8004` — two
-`get_weather` turns come back as `call_get_weather_0` and `call_get_weather_1`,
-each carrying its own city. Golden stays green because it renames ids by first
-appearance, so the canonical form never saw the literal.
+thread's history rather than from the run. Verified live on `:3005`, `:8002`,
+`:8003` and `:8004` — two `get_weather` turns come back as `call_get_weather_0`
+and `call_get_weather_1`, each carrying its own city. Golden stays green because
+it renames ids by first appearance, so the canonical form never saw the literal;
+`conformance.sh` grew the assertion that would have caught it, and fails on a
+pre-fix backend (2 calls, 1 distinct).
+
+Scope, said precisely, because the first version of this note overstated it: the
+ordinal is unique for the history the model is given. On the session-authoritative
+backends (pi, pi-rpc) that is the thread. On the client-authoritative routes
+(`/chat` on the reference, its jinja copy, and cloudflare-agents) it is whatever
+the client echoed — see item 9. And a turn the store never keeps can't be
+counted, which is item 8b.
+
+**8b, also fixed.** In the jinja cell a stopped turn is discarded by design, so
+the re-run mints the same call id — and the tool card's *DOM* id was
+`tc-{call_id}`, so two cards shared one element id and `getElementById` sent
+every patch to the dead one: the abandoned card went green with the new
+question's answer while the live card hung at "Streaming arguments…" forever.
+Reproduced in the browser, before and after. The card now carries its own
+`dom` id minted per render (`frontends/jinja/app/views.py`), because rendering
+identity is the renderer's to choose, not the model's. This also covers the
+duplicate-id case item 9 can still produce.
+
+---
+
+## 9. A partial echo wipes the server's thread, and reissues a live call id
+
+**Bug · the client-authoritative routes · design decision needed**
+
+`/chat` on the reference (`backends/pydantic-ai/app/main.py`), its jinja copy
+(`frontends/jinja/app/main.py`) and cloudflare-agents
+(`backends/cloudflare-agents/src/thread.ts:64`) build the run's history purely
+from `body.messages`, and persist by replacing the stored row wholesale. A
+client that sends only the new user message therefore destroys every earlier
+turn on the server, and — because the model now sees an empty history — numbers
+its tool call from zero again, reissuing an id the client still holds.
+
+Reproduced on `:3005` and `:8002`: turn 1 Tokyo gives `call_get_weather_0`;
+turn 2 Paris sent alone gives `call_get_weather_0` again, and
+`GET /threads/{id}` comes back holding only the Paris turn. pi and pi-rpc are
+immune — they read their own session, so the same probe numbers `_1` and keeps
+both turns.
+
+The React cells always echo the full transcript, so nothing in the matrix hits
+this today. It is reachable from a second tab, or any client that windows a long
+thread. The fix is a decision, not a patch: either merge the client's messages
+into the stored history instead of replacing it, or say in `CONTRACT.md` that
+these routes are client-authoritative and the server's copy is a cache the
+client may truncate. Worth doing deliberately — "client-authoritative history is
+the AI SDK default" is a real position, but silently losing turns isn't part of
+it.
+
+---
+
+## 10. The four ports answer differently for a client-supplied transcript
+
+**Divergence · introduced by 51c0d5d · small, once item 9 is decided**
+
+Same `/chat` body — a full two-turn transcript containing a completed
+`call_get_weather_0` — against a thread id the server has never seen: pi and
+pi-rpc mint `call_get_weather_0`, colliding with the id already in the client's
+transcript, while cloudflare-agents and the jinja/pydantic-ai route mint
+`call_get_weather_1`. Before the fix all four said `_0`; the fix made each one
+correct about the history it can see, and those histories differ.
+
+An incomplete call in the echoed transcript diverges further:
+cloudflare-agents drops it (`ignoreIncompleteToolCalls: true`) and reuses its
+id; pydantic-ai synthesises "The tool call was interrupted before a result was
+produced.", which trips the scripted model's returns-branch so it summarises
+the phantom return instead of answering the new question; pi ignores the echo
+entirely. Three behaviours for one input.
+
+This is the same question as item 9 wearing different clothes — where history
+lives decides it — so it should be settled once, not four times. Note the
+golden check cannot see any of this: it drives every backend with the same
+honest-client flow.
+
+---
+
+## 11. `pi` and `pi-rpc`: two thread ids can share one session file
+
+**Bug · pi backends · one line**
+
+`backends/pi/src/store.ts:27` (and the identical function in pi-rpc) coerces a
+thread id into a pi session id with
+`threadId.replace(/[^A-Za-z0-9._-]/g, "_")`, which is not injective: `rev x`,
+`rev/x` and `rev_x` all become `rev_x`. Confirmed on `:8003` — a turn posted to
+thread `rev x` came back from `GET /threads/rev_x`, and a `DELETE` on either id
+removes both. Ids with no allowed characters at all collapse further, onto the
+shared literal `"thread"`.
+
+Hub-minted ids stay in the safe class, so this needs an external client. Hashing
+the original id into the coerced one, or rejecting ids that don't survive the
+round trip, both close it.

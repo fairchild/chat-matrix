@@ -9,6 +9,7 @@ came from.
 from __future__ import annotations
 
 from collections.abc import Sequence
+import secrets
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Literal
 
@@ -37,11 +38,21 @@ class ReasoningView:
     done: bool = False
 
 
+def _dom_id() -> str:
+    return secrets.token_urlsafe(8)
+
+
 @dataclass(slots=True)
 class ToolView:
     kind: ClassVar[str] = "tool"
     call_id: str
     name: str
+    #: The card's identity in the DOM, minted per rendered card. Deliberately
+    #: not `call_id`: a turn abandoned mid-call is discarded from the store, so
+    #: the next run mints the same call id, and two cards sharing one element
+    #: id sends every patch to whichever `getElementById` finds first — the
+    #: dead card. Rendering identity is the renderer's to choose.
+    dom: str = field(default_factory=_dom_id)
     state: ToolState = "input-streaming"
     args_text: str = ""
     input: Any = None

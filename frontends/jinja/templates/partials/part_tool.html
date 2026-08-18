@@ -1,12 +1,12 @@
 {% set body = tool_partial(part.name) %}
 {% set label = {"input-streaming": "arguments", "input-available": "running", "output-available": "done", "output-error": "failed"}.get(part.state, part.state) %}
-<section class="tool" data-part="tool" data-tool="{{ part.name }}" data-state="{{ part.state }}" id="tc-{{ part.call_id }}">
+<section class="tool" data-part="tool" data-tool="{{ part.name }}" data-state="{{ part.state }}" id="tc-{{ part.dom }}">
   <header>
     <span class="name">{{ part.name }}</span>
     <span class="state">{{ label }}</span>
   </header>
   {% if part.state == "input-streaming" %}
-  <pre class="args" id="args-{{ part.call_id }}">{{ part.args_text }}</pre>
+  <pre class="args" id="args-{{ part.dom }}">{{ part.args_text }}</pre>
   <p class="pending"><span class="spinner" aria-hidden="true"></span> Streaming arguments…</p>
   {% else %}
   {% include body %}

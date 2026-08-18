@@ -70,6 +70,65 @@ for proto in vercel-ai ag-ui; do
   fi
 done
 
+# A second turn calling the *same* tool, with the transcript echoed back the way
+# a client does. Nothing else here repeats a tool inside one thread, and the
+# golden fixtures can't either, so this is the only place a call id numbered
+# per-run collides with itself — which it did, in all four backends, until
+# 51c0d5d. The id is a client's identity for a tool part: two parts sharing one
+# means the second result renders against the first call's card.
+head_ "tool call ids"
+second=$(mktemp)
+if python3 - "$BACKEND" "$THREAD" >"$second" 2>/dev/null <<'PYEOF'
+import json, sys, urllib.request
+
+backend, thread = sys.argv[1], sys.argv[2]
+
+def get(path):
+    with urllib.request.urlopen(f"{backend}{path}", timeout=30) as response:
+        return json.load(response)
+
+history = get(f"/threads/{thread}?protocol=vercel-ai")["messages"]
+body = json.dumps({
+    "id": thread,
+    "trigger": "submit-message",
+    "messages": history + [
+        {"id": "m2", "role": "user",
+         "parts": [{"type": "text", "text": "What is the weather in Paris?"}]}
+    ],
+}).encode()
+request = urllib.request.Request(
+    f"{backend}/chat", data=body, headers={"content-type": "application/json"}
+)
+with urllib.request.urlopen(request, timeout=60) as response:
+    response.read()
+
+ids = []
+def walk(node):
+    if isinstance(node, dict):
+        if isinstance(node.get("toolCallId"), str):
+            ids.append(node["toolCallId"])
+        for value in node.values():
+            walk(value)
+    elif isinstance(node, list):
+        for value in node:
+            walk(value)
+
+walk(get(f"/threads/{thread}?protocol=vercel-ai"))
+print(len(ids), len(set(ids)))
+PYEOF
+then
+  read -r total distinct <"$second"
+  if [ "${total:-0}" -lt 2 ]; then
+    bad "two turns leave two tool calls in the thread (found ${total:-0})"
+  elif [ "$total" != "$distinct" ]; then
+    bad "tool call ids are unique in a thread ($total calls, $distinct distinct)"
+  else
+    ok "tool call ids are unique in a thread ($total calls)"
+  fi
+else
+  bad "second turn on the same thread (request failed)"
+fi
+
 head_ "ag-ui stream (/ag-ui)"
 agui=$(mktemp)
 curl -sN -X POST "$BACKEND/ag-ui" -H 'content-type: application/json' -d "{

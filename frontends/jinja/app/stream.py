@@ -113,7 +113,7 @@ class Turn:
         return patch("append", f"parts-{self.turn_id}", html=render(f"partials/part_{kind}.html", part=view))
 
     def _tool(self, view: ToolView) -> bytes:
-        return patch("replace", f"tc-{view.call_id}", html=render("partials/part_tool.html", part=view))
+        return patch("replace", f"tc-{view.dom}", html=render("partials/part_tool.html", part=view))
 
     def _apply(self, chunk: BaseChunk) -> list[bytes]:
         match chunk:
@@ -122,9 +122,10 @@ class Turn:
                 return [self._part("tool", view)]
             case ToolInputDeltaChunk(tool_call_id=cid, input_text_delta=delta):
                 view = self.parts[cid]
-                if isinstance(view, ToolView):
-                    view.args_text += delta
-                return [patch("text", f"args-{cid}", text=delta)]
+                if not isinstance(view, ToolView):
+                    return []
+                view.args_text += delta
+                return [patch("text", f"args-{view.dom}", text=delta)]
             case ToolInputAvailableChunk(tool_call_id=cid, tool_name=name, input=args):
                 view = self.parts.get(cid) or ToolView(call_id=cid, name=name)
                 if isinstance(view, ToolView):
