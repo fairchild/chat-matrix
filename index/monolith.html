@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>the monolith · chat-stack matrix</title>
+<meta name="description" content="One FastAPI process runs the agent, keeps the history, and renders every piece of HTML the browser sees — what a good chat UI costs with no chat framework at all." />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="the monolith · chat-stack matrix" />
+<meta property="og:description" content="One FastAPI process runs the agent, keeps the history, and renders every piece of HTML the browser sees — what a good chat UI costs with no chat framework at all." />
+<meta name="twitter:card" content="summary" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='%2371717a'%3E%3Crect x='1' y='1' width='6' height='6' rx='1.5'/%3E%3Crect x='9' y='1' width='6' height='6' rx='1.5'/%3E%3Crect x='1' y='9' width='6' height='6' rx='1.5'/%3E%3C/g%3E%3Crect x='9' y='9' width='6' height='6' rx='1.5' fill='%234ade80'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #fbfbfa; --panel: #fff; --ink: #18181b; --dim: #71717a; --faint: #a1a1aa;
+    --line: #e4e4e7; --accent: #18181b; --up: #16a34a; --down: #d4d4d8; --chip: #f4f4f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0c0d; --panel: #151517; --ink: #ededee; --dim: #8b8b93; --faint: #6b6b73;
+      --line: #27272a; --accent: #ededee; --up: #4ade80; --down: #3f3f46; --chip: #1f1f23;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 48px 24px 80px; background: var(--bg); color: var(--ink);
+    font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  .crumb { margin: 0 0 18px; font-size: 12.5px; }
+  .crumb a { color: var(--dim); text-decoration: none; border-bottom: 1px solid var(--line); padding-bottom: 1px; }
+  .crumb a:hover { color: var(--ink); border-color: var(--accent); }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .lede { color: var(--dim); margin: 0 0 10px; max-width: 66ch; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim);
+       margin: 40px 0 12px; font-weight: 600; }
+  p { max-width: 68ch; }
+  a { color: inherit; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  code { background: var(--chip); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+
+  /* ---- the diagram --------------------------------------------------------
+     Two renderings of one picture: side-by-side above 700px, stacked below,
+     because a single viewBox scaled to a phone puts its labels at 6px. */
+  figure { margin: 4px 0 0; }
+  figure.diagram { margin: 2px 0 0; }
+  .diagram svg { display: block; width: 100%; height: auto; }
+  .diagram .d-narrow { display: none; }
+  .d-box { fill: var(--panel); stroke: var(--line); stroke-width: 1; }
+  .d-rule { stroke: var(--line); stroke-width: 1; }
+  .d-title { fill: var(--ink); font: 600 14.5px ui-sans-serif, system-ui, -apple-system, sans-serif; }
+  .d-item { fill: var(--dim); font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .d-label { fill: var(--ink); font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .d-sub { fill: var(--dim); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .d-prose { fill: var(--dim); font: 12.5px ui-sans-serif, system-ui, -apple-system, sans-serif; }
+  .d-cap { fill: var(--dim); font: 11.5px ui-sans-serif, system-ui, -apple-system, sans-serif; }
+  .d-arrow { color: var(--dim); stroke: currentColor; stroke-width: 1.25; fill: none; }
+  .d-arrow .head { fill: currentColor; stroke: none; }
+  .d-arrow .stream { stroke-dasharray: 13 5; }
+  .d-narrow .stream { stroke-dasharray: 5 4; }
+
+  .after-figure { margin-top: 16px; }
+
+  /* ---- what it showed ----------------------------------------------------- */
+  .finding { margin: 0 0 17px; }
+  .finding:last-of-type { margin-bottom: 0; }
+  .finding strong { font-weight: 600; }
+  .limit {
+    margin: 24px 0 0; padding-top: 15px; border-top: 1px solid var(--line);
+    color: var(--dim); font-size: 13px;
+  }
+
+  /* ---- the bar row --------------------------------------------------------
+     One measure (lines), five labelled things, every value directly labelled at
+     its own bar end. Solid is written here; the lighter bar under the rule is
+     the agent, copied rather than written. No hue anywhere — the page has none. */
+  figure.bars { margin: 12px 0 0; max-width: 620px; }
+  .bars .row {
+    display: grid; grid-template-columns: 106px 1fr; align-items: center;
+    gap: 12px; padding: 3px 0;
+  }
+  .bars .k {
+    font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--dim); text-align: right; white-space: nowrap;
+  }
+  .bars .track { display: flex; align-items: center; gap: 9px; background: none; }
+  .bars .bar { height: 9px; border-radius: 1px 4px 4px 1px; background: var(--accent); flex: none; }
+  .bars .row.copied .bar { background: var(--dim); }
+  .bars .v { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); }
+  .bars .split { grid-column: 2; border-top: 1px solid var(--line); margin: 5px 0; }
+  .bars figcaption { margin-top: 12px; font-size: 12.5px; color: var(--dim); line-height: 1.55; }
+
+  /* ---- the build strip ---------------------------------------------------- */
+  .pipe { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 2px 0 0; }
+  .pipe .step {
+    font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink);
+    background: var(--chip); border: 1px solid var(--line); border-radius: 5px;
+    padding: 4px 8px; white-space: nowrap;
+  }
+  .pipe .arw { color: var(--dim); font-size: 12px; }
+  .pipe .par {
+    display: flex; flex-direction: column; gap: 4px;
+    border: 1px dashed var(--line); border-radius: 8px; padding: 5px;
+  }
+
+  /* ---- the recording ------------------------------------------------------ */
+  figure.rec img {
+    display: block; width: 100%; height: auto; border: 1px solid var(--line);
+    border-radius: 10px; background: var(--panel);
+  }
+  figcaption { margin-top: 10px; font-size: 12.5px; color: var(--dim); line-height: 1.55; }
+
+  footer { margin-top: 48px; color: var(--dim); font-size: 12.5px; }
+  footer a { text-decoration: none; border-bottom: 1px solid var(--line); }
+  footer a:hover { color: var(--ink); border-color: var(--accent); }
+
+  @media (max-width: 700px) {
+    body { padding: 32px 16px 64px; }
+    .diagram .d-wide { display: none; }
+    .diagram .d-narrow { display: block; max-width: 440px; }
+    .bars .row { grid-template-columns: 92px 1fr; gap: 9px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="crumb"><a href="./">← matrix</a></p>
+  <h1>the monolith</h1>
+  <p class="lede">
+    One FastAPI process runs the reference agent, keeps the history, and renders
+    every piece of HTML the browser ever sees. It sits outside the matrix on
+    purpose — no wire between the ends, no backend to pick — to answer a question
+    the axes can't: <em>what does a good chat UI cost with no chat framework at
+    all?</em>
+  </p>
+
+  <h2>How it works</h2>
+  <figure class="diagram">
+    <svg class="d-wide" viewBox="0 0 760 270" role="img"
+         aria-label="The browser holds only the DOM and 62 lines of JavaScript that apply patches. One process — FastAPI, the agent, a SQLite store and Jinja — answers a POST of the new message with a stream of NDJSON patches, and a GET of the thread with the whole page rendered from the store. Without JavaScript the same POST runs to completion and redirects.">
+      <rect class="d-box" x="0.5" y="36.5" width="170" height="170" rx="9" />
+      <text class="d-title" x="16" y="62">browser</text>
+      <line class="d-rule" x1="16" y1="76" x2="154" y2="76" />
+      <text class="d-item" x="16" y="124">the DOM</text>
+      <text class="d-item" x="16" y="145">62 lines of JS</text>
+      <text class="d-item" x="16" y="166">apply patch</text>
+
+      <rect class="d-box" x="589.5" y="36.5" width="170" height="170" rx="9" />
+      <text class="d-title" x="605" y="62">one process</text>
+      <line class="d-rule" x1="605" y1="76" x2="743" y2="76" />
+      <text class="d-item" x="605" y="114">FastAPI</text>
+      <text class="d-item" x="605" y="135">the agent</text>
+      <text class="d-item" x="605" y="156">SQLite store</text>
+      <text class="d-item" x="605" y="177">Jinja</text>
+
+      <text class="d-label" x="380" y="48" text-anchor="middle">POST /t/{id} · message</text>
+      <g class="d-arrow">
+        <path d="M182 58 H570" />
+        <path class="head" d="M578 58 L570 54 L570 62 Z" />
+      </g>
+
+      <text class="d-label" x="380" y="80" text-anchor="middle">NDJSON patches</text>
+      <text class="d-sub" x="380" y="96" text-anchor="middle">append · replace · text · done · error</text>
+      <g class="d-arrow">
+        <path class="stream" d="M190 104 H578" />
+        <path class="head" d="M182 104 L190 100 L190 108 Z" />
+      </g>
+
+      <text class="d-label" x="380" y="142" text-anchor="middle">GET /t/{id}</text>
+      <g class="d-arrow">
+        <path d="M182 152 H570" />
+        <path class="head" d="M578 152 L570 148 L570 156 Z" />
+      </g>
+
+      <text class="d-prose" x="380" y="180" text-anchor="middle">the whole page, from the store</text>
+      <g class="d-arrow">
+        <path d="M190 190 H578" />
+        <path class="head" d="M182 190 L190 186 L190 194 Z" />
+      </g>
+
+      <line class="d-rule" x1="170" y1="230" x2="590" y2="230" />
+      <text class="d-cap" x="380" y="252" text-anchor="middle">no JavaScript: the same POST runs to completion → 303 → GET, same templates</text>
+    </svg>
+
+    <svg class="d-narrow" viewBox="0 0 380 566" role="img"
+         aria-label="The browser holds only the DOM and 62 lines of JavaScript that apply patches. One process — FastAPI, the agent, a SQLite store and Jinja — answers a POST of the new message with a stream of NDJSON patches, and a GET of the thread with the whole page rendered from the store. Without JavaScript the same POST runs to completion and redirects.">
+      <rect class="d-box" x="0.5" y="0.5" width="379" height="94" rx="9" />
+      <text class="d-title" x="14" y="26">browser</text>
+      <line class="d-rule" x1="14" y1="38" x2="366" y2="38" />
+      <text class="d-item" x="14" y="62">the DOM · 62 lines of JS</text>
+      <text class="d-item" x="14" y="82">apply patch</text>
+
+      <g class="d-arrow">
+        <path d="M30 112 V140" />
+        <path class="head" d="M30 148 L26 140 L34 140 Z" />
+      </g>
+      <text class="d-label" x="50" y="134">POST /t/{id} · message</text>
+
+      <g class="d-arrow">
+        <path class="stream" d="M30 214 V186" />
+        <path class="head" d="M30 178 L26 186 L34 186 Z" />
+      </g>
+      <text class="d-label" x="50" y="192">NDJSON patches</text>
+      <text class="d-sub" x="50" y="208">append · replace · text · done · error</text>
+
+      <g class="d-arrow">
+        <path d="M30 276 V304" />
+        <path class="head" d="M30 312 L26 304 L34 304 Z" />
+      </g>
+      <text class="d-label" x="50" y="298">GET /t/{id}</text>
+
+      <g class="d-arrow">
+        <path d="M30 378 V350" />
+        <path class="head" d="M30 342 L26 350 L34 350 Z" />
+      </g>
+      <text class="d-prose" x="50" y="368">the whole page, from the store</text>
+
+      <rect class="d-box" x="0.5" y="398.5" width="379" height="94" rx="9" />
+      <text class="d-title" x="14" y="424">one process</text>
+      <line class="d-rule" x1="14" y1="436" x2="366" y2="436" />
+      <text class="d-item" x="14" y="460">FastAPI · the agent</text>
+      <text class="d-item" x="14" y="480">SQLite store · Jinja</text>
+
+      <line class="d-rule" x1="0" y1="516" x2="380" y2="516" />
+      <text class="d-cap" x="190" y="538" text-anchor="middle">no JavaScript: the same POST runs to completion</text>
+      <text class="d-cap" x="190" y="554" text-anchor="middle">→ 303 → GET, same templates</text>
+    </svg>
+  </figure>
+  <p class="after-figure">
+    Every patch is a Jinja render of the partial the full page uses, so a tool
+    card is described once. Reload rebuilds the page from the store through the
+    same templates; the sidebar is server state and is patched at the end of a
+    turn.
+  </p>
+
+  <h2>What it showed</h2>
+
+  <p class="finding"><strong>The framework you skip moves into a stylesheet you own.</strong></p>
+  <figure class="bars">
+    <div class="row" title="hand-written, light and dark via prefers-color-scheme, no build step">
+      <div class="k">app.css</div>
+      <div class="track"><div class="bar" style="width:82%"></div><span class="v">834</span></div>
+    </div>
+    <div class="row" title="main.py 231 · stream.py 228 · views.py 105 · html.py 64">
+      <div class="k">new python</div>
+      <div class="track"><div class="bar" style="width:61.7%"></div><span class="v">628</span></div>
+    </div>
+    <div class="row" title="15 files">
+      <div class="k">templates</div>
+      <div class="track"><div class="bar" style="width:19.2%"></div><span class="v">195</span></div>
+    </div>
+    <div class="row" title="the whole client, no libraries">
+      <div class="k">app.js</div>
+      <div class="track"><div class="bar" style="width:6.1%"></div><span class="v">62</span></div>
+    </div>
+    <div class="row"><div class="split"></div></div>
+    <div class="row copied" title="agent.py · scripted.py · store.py · models.py, held to the reference by a diff">
+      <div class="k">copied agent</div>
+      <div class="track"><div class="bar" style="width:50.9%"></div><span class="v">518</span></div>
+    </div>
+    <figcaption>
+      Lines of code: four things written for this cell, and — under the rule —
+      the 518 lines of agent copied verbatim from the reference backend.
+    </figcaption>
+  </figure>
+
+  <p class="finding" style="margin-top:26px">
+    <strong>Where the history sits decides what's free.</strong> Reload resumes
+    the thread and there is a thread list — about fifty lines — because the store
+    is in the process. None of the four React cells does either; theirs is behind
+    a fetch.
+  </p>
+  <p class="finding">
+    <strong>The client stayed ignorant.</strong> Ids and five ops. The one
+    coupling found (Stop's delegation) was removed, not accommodated.
+  </p>
+  <p class="finding">
+    <strong>The browser's form semantics became the transport, and bit once.</strong>
+    Suggestion buttons × <code>required</code> × Starlette's last-wins
+    <code>FormData</code> → the composer sits before the suggestions in the DOM
+    and CSS puts them back. The price of having no client state machine.
+  </p>
+  <p class="finding">
+    <strong>The copied agent's <code>diff</code> fired on day one and was paid the
+    same day.</strong> The reference grew a model picker between the cell's first
+    commit and its next; the copy was re-synced, a fourth file rode along.
+  </p>
+  <p class="limit">
+    It can't be compared on protocol or topology — it has one of each by
+    construction — so it answers <em>what a chat UI costs without a chat
+    framework</em>, not <em>which framework</em>.
+  </p>
+
+  <h2>How it was built</h2>
+  <div class="pipe">
+    <span class="step">plan §3 contracts</span>
+    <span class="arw">→</span>
+    <span class="step">A skeleton + flush spike</span>
+    <span class="arw">→</span>
+    <span class="par">
+      <span class="step">B1 stream engine</span>
+      <span class="step">B2 templates + CSS</span>
+      <span class="step">B3 client</span>
+    </span>
+    <span class="arw">→</span>
+    <span class="step">C integrate + probes</span>
+    <span class="arw">→</span>
+    <span class="par">
+      <span class="step">D harness</span>
+      <span class="step">E docs</span>
+    </span>
+    <span class="arw">→</span>
+    <span class="step">F fresh-context review</span>
+    <span class="arw">→</span>
+    <span class="step">fix round</span>
+    <span class="arw">→</span>
+    <span class="step">commit</span>
+  </div>
+  <p class="after-figure">
+    Fable orchestrated and verified; Opus and Sonnet lanes built against fixed
+    contracts (<code>docs/plans/frontends-jinja.md</code>) so they could run in
+    parallel. The two real bugs — Stop dying after Enter in the busy textarea, and
+    two concurrent turns overwriting each other in the store — came from the
+    fresh-context review, not from any builder or the probes; both were fixed and
+    re-verified with the reviewer's own scripts.
+  </p>
+  <p>
+    Gates: conformance 18/18 on <code>:3005</code>, the copied files identical to
+    the reference, <code>/chat</code> byte-identical to <code>:8001</code>, four
+    probe flows green — and <code>resume</code> red, by design, because this is
+    the one cell that rehydrates.
+  </p>
+
+  <h2>The recording</h2>
+  <figure class="rec">
+    <img src="jinja-cell.gif" width="1100" height="773" loading="lazy"
+         alt="Screen recording of the cell at localhost:3005: an empty thread, the weather suggestion streaming a tool card and markdown text, a typed notes search, an analyze turn stopped mid-flight leaving its card frozen, a reload that brings back the first two turns without the stopped one, and finally the same thread with JavaScript off running a fourth turn through the post/redirect/get path." />
+    <figcaption>
+      The three prompts, Stop mid-<code>analyze</code>, a reload that keeps the
+      thread, and a turn with JavaScript off.
+    </figcaption>
+  </figure>
+
+  <footer>
+    The cell runs at <a href="http://localhost:3005">localhost:3005</a>. The
+    ergonomics notes this page condenses are in
+    <code>frontends/jinja/README.md</code>, and the plan every lane built against
+    is <code>docs/plans/frontends-jinja.md</code>. <a href="./">← back to the
+    matrix</a>.
+  </footer>
+</div>
+</body>
+</html>
