@@ -145,9 +145,9 @@ lists every visitor's threads.
 
 ---
 
-## 8. Two tool calls in a thread can share one `tool_call_id`
+## 8. ~~Two tool calls in a thread can share one `tool_call_id`~~ — fixed
 
-**Bug · reference agent, so every backend · small**
+**Bug · reference agent, so every backend · fixed 2026-08-18**
 
 `backends/pydantic-ai/app/scripted.py:103` assigns
 `tool_call_id=f"call_{plan.tool}_{index}"`, where `index` counts calls *within
@@ -168,3 +168,10 @@ unique per call, fixes it. The scripted file is copied verbatim into
 
 Found while recording `docs/recordings/jinja-cell.mjs`, whose header documents
 the prompt chosen to steer around it rather than showcase it unlabelled.
+
+**Fixed:** all four backends now number the id from the calls already in the
+thread's history rather than from the run, so the ordinal is per-tool and
+per-thread. Verified live on `:3005`, `:8002`, `:8003` and `:8004` — two
+`get_weather` turns come back as `call_get_weather_0` and `call_get_weather_1`,
+each carrying its own city. Golden stays green because it renames ids by first
+appearance, so the canonical form never saw the literal.

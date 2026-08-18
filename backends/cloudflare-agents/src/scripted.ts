@@ -92,6 +92,25 @@ function latestUserText(prompt: LanguageModelV4Prompt): string {
   return "";
 }
 
+/**
+ * How many times each tool has already been called in this thread.
+ *
+ * The id has to be unique across the thread, not the run: a client keyed on
+ * the tool call id — which is every AI SDK client — treats one id as one call,
+ * so a second `get_weather` numbered from zero again merges into the first and
+ * renders its result against the first call's card on reload.
+ */
+function callsSoFar(prompt: LanguageModelV4Prompt): Map<string, number> {
+  const seen = new Map<string, number>();
+  for (const message of prompt) {
+    if (message.role !== "assistant") continue;
+    for (const part of message.content) {
+      if (part.type === "tool-call") seen.set(part.toolName, (seen.get(part.toolName) ?? 0) + 1);
+    }
+  }
+  return seen;
+}
+
 function pendingToolReturns(prompt: LanguageModelV4Prompt): LanguageModelV4ToolResultPart[] {
   const last = prompt.at(-1);
   if (last?.role !== "tool") return [];
@@ -149,11 +168,12 @@ async function* script(options: LanguageModelV4CallOptions): AsyncGenerator<Lang
     : PLANS.filter((plan) => plan.keywords.some((word) => lowered.includes(word)) && available.has(plan.tool));
 
   if (plans.length) {
-    const calls = plans.map((plan, index) => ({
-      id: `call_${plan.tool}_${index}`,
-      toolName: plan.tool,
-      input: dumps(plan.buildArgs(userText)),
-    }));
+    const seen = callsSoFar(options.prompt);
+    const calls = plans.map((plan) => {
+      const ordinal = seen.get(plan.tool) ?? 0;
+      seen.set(plan.tool, ordinal + 1);
+      return { id: `call_${plan.tool}_${ordinal}`, toolName: plan.tool, input: dumps(plan.buildArgs(userText)) };
+    });
     for (const { id, toolName, input } of calls) {
       yield { type: "tool-input-start", id, toolName };
       // Split the arguments so the UI has a chance to show them streaming in.

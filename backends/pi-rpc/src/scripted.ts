@@ -116,6 +116,25 @@ function pendingToolResults(messages: readonly Message[]): ToolResultMessage[] {
   return returns;
 }
 
+/**
+ * How many times each tool has already been called in this thread.
+ *
+ * The id has to be unique across the thread, not the run: a client keyed on
+ * the tool call id — which is every AI SDK client — treats one id as one call,
+ * so a second `get_weather` numbered from zero again merges into the first and
+ * renders its result against the first call's card on reload.
+ */
+function callsSoFar(messages: readonly Message[]): Map<string, number> {
+  const seen = new Map<string, number>();
+  for (const message of messages) {
+    if (message.role !== "assistant" || typeof message.content === "string") continue;
+    for (const part of message.content) {
+      if (part.type === "toolCall") seen.set(part.name, (seen.get(part.name) ?? 0) + 1);
+    }
+  }
+  return seen;
+}
+
 const matchingPlans = (text: string): Plan[] => {
   const lowered = text.toLowerCase();
   return PLANS.filter((plan) => plan.keywords.some((word) => lowered.includes(word)));
@@ -174,11 +193,14 @@ function stream(
   };
 
   const emitToolCalls = async (plans: readonly Plan[], userText: string) => {
-    for (const [index, plan] of plans.entries()) {
+    const seen = callsSoFar(context.messages);
+    for (const plan of plans) {
       const args = plan.buildArgs(userText);
+      const ordinal = seen.get(plan.tool) ?? 0;
+      seen.set(plan.tool, ordinal + 1);
       const call: ToolCall = {
         type: "toolCall",
-        id: `call_${plan.tool}_${index}`,
+        id: `call_${plan.tool}_${ordinal}`,
         name: plan.tool,
         arguments: {},
       };

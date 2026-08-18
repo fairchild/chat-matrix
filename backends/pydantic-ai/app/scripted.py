@@ -11,12 +11,15 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+from collections import Counter
 from collections.abc import AsyncIterator, Callable, Sequence
 from dataclasses import dataclass
 
 from pydantic_ai.messages import (
     ModelMessage,
     ModelRequest,
+    ModelResponse,
+    ToolCallPart,
     ToolReturnPart,
     UserPromptPart,
 )
@@ -97,10 +100,32 @@ async def _emit_text(text: str) -> AsyncIterator[str]:
         yield token
 
 
-async def _emit_tool_calls(plans: Sequence[Plan], user_text: str) -> AsyncIterator[dict[int, DeltaToolCall]]:
+def _calls_so_far(messages: Sequence[ModelMessage]) -> Counter[str]:
+    """How many times each tool has already been called in this thread.
+
+    The id has to be unique across the thread, not the run: a client keyed on
+    `tool_call_id` — which is every AI SDK client — treats one id as one call,
+    so a second `get_weather` numbered from zero again merges into the first
+    and renders its result against the first call's card on reload.
+    """
+    return Counter(
+        part.tool_name
+        for message in messages
+        if isinstance(message, ModelResponse)
+        for part in message.parts
+        if isinstance(part, ToolCallPart)
+    )
+
+
+async def _emit_tool_calls(
+    plans: Sequence[Plan], user_text: str, history: Sequence[ModelMessage]
+) -> AsyncIterator[dict[int, DeltaToolCall]]:
+    seen = _calls_so_far(history)
     for index, plan in enumerate(plans):
         args = json.dumps(plan.build_args(user_text))
-        yield {index: DeltaToolCall(name=plan.tool, tool_call_id=f"call_{plan.tool}_{index}")}
+        call_id = f"call_{plan.tool}_{seen[plan.tool]}"
+        seen[plan.tool] += 1
+        yield {index: DeltaToolCall(name=plan.tool, tool_call_id=call_id)}
         # Split the arguments so the UI has a chance to show them streaming in.
         midpoint = len(args) // 2
         for chunk in (args[:midpoint], args[midpoint:]):
@@ -132,7 +157,7 @@ async def _stream(
     plans = [plan for plan in _matching_plans(user_text) if plan.tool in available]
 
     if plans:
-        async for call in _emit_tool_calls(plans, user_text):
+        async for call in _emit_tool_calls(plans, user_text, messages):
             yield call
         return
 
