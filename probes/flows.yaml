@@ -40,8 +40,9 @@
     - ask "Search notes for streaming protocols."
     - wait for the tool call
     - wait for the reply
-    - expect the reply to mention "search_notes"
+    # Same reordering as the weather flow above, and for the same reason.
     - expand the tool call
+    - expect the reply to mention "search_notes"
     - expect a tool call for search_notes
     - capture list-result
 
