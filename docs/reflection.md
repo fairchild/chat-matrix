@@ -93,6 +93,36 @@ sessions — `pi` — will want to be the source of truth, and I think that's a
 genuine divergence in the contract rather than an implementation detail. I'd
 expect to revisit it rather than paper over it.
 
+## On the monolith
+
+`frontends/jinja` was meant to be a curiosity and turned into the clearest thing
+in the repo about where state belongs. The CSS is bigger than everything else
+put together — 834 lines against 628 of new Python and 62 of JavaScript — which
+I read as the framework you skip moving into a stylesheet you own rather than
+disappearing. What I didn't predict is that reload-resumes-the-thread and a
+thread list, neither of which any of the four React cells does, came almost free
+here: the history was already in the process, so the page route is two lines.
+Where the history sits decides whether resume is a feature you build or a
+consequence of the architecture, and that's a question I'd now ask before asking
+which UI library to use.
+
+The client stayed as ignorant as I wanted — five ops and some element ids — and
+the one coupling that did show up, Stop's event delegation leaning on a CSS
+rule, turned out to be removable rather than inherent. The cost landed somewhere
+I didn't expect: with no client state machine, the browser's own form semantics
+are the transport, and they bit exactly once and sharply — a suggestion button
+and an empty textarea both posting `message`, last-wins in Starlette, fixed by
+putting the composer first in the DOM and reordering it in CSS. I'd still take
+that trade: rules that predate the app and aren't written down in one place,
+against no state machine of my own to get wrong. The maintenance cost the plan
+named, a copied agent held to the reference by a `diff`, fired on day one when
+the reference grew a model picker, and was paid the same day.
+
+The limit is the one it was built with. It can't be pointed at another backend
+and it has one topology by construction, so it answers "what does a chat UI cost
+when there is no chat framework" and not "which framework" — different
+questions, which I'd been treating as one.
+
 ## On the harness itself
 
 **The scripted model is the decision I'd defend hardest.** It looked like a
