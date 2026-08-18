@@ -113,11 +113,11 @@ this UI is provably the one under the other four.
 
 The axis this cell is being judged on, recorded while it was fresh.
 
-**The weight is in the CSS, not the framework.** New Python is 628 lines —
-`main.py` 231, `stream.py` 228, `views.py` 105, `html.py` 64 — on top of the 518
+**The weight is in the CSS, not the framework.** New Python is 673 lines —
+`main.py` 251, `stream.py` 231, `views.py` 105, `html.py` 86 — on top of the 543
 copied verbatim from the reference backend. Templates are 195 lines across 15
-files, the client is 62, and `static/app.css` is 834, more than everything else
-put together. That's what it costs to sit next to four React cells with no design
+files, the client is 62, and `static/app.css` is 834 — more than the Python and
+the client put together. That's what it costs to sit next to four React cells with no design
 system underneath: the framework you skip is not the work you skip, it just moves
 into a stylesheet you own. Six direct dependencies resolve to 106 packages
 (`uv pip list`), against 356 for assistant-ui, 477 for AI Elements, 529 for

@@ -97,7 +97,7 @@ expect to revisit it rather than paper over it.
 
 `frontends/jinja` was meant to be a curiosity and turned into the clearest thing
 in the repo about where state belongs. The CSS is bigger than everything else
-put together — 834 lines against 628 of new Python and 62 of JavaScript — which
+put together — 834 lines against 673 of new Python and 62 of JavaScript — which
 I read as the framework you skip moving into a stylesheet you own rather than
 disappearing. What I didn't predict is that reload-resumes-the-thread and a
 thread list, neither of which any of the four React cells does, came almost free
