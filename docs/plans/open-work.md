@@ -191,8 +191,15 @@ every patch to the dead one: the abandoned card went green with the new
 question's answer while the live card hung at "Streaming arguments…" forever.
 Reproduced in the browser, before and after. The card now carries its own
 `dom` id minted per render (`frontends/jinja/app/views.py`), because rendering
-identity is the renderer's to choose, not the model's. This also covers the
-duplicate-id case item 9 can still produce.
+identity is the renderer's to choose, not the model's.
+
+It fixes patch *targeting* and not result *pairing* — a second review caught the
+first version of this note claiming both. A `/chat` client can still author two
+parts under one id into the store, and `dump_messages` pairs them by id upstream
+of `_tool_view`, so the page renders two cards under distinct `dom` ids both
+showing the *last* call's output. The renderer cannot see that; every AI SDK
+client pairs the same way. The uniqueness gate, not the `dom` id, is what
+protects against it — which is why the gate is the durable half of this fix.
 
 ---
 
@@ -213,6 +220,12 @@ turn 2 Paris sent alone gives `call_get_weather_0` again, and
 `GET /threads/{id}` comes back holding only the Paris turn. pi and pi-rpc are
 immune — they read their own session, so the same probe numbers `_1` and keeps
 both turns.
+
+Demonstrated downstream on `:3005`: with Tokyo and Oslo both stored as
+`call_get_weather_0`, the rehydrated dump pairs by id and comes back as
+input-Tokyo/output-Oslo and input-Oslo/output-Oslo, so the page shows the same
+Oslo card twice. That pairing is `dump_messages`' and every AI SDK client's, not
+the cell's, which is why item 8b's `dom` id can't reach it.
 
 The React cells always echo the full transcript, so nothing in the matrix hits
 this today. It is reachable from a second tab, or any client that windows a long

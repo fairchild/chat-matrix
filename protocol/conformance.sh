@@ -78,7 +78,8 @@ done
 # means the second result renders against the first call's card.
 head_ "tool call ids"
 second=$(mktemp)
-if python3 - "$BACKEND" "$THREAD" >"$second" 2>/dev/null <<'PYEOF'
+why=$(mktemp)
+if python3 - "$BACKEND" "$THREAD" >"$second" 2>"$why" <<'PYEOF'
 import json, sys, urllib.request
 
 backend, thread = sys.argv[1], sys.argv[2]
@@ -103,12 +104,23 @@ with urllib.request.urlopen(request, timeout=60) as response:
     response.read()
 
 ids = []
+
 def walk(node):
+    """Collect the ids of tool *parts* only.
+
+    An `id` inside a tool's arguments or result is that tool's content, not a
+    part's identity — the same distinction golden.ts draws when it renames ids
+    at a frame's top level and leaves the rest alone. Recursing indiscriminately
+    would red a healthy thread whose tool happens to return a `toolCallId` key.
+    """
     if isinstance(node, dict):
-        if isinstance(node.get("toolCallId"), str):
-            ids.append(node["toolCallId"])
-        for value in node.values():
-            walk(value)
+        kind = node.get("type")
+        if isinstance(kind, str) and (kind.startswith("tool-") or kind == "dynamic-tool"):
+            if isinstance(node.get("toolCallId"), str):
+                ids.append(node["toolCallId"])
+        for key, value in node.items():
+            if key not in ("input", "output"):
+                walk(value)
     elif isinstance(node, list):
         for value in node:
             walk(value)
@@ -131,6 +143,7 @@ then
   fi
 else
   bad "second turn on the same thread (request failed)"
+  sed 's/^/    /' "$why" | tail -4
 fi
 
 head_ "ag-ui stream (/ag-ui)"
