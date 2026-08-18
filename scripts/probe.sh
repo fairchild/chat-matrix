@@ -54,8 +54,8 @@ for check in "${checks[@]}"; do
     printf '  \033[33m⚠\033[0m backend %s is on %s — captures across cells stop being comparable\n' "$name" "$model"
 done
 
-bunx playwright test "$@"
-status=$?
+status=0
+bunx playwright test "$@" || status=$?
 
 # The gallery is the deliverable, so build it even when a flow failed — a broken
 # cell is exactly the thing you want to look at.
