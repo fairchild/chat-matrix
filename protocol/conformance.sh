@@ -118,12 +118,16 @@ print(len(ids), len(set(ids)))
 PYEOF
 then
   read -r total distinct <"$second"
-  if [ "${total:-0}" -lt 2 ]; then
-    bad "two turns leave two tool calls in the thread (found ${total:-0})"
-  elif [ "$total" != "$distinct" ]; then
+  # Uniqueness is the claim, and it doesn't depend on the model. Whether two
+  # calls happened at all does: a real model may answer the second question
+  # without reaching for the tool, which is a miss, not a conformance failure.
+  if [ "$total" != "$distinct" ]; then
     bad "tool call ids are unique in a thread ($total calls, $distinct distinct)"
+  elif [ "${total:-0}" -lt 2 ] && [ "$model" = "scripted" ]; then
+    bad "two turns leave two tool calls in the thread (found ${total:-0})"
   else
-    ok "tool call ids are unique in a thread ($total calls)"
+    ok "tool call ids are unique in a thread (${total:-0} calls)"
+    [ "${total:-0}" -lt 2 ] && printf '    \033[33m⚠\033[0m fewer than two calls — %s did not call the tool twice, so uniqueness held trivially\n' "$model"
   fi
 else
   bad "second turn on the same thread (request failed)"
