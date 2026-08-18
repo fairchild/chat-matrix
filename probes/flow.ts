@@ -18,6 +18,7 @@ export type Step =
   | { kind: "expectMention"; text: string }
   | { kind: "expectMessages"; count: number; role: "user" | "assistant" }
   | { kind: "expectBusy"; busy: boolean }
+  | { kind: "expectDeclaredResume" }
   | { kind: "reload" }
   | { kind: "capture"; label: string };
 
@@ -56,6 +57,15 @@ const RULES: Rule[] = [
   {
     pattern: /^expect the chat to be (busy|idle)$/,
     build: (m) => ({ kind: "expectBusy", busy: m[1] === "busy" }),
+  },
+  // Every cell can honour this one, which is what earns it a place in the
+  // grammar: it asks each cell to match its own declaration rather than a fixed
+  // number, so the sentence resolves through `resumes` in frontends.ts instead
+  // of naming a stack. The alternative — "expect 0 user messages" — was a claim
+  // about React cells that jinja could only ever fail.
+  {
+    pattern: /^expect the history to resume as the cell declares$/,
+    build: () => ({ kind: "expectDeclaredResume" }),
   },
   { pattern: /^reload the page$/, build: () => ({ kind: "reload" }) },
   {

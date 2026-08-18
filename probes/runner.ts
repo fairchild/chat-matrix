@@ -15,6 +15,9 @@ export type Shot = { label: string; path: string; step: string };
 
 export class Runner {
   readonly shots: Shot[] = [];
+  /** User messages on screen at the moment of the last reload — what a cell
+   *  that declares `resumes` has to put back. */
+  private usersAtReload: number | null = null;
 
   constructor(
     private readonly page: Page,
@@ -150,7 +153,28 @@ export class Runner {
         return;
       }
 
+      case "expectDeclaredResume": {
+        if (this.usersAtReload === null) {
+          throw new Error(`probes: "${source}" only means something after "reload the page".`);
+        }
+        const before = this.usersAtReload;
+        const declared = this.a.resumes === true;
+        const plural = before === 1 ? "message" : "messages";
+        const message = declared
+          ? `${this.frontend.name} declares resumes: true in probes/frontends.ts, so the ` +
+            `${before} user ${plural} sent before the reload should still be on screen.`
+          : `${this.frontend.name} does not declare resumes in probes/frontends.ts, so the ` +
+            `transcript should be empty after a reload; if it now rehydrates, declare it there.`;
+        await expect
+          .poll(() => this.a.userMessages(page).count(), { timeout: 10_000, message })
+          .toBe(declared ? before : 0);
+        return;
+      }
+
       case "reload": {
+        // Read the transcript before it goes away: the resume assertion is
+        // against what was on screen, not against a number written in the flow.
+        this.usersAtReload = await this.a.userMessages(page).count();
         await page.reload({ waitUntil: "networkidle" });
         await this.a.composer(page).first().waitFor({ state: "visible", timeout: 20_000 });
         await page.waitForTimeout(1_500);

@@ -83,8 +83,11 @@
   about: >
     Send a message, reload, and see what's left. The contract persists the thread
     server-side on stream completion, so anything missing here is the frontend
-    choosing not to rehydrate it. Currently nothing rehydrates — the assertion is
-    written to describe that, and will fail loudly the day one of them fixes it.
+    choosing not to ask for it. The four React cells don't: they come back to an
+    empty thread. jinja does, because it holds the thread in the process that
+    renders the page. Each cell says which in frontends.ts, and the assertion
+    reads that declaration in both directions — so the flow goes red the day a
+    cell's behaviour and its declaration stop agreeing, whichever one moved.
   steps:
     - open the chat
     - ask "What's the weather in Tokyo?"
@@ -92,5 +95,5 @@
     - expect 1 user message
     - capture before-reload
     - reload the page
-    - expect 0 user messages
+    - expect the history to resume as the cell declares
     - capture after-reload

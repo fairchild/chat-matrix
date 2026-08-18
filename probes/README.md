@@ -115,20 +115,29 @@ The scripted model makes the work identical across backends, so the gallery
 becomes a rendering diff: same flows, same moments, one variable changed. A
 `pi`-backed backend was in progress as of the same date.
 
-The assertion to watch is `resume`'s `expect 0 user messages`. It pins the
-current behaviour, and a backend that owns its own sessions — as a `pi`-backed one
-might — is the likeliest thing to finally break it. That failure is the good
-outcome; read it as the feature landing, not the harness rotting.
+The assertion to watch is `resume`'s `expect the history to resume as the cell
+declares`. It reads `resumes` from each adapter in `frontends.ts` and holds the
+cell to it in both directions: a cell that declares it has to put the thread
+back, and a cell that declares nothing has to come back empty. So a frontend
+that starts rehydrating — or a backend that owns its own sessions, as a
+`pi`-backed one might — goes red until someone writes the new behaviour down.
+That failure is the good outcome; read it as the feature landing, not the
+harness rotting.
 
 ## What it found on the first run
 
-**Nothing resumes on reload.** Send a message, reload, and all four come back
-empty — a fresh thread, not the one you were in. The backend is persisting
-correctly and `/threads/{id}` serves the history; no frontend asks for it. The
-root README describes this as "reload resumes the current thread rather than
-letting you pick one", which is a more generous reading than the UI supports.
-The `resume` flow asserts the current behaviour (`expect 0 user messages`) so it
-fails the day someone fixes it.
+**None of the four React cells resume on reload.** Send a message, reload, and
+they come back empty — a fresh thread, not the one you were in. The backend is
+persisting correctly and `/threads/{id}` serves the history; none of them asks
+for it. The root README describes this as "reload resumes the current thread
+rather than letting you pick one", which is a more generous reading than those
+four support.
+
+The fifth cell changed the picture. `jinja` arrived later and does resume: the
+thread lives in the process that renders the page, so a reload re-renders it.
+That is why the flow no longer asserts a single number for everyone — each
+adapter declares `resumes` in `frontends.ts`, and the assertion holds the cell
+to its own declaration either way.
 
 Worth knowing if you write your own check: every frontend renders the probe
 prompts as suggestion buttons, so a substring search for the prompt text finds it

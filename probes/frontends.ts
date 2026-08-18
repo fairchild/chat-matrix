@@ -44,6 +44,12 @@ export type Adapter = {
   /** Some stacks collapse tool calls by default; expanding is what makes the
    *  screenshot worth looking at. No-op where they're already open. */
   expandToolCall?: (page: Page) => Promise<void>;
+  /** Declares that this cell puts the thread back on screen after a reload.
+   *  The `resume` flow asserts both directions: a cell that declares it must
+   *  show the messages again, and a cell that says nothing must come back
+   *  empty — so the flag can't quietly absorb a regression, and a cell that
+   *  starts rehydrating goes red until someone declares it here. */
+  resumes?: true;
 };
 
 const ADAPTERS: Record<string, Adapter> = {
@@ -120,9 +126,11 @@ const ADAPTERS: Record<string, Adapter> = {
   // written to this file's interface on purpose (frontends/jinja, plan §3.3).
   // The Stop button exists only while a run is in flight, which is the busy
   // tell; the tool name is visible text in the card header, so toolNamed's
-  // default works. Nothing collapses. This cell rehydrates on reload, so the
-  // `resume` flow's "expect 0 user messages" fails here by design.
+  // default works. Nothing collapses. The thread lives in the process that
+  // renders the page, so a reload re-renders it rather than starting over —
+  // which is what `resumes` declares, and what the `resume` flow holds it to.
   jinja: {
+    resumes: true,
     composer: (p) => p.locator('textarea[data-slot="input"]'),
     stop: (p) => p.locator('button[aria-label="Stop generating"]'),
     userMessages: (p) => p.locator('[data-role="user"]'),
