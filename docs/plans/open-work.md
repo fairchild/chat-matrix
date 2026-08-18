@@ -142,3 +142,29 @@ Two known caveats to decide about before it's public, both already in
 `README.md`: hosted CopilotKit can't be moved off its configured backend
 (`safeBackend` forwards localhost only), and `/threads` on a public backend
 lists every visitor's threads.
+
+---
+
+## 8. Two tool calls in a thread can share one `tool_call_id`
+
+**Bug · reference agent, so every backend · small**
+
+`backends/pydantic-ai/app/scripted.py:103` assigns
+`tool_call_id=f"call_{plan.tool}_{index}"`, where `index` counts calls *within
+one run*. Ask a thread for the weather in Tokyo and then in Paris, and both
+stored calls are `call_get_weather_0`. Reproduced today against the scripted
+model on `:3005`: `/threads/{id}?protocol=vercel-ai` comes back with two tool
+parts carrying the identical `toolCallId`.
+
+That id is the AI SDK's identity for a tool part, so any client keyed on it —
+which is all of them — merges the two into one on rehydration, and the second
+call's result renders against the first call's card. It shows on reload, not
+during the live stream, which is why four green cells never caught it.
+
+Seeding the counter from the thread's existing call count, or just making the id
+unique per call, fixes it. The scripted file is copied verbatim into
+`frontends/jinja`, so that copy moves in the same commit (the `diff` gate in
+`frontends/jinja/README.md` will say so if it doesn't).
+
+Found while recording `docs/recordings/jinja-cell.mjs`, whose header documents
+the prompt chosen to steer around it rather than showcase it unlabelled.
