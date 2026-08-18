@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 from typing import Any, Literal
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import ChoiceLoader, Environment, FileSystemLoader, TemplateNotFound, select_autoescape
 from markdown_it import MarkdownIt
 from markupsafe import Markup
 
@@ -22,8 +22,17 @@ STATIC = ROOT / "static"
 
 INDEX_URL = os.getenv("INDEX_URL", "http://localhost:3000")
 
+OVERRIDES = os.getenv("CHAT_TEMPLATES")
+"""A directory searched before the packaged one, so a host app can replace any
+template by name — `base.html` for its own chrome, `partials/tool_<name>.html`
+for its own tools — without forking the rest."""
+
+_loaders = [FileSystemLoader(TEMPLATES)]
+if OVERRIDES:
+    _loaders.insert(0, FileSystemLoader(OVERRIDES))
+
 env = Environment(
-    loader=FileSystemLoader(TEMPLATES),
+    loader=ChoiceLoader(_loaders),
     autoescape=select_autoescape(default=True, default_for_string=True),
     trim_blocks=True,
     lstrip_blocks=True,
@@ -42,9 +51,22 @@ def pretty_json(value: Any) -> str:
     return json.dumps(value, indent=2, ensure_ascii=False, default=str)
 
 
+def tool_partial(name: str) -> str:
+    """The card for a tool, by convention: `partials/tool_<name>.html` if it
+    exists, the generic renderer otherwise. A host app's own tool gets a card
+    by adding a file, not by editing a map here."""
+    candidate = f"partials/tool_{name}.html"
+    try:
+        env.get_template(candidate)
+    except TemplateNotFound:
+        return "partials/tool_generic.html"
+    return candidate
+
+
 env.filters["markdown"] = markdown
 env.filters["json"] = pretty_json
 env.globals["index_url"] = INDEX_URL
+env.globals["tool_partial"] = tool_partial
 
 
 def render(name: str, **context: Any) -> str:

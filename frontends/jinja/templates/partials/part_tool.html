@@ -1,4 +1,4 @@
-{% set body = {"get_weather": "partials/tool_weather.html", "search_notes": "partials/tool_notes.html", "analyze": "partials/tool_analyze.html"}.get(part.name, "partials/tool_generic.html") %}
+{% set body = tool_partial(part.name) %}
 {% set label = {"input-streaming": "arguments", "input-available": "running", "output-available": "done", "output-error": "failed"}.get(part.state, part.state) %}
 <section class="tool" data-part="tool" data-tool="{{ part.name }}" data-state="{{ part.state }}" id="tc-{{ part.call_id }}">
   <header>

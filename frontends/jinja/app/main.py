@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
-from fastapi import FastAPI, Form, HTTPException
+from fastapi import APIRouter, FastAPI, Form, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -38,11 +38,27 @@ SDK_VERSION = 7
 
 store = ThreadStore(Path(os.getenv("DEMO_DB", "data/threads.db")))
 
+ui = APIRouter()
+"""The server-rendered chat: whole pages on GET, DOM patches on POST. This is
+the half a host app wants — `include_router(ui)` and `mount_static(app)` and it
+has the UI, with `Turn(agent=...)` deciding whose agent answers."""
+
+protocol = APIRouter()
+"""The reference backend's own routes. Included here so `conformance.sh :3005`
+gates the embedded agent; a host app that already speaks a protocol can leave
+this one out."""
+
+
+def mount_static(host: FastAPI, path: str = "/static") -> None:
+    """The stylesheet lives in this package, so the host app mounts it from here."""
+    host.mount(path, StaticFiles(directory=STATIC), name="static")
+
+
 app = FastAPI(title="chat-stack frontend · jinja")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
 )
-app.mount("/static", StaticFiles(directory=STATIC), name="static")
+mount_static(app)
 
 SUGGESTIONS = (
     ("What's the weather in Tokyo?", "fast structured tool"),
@@ -99,18 +115,18 @@ def _page_context(thread_id: str) -> dict[str, Any]:
 # ---- the chat ---------------------------------------------------------------
 
 
-@app.get("/")
+@ui.get("/")
 async def new_thread() -> RedirectResponse:
     return RedirectResponse(_thread_url(secrets.token_urlsafe(12)), status_code=303)
 
 
-@app.get("/t/{thread_id}", response_class=HTMLResponse)
+@ui.get("/t/{thread_id}", response_class=HTMLResponse)
 async def thread_page(thread_id: str) -> HTMLResponse:
     turns = from_ui_messages(VercelAIAdapter.dump_messages(store.history(thread_id)))
     return HTMLResponse(render("thread.html", turns=turns, **_page_context(thread_id)))
 
 
-@app.post("/t/{thread_id}")
+@ui.post("/t/{thread_id}")
 async def send(request: Request, thread_id: str, message: str = Form("")) -> Response:
     wants_patches = NDJSON in request.headers.get("accept", "")
     message = message.strip()
@@ -132,12 +148,12 @@ async def send(request: Request, thread_id: str, message: str = Form("")) -> Res
     return RedirectResponse(_thread_url(thread_id), status_code=303)
 
 
-@app.get("/t/{thread_id}/fragments/composer", response_class=HTMLResponse)
+@ui.get("/t/{thread_id}/fragments/composer", response_class=HTMLResponse)
 async def composer_fragment(thread_id: str) -> HTMLResponse:
     return HTMLResponse(render("partials/composer.html", thread_id=thread_id, state="idle"))
 
 
-@app.get("/app.js")
+@ui.get("/app.js")
 async def app_js(request: Request) -> Response:
     return Response(
         render("app.js"),
@@ -149,7 +165,7 @@ async def app_js(request: Request) -> Response:
 # ---- the reference backend's routes, verbatim in spirit ---------------------
 
 
-@app.get("/health")
+@protocol.get("/health")
 async def health() -> dict[str, Any]:
     return {
         "backend": BACKEND_NAME,
@@ -165,13 +181,13 @@ class ModelChoice(BaseModel):
     id: str
 
 
-@app.get("/models")
+@protocol.get("/models")
 async def list_models() -> dict[str, Any]:
     """Every model this backend knows about, available or not, each with its reason."""
     return {"current": current_model(), "models": catalogue(current_model())}
 
 
-@app.post("/model")
+@protocol.post("/model")
 async def select_model(choice: ModelChoice) -> dict[str, str]:
     """Switch the running model. Process-wide on purpose: the model is the control variable."""
     if reason := unavailable(choice.id):
@@ -180,7 +196,7 @@ async def select_model(choice: ModelChoice) -> dict[str, str]:
     return {"model": current_model()}
 
 
-@app.post("/chat")
+@protocol.post("/chat")
 async def chat(request: Request) -> Response:
     run_input = VercelAIAdapter.build_run_input(await request.body())
     return await VercelAIAdapter.dispatch_request(
@@ -192,7 +208,7 @@ async def chat(request: Request) -> Response:
     )
 
 
-@app.post("/ag-ui")
+@protocol.post("/ag-ui")
 async def ag_ui(request: Request) -> Response:
     run_input = AGUIAdapter.build_run_input(await request.body())
     return await AGUIAdapter.dispatch_request(
@@ -203,12 +219,12 @@ async def ag_ui(request: Request) -> Response:
     )
 
 
-@app.get("/threads")
+@protocol.get("/threads")
 async def list_threads() -> dict[str, Any]:
     return {"threads": [asdict(summary) for summary in store.list()]}
 
 
-@app.get("/threads/{thread_id}")
+@protocol.get("/threads/{thread_id}")
 async def get_thread(thread_id: str, protocol: str = "vercel-ai") -> dict[str, Any]:
     if not store.exists(thread_id):
         raise HTTPException(status_code=404, detail=f"no thread {thread_id!r}")
@@ -224,8 +240,12 @@ async def get_thread(thread_id: str, protocol: str = "vercel-ai") -> dict[str, A
     }
 
 
-@app.delete("/threads/{thread_id}")
+@protocol.delete("/threads/{thread_id}")
 async def delete_thread(thread_id: str) -> dict[str, bool]:
     if not store.delete(thread_id):
         raise HTTPException(status_code=404, detail=f"no thread {thread_id!r}")
     return {"deleted": True}
+
+
+app.include_router(ui)
+app.include_router(protocol)

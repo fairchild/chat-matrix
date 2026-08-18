@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import quote
 
+from pydantic_ai import Agent
 from pydantic_ai.messages import ModelMessage
 from pydantic_ai.ui.vercel_ai import VercelAIAdapter
 from pydantic_ai.ui.vercel_ai.response_types import (
@@ -41,7 +42,7 @@ from pydantic_ai.ui.vercel_ai.response_types import (
     ToolOutputErrorChunk,
 )
 
-from .agent import agent
+from .agent import agent as default_agent
 from .html import patch, render
 from .views import ReasoningView, TextView, ToolView, Turn as TurnView
 
@@ -66,6 +67,8 @@ class Turn:
     sidebar: Callable[[], str] | None = None
     #: Serialises runs on one thread. None means "don't serialise".
     lock: asyncio.Lock | None = None
+    #: Whose turn this is. A host app passes its own; the cell's is the default.
+    agent: Agent[Any, Any] = field(default_factory=lambda: default_agent)
     turn_id: str = field(default_factory=_mint)
     parts: dict[str, TextView | ReasoningView | ToolView] = field(default_factory=dict)
 
@@ -197,7 +200,7 @@ class Turn:
             ],
         }
         run_input = VercelAIAdapter.build_run_input(json.dumps(body).encode())
-        adapter = VercelAIAdapter(agent=agent, run_input=run_input, sdk_version=SDK_VERSION)
+        adapter = VercelAIAdapter(agent=self.agent, run_input=run_input, sdk_version=SDK_VERSION)
         return adapter.run_stream(message_history=self.history(), on_complete=self.on_complete)
 
     async def patches(self) -> AsyncIterator[bytes]:

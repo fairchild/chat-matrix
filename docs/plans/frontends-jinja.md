@@ -73,10 +73,10 @@ frontends/jinja/
   templates/partials/part_text.html
   templates/partials/part_reasoning.html
   templates/partials/part_tool.html          dispatch by name → one of:
-  templates/partials/tool_weather.html
-  templates/partials/tool_notes.html
+  templates/partials/tool_get_weather.html   (named for the tool: `tool_<name>.html`)
+  templates/partials/tool_search_notes.html
   templates/partials/tool_analyze.html
-  templates/partials/tool_generic.html
+  templates/partials/tool_generic.html       the fallback when no file matches
   templates/partials/composer.html           state idle | busy
   templates/partials/suggestions.html
   templates/partials/threads.html            sidebar

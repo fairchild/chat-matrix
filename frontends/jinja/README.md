@@ -97,8 +97,8 @@ this UI is provably the one under the other four.
 | `templates/partials/part_text.html` | model text: raw `<pre>` while streaming, rendered markdown when done |
 | `templates/partials/part_reasoning.html` | a `<details>`, open while it streams |
 | `templates/partials/part_tool.html` | the tool card and its header; dispatches the body by tool name |
-| `templates/partials/tool_weather.html` | temperature, city, conditions, a humidity bar |
-| `templates/partials/tool_notes.html` | note cards with tag chips |
+| `templates/partials/tool_get_weather.html` | temperature, city, conditions, a humidity bar |
+| `templates/partials/tool_search_notes.html` | note cards with tag chips |
 | `templates/partials/tool_analyze.html` | spinner with the topic, then the analysis |
 | `templates/partials/tool_generic.html` | the floor for a tool nobody wrote a card for: name, input, output |
 | `templates/partials/composer.html` | idle and busy — the Stop button exists only in the busy render |
@@ -307,6 +307,66 @@ card appears: `input-streaming`, which lasts about 70ms and shows arguments
 streaming under a spinner, or `input-available`, which lasts the full ~3s and
 reads "Analyzing assistant-ui as a chat frontend…". Both were made to read as
 work in progress for exactly this reason; the current artifact caught the second.
+
+## Using it in another FastAPI app
+
+The cell was built to be looked at, not imported, but four seams make it usable
+from a host app without forking it. What follows is what works today, verified
+against a second instance run from the same source.
+
+```python
+from app.main import ui, protocol, mount_static   # protocol optional
+from app.stream import Turn                        # Turn(agent=your_agent, ...)
+
+host = FastAPI()
+host.include_router(ui)      # the chat: GET /t/{id}, POST /t/{id}, /app.js
+mount_static(host)           # the stylesheet, from this package's static/
+```
+
+**The agent is a parameter.** `Turn` takes an `agent` field defaulting to the
+packaged one, and it's the only place the agent is read, so a host app's agent
+answers by passing it — no import rewiring.
+
+**Templates are overridable by name.** `CHAT_TEMPLATES=/path/to/templates` is
+searched before the packaged directory, so a host app replaces `base.html` for
+its own chrome, or any partial, by putting a file with the same name there.
+Everything it doesn't override still resolves to the packaged copy.
+
+**Tool cards are found by convention.** `partials/tool_<tool name>.html` if it
+exists, `partials/tool_generic.html` otherwise — so a host app's own tool gets
+its own card by adding a file. This is why the two cards here are named
+`tool_get_weather.html` and `tool_search_notes.html`: the filename is the tool
+name, and the mapping that used to be a dict in `part_tool.html` is gone.
+
+**The client is already prefix-agnostic.** `app.js` derives every URL from the
+composer form's `action`, so it doesn't hard-code where the chat lives.
+
+### What's still in the way
+
+These are the changes worth making if the goal shifts from "readable cell" to
+"reusable component"; none is done here.
+
+**Mounting under a prefix.** `include_router(ui)` works at the root only.
+`base.html` hard-codes `/static/app.css`, `/app.js` and `/`, and
+`composer.html`, `threads.html`, `_thread_url` and `Turn.url` hard-code `/t/`.
+A `prefix` Jinja global plus the same value in those two Python helpers would
+cover it — about eight edits, and the client needs nothing because it reads
+`form.action`.
+
+**The store and the agent are module globals.** `main.py` builds one
+`ThreadStore` at import from `DEMO_DB`, and the routes close over it. A host app
+with its own persistence has no seam. The shape that fixes it is a
+`create_ui(store, agent, suggestions) -> APIRouter` factory, which is a real
+refactor of `main.py` rather than an edit.
+
+**It isn't a package.** `pyproject.toml` sets `package = false` because the cell
+is run, not installed. Installing it means a build backend, and
+`templates/`+`static/` declared as package data so `html.py`'s
+`Path(__file__).parent.parent` still resolves from site-packages.
+
+**The chrome is the demo's.** `base.html` carries the "← matrix" crumb, the cell
+name and the model badge, and `SUGGESTIONS` in `main.py` is three prompts about
+this repo. Overridable per above, but the defaults assume this harness.
 
 ## Not implemented
 
