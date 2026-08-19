@@ -5,7 +5,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "@playwright/test";
 import { loadFlows } from "./flow.ts";
-import { frontends, ROOT } from "./frontends.ts";
+import { captureKey, frontends, ROOT } from "./frontends.ts";
 import { Runner, type Shot } from "./runner.ts";
 
 const ARTIFACTS = join(ROOT, "probes", "artifacts");
@@ -34,11 +34,19 @@ for (const { name, why } of unsupported) {
 // process to write would silently drop every other worker's captures.
 const MANIFEST = join(ARTIFACTS, "manifest");
 
+// The backend is the first thing in every artifact path and the first thing in
+// every manifest name, so a run against a second backend lands beside the first
+// instead of on top of it — which is what makes the gallery a rendering diff
+// rather than a picture of whoever ran last. captureKey() is where a cell that
+// runs its own agent (jinja) opts out of being labelled with a backend it never
+// talked to.
 for (const frontend of supported) {
+  const key = captureKey(frontend);
   test.describe(frontend.name, () => {
     for (const flow of flows) {
       test(`${flow.flow} · ${flow.axis}`, async ({ browser }, testInfo) => {
-        const videoDir = join(ARTIFACTS, flow.flow, "video");
+        const flowDir = join(ARTIFACTS, key, flow.flow);
+        const videoDir = join(flowDir, "video");
         mkdirSync(videoDir, { recursive: true });
 
         const context = await browser.newContext({
@@ -46,7 +54,7 @@ for (const frontend of supported) {
           recordVideo: { dir: videoDir, size: { width: 1280, height: 900 } },
         });
         const page = await context.newPage();
-        const runner = new Runner(page, frontend, flow, ARTIFACTS);
+        const runner = new Runner(page, frontend, flow, flowDir);
 
         try {
           await runner.run();
@@ -59,9 +67,15 @@ for (const frontend of supported) {
           }
           mkdirSync(MANIFEST, { recursive: true });
           writeFileSync(
-            join(MANIFEST, `${flow.flow}--${frontend.name}.json`),
+            join(MANIFEST, `${key}--${flow.flow}--${frontend.name}.json`),
             JSON.stringify(
-              { flow: flow.flow, axis: flow.axis, frontend: frontend.name, shots: runner.shots },
+              {
+                backend: key,
+                flow: flow.flow,
+                axis: flow.axis,
+                frontend: frontend.name,
+                shots: runner.shots,
+              },
               null,
               2,
             ),

@@ -2,6 +2,10 @@
 // like. Everything else in probes/ is written against this interface, which is
 // what lets one flow run against three unrelated UIs.
 //
+// The artifact key lives here too (`backendKey`, `captureKey`): the spec, the
+// runner and the gallery all have to agree about where a capture goes, and this
+// is already the file that knows which cell is which.
+//
 // Ports are not repeated here — they come from scripts/stacks.sh, which stays the
 // single place the matrix is listed. A frontend that appears there without an
 // adapter below is reported as unsupported rather than silently skipped. The
@@ -44,6 +48,12 @@ export type Adapter = {
   /** Some stacks collapse tool calls by default; expanding is what makes the
    *  screenshot worth looking at. No-op where they're already open. */
   expandToolCall?: (page: Page) => Promise<void>;
+  /** Declares that this cell runs its own agent in the process that serves it
+   *  and ignores `?backend=`. Such a cell sits outside the backend grid: its
+   *  captures are filed under its own name rather than under the backend a run
+   *  targeted, because that backend never reached the page — labelling them
+   *  with it would invent a variable. The gallery shows it once per moment. */
+  ownAgent?: true;
   /** Declares that this cell puts the thread back on screen after a reload.
    *  The `resume` flow asserts both directions: a cell that declares it must
    *  show the messages again, and a cell that says nothing must come back
@@ -129,7 +139,10 @@ const ADAPTERS: Record<string, Adapter> = {
   // default works. Nothing collapses. The thread lives in the process that
   // renders the page, so a reload re-renders it rather than starting over —
   // which is what `resumes` declares, and what the `resume` flow holds it to.
+  // That same process also holds the agent, so `?backend=` never reaches it:
+  // `ownAgent` says so, and keeps its captures out of the backend grid.
   jinja: {
+    ownAgent: true,
     resumes: true,
     composer: (p) => p.locator('textarea[data-slot="input"]'),
     stop: (p) => p.locator('button[aria-label="Stop generating"]'),
@@ -173,17 +186,64 @@ const hostedCells = (): Set<string> => {
   return new Set([...block[1].matchAll(/[\w-]+/g)].map((m) => m[0]));
 };
 
-/** Read the matrix from scripts/stacks.sh so this file never has to be updated
- *  when a cell is added — only when a cell needs new selectors. */
-export const frontends = (): { supported: Frontend[]; unsupported: Unsupported[] } => {
-  const stacks = readFileSync(join(ROOT, "scripts", "stacks.sh"), "utf8");
-  const block = stacks.match(/FRONTENDS=\(([\s\S]*?)\)/);
-  if (!block) throw new Error("probes: no FRONTENDS=(…) block in scripts/stacks.sh");
+const slug = (s: string): string =>
+  s.trim().toLowerCase().replace(/[^\w.-]+/g, "-").replace(/^-+|-+$/g, "");
 
-  const entries = [...block[1].matchAll(/"([\w-]+):(\d+)"/g)].map((m) => ({
+/** host and port, e.g. http://localhost:8002 → localhost-8002. */
+const urlSlug = (url: string): string => {
+  try {
+    const u = new URL(url);
+    return slug(u.port ? `${u.hostname}-${u.port}` : u.hostname);
+  } catch {
+    return slug(url);
+  }
+};
+
+/** What this run's backend is called, and so the top level of the artifact
+ *  layout: two runs against different backends sit side by side instead of the
+ *  second overwriting the first. scripts/probe.sh resolves the name from the
+ *  effective backend's /health and exports it; a bare `bunx playwright test` has
+ *  no such resolution, so the URL's host-port stands in and the captures still
+ *  land somewhere legible. With neither, each cell talks to whatever backend it
+ *  was built against, which is all this can honestly say. */
+export const backendKey = (): string => {
+  const named = process.env.PROBE_BACKEND_NAME?.trim();
+  if (named) return slug(named);
+  const url = process.env.PROBE_BACKEND?.trim();
+  return url ? urlSlug(url) : "cell-default";
+};
+
+/** Where one cell's captures belong: under the backend it was driven against,
+ *  or under its own name when it runs its own agent (see `ownAgent`). */
+export const captureKey = (frontend: Frontend): string =>
+  frontend.adapter.ownAgent ? frontend.name : backendKey();
+
+/** Whether a cell sits outside the backend grid, by name — what the gallery has
+ *  to work with when it reads a manifest. */
+export const outsideGrid = (name: string): boolean => ADAPTERS[name]?.ownAgent === true;
+
+const stacks = (): string => readFileSync(join(ROOT, "scripts", "stacks.sh"), "utf8");
+
+const entriesOf = (list: "FRONTENDS" | "BACKENDS"): Array<{ name: string; port: number }> => {
+  const block = stacks().match(new RegExp(`${list}=\\(([\\s\\S]*?)\\)`));
+  if (!block) throw new Error(`probes: no ${list}=(…) block in scripts/stacks.sh`);
+  return [...block[1].matchAll(/"([\w-]+):(\d+)"/g)].map((m) => ({
     name: m[1],
     port: Number(m[2]),
   }));
+};
+
+/** The matrix in scripts/stacks.sh order — the gallery's columns and rows, so
+ *  the layout doesn't depend on which run or worker finished first. */
+export const matrixOrder = (): { cells: string[]; backends: string[] } => ({
+  cells: entriesOf("FRONTENDS").map((e) => e.name),
+  backends: entriesOf("BACKENDS").map((e) => e.name),
+});
+
+/** Read the matrix from scripts/stacks.sh so this file never has to be updated
+ *  when a cell is added — only when a cell needs new selectors. */
+export const frontends = (): { supported: Frontend[]; unsupported: Unsupported[] } => {
+  const entries = entriesOf("FRONTENDS");
   const hosted = portOffset() ? hostedCells() : null;
 
   const supported: Frontend[] = [];

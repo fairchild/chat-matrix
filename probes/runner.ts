@@ -23,7 +23,9 @@ export class Runner {
     private readonly page: Page,
     private readonly frontend: Frontend,
     private readonly flow: Flow,
-    private readonly artifacts: string,
+    /** Where this run's captures go: artifacts/<backend>/<flow>, composed by
+     *  matrix.spec.ts so the layout is decided in one place rather than here. */
+    private readonly captureDir: string,
   ) {}
 
   private get a() {
@@ -182,9 +184,8 @@ export class Runner {
       }
 
       case "capture": {
-        const dir = join(this.artifacts, this.flow.flow);
-        mkdirSync(dir, { recursive: true });
-        const path = join(dir, `${step.label}--${this.frontend.name}.png`);
+        mkdirSync(this.captureDir, { recursive: true });
+        const path = join(this.captureDir, `${step.label}--${this.frontend.name}.png`);
         await page.screenshot({ path });
         this.shots.push({ label: step.label, path, step: source });
         return;

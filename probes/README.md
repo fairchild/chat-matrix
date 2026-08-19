@@ -14,8 +14,11 @@ gets interesting.
 ./scripts/probe.sh    # or: mise run probe
 ```
 
-Then open `probes/artifacts/index.html`. Screenshots, recordings and an HTML
-report all land under `artifacts/`, which is gitignored.
+Then open `probes/artifacts/index.html`. Screenshots and recordings land under
+`artifacts/<backend>/<flow>/`, manifests under `artifacts/manifest/`, and
+Playwright's own HTML report under `artifacts/report/` — all gitignored. The
+backend comes first in the path so a second run against a different backend sits
+beside the first; see "Adding a backend" below.
 
 `./scripts/probe.sh` passes its arguments straight through to Playwright, so
 `--grep analyze`, `--headed` and `--ui` all work.
@@ -84,8 +87,39 @@ else changes. The per-cell wiring differs (the three direct cells read the param
 in the browser; CopilotKit forwards the choice server-side as a header), and
 both mechanisms were exercised: the command above ran 8/8 green against
 `backends/cloudflare-agents/` on 2026-08-16, with the Worker's log showing six
-`/chat` and two `/ag-ui` requests. Screenshots overwrite the default set — the
-gallery shows whichever backend ran last, and says so nowhere yet.
+`/chat` and two `/ag-ui` requests.
+
+`probe.sh` resolves the effective backend once — `PROBE_BACKEND` if you set one,
+the preview's backend under an offset, else the first entry in `stacks.sh` — and
+exports it, so every run drives the cells with an explicit `?backend=` rather
+than letting each fall back to its build-time default. It then reads that
+backend's `/health` for the name it calls itself and exports it as
+`PROBE_BACKEND_NAME`, which is what the artifacts are keyed by:
+
+```
+artifacts/
+  cloudflare-agents/weather/tool-call--shadcn.png
+  cloudflare-agents/weather/video/shadcn.webm
+  pi/weather/tool-call--shadcn.png
+  manifest/cloudflare-agents--weather--shadcn.json
+  index.html
+```
+
+So runs accumulate instead of overwriting, and each moment in the gallery gets
+one band per backend, captioned with its name — which is what makes the page a
+cross-backend rendering diff rather than a picture of whichever run finished
+last. Running `bunx playwright test` directly skips that resolution and the key
+degrades in steps: with `PROBE_BACKEND` set it's a slug of the URL
+(`localhost-8002`), and with nothing set at all it's `cell-default`, since each
+cell is then talking to whatever backend it was built against and there is no
+honest name for that.
+
+`jinja` sits outside that grid. It runs its own agent in the process that serves
+the page and ignores `?backend=`, so it declares `ownAgent` in `frontends.ts`:
+its captures go under `jinja/`, its manifests read `"backend": "jinja"`, and the
+gallery shows it once per moment under a band that says it doesn't vary by
+backend. Filing those shots under the backend a run targeted would name a
+variable that never reached the page.
 
 ## Probing the hosted preview
 
@@ -112,8 +146,11 @@ skip row for jinja, no `:3005` in the run — 19 green, and the one red
 the collapsed group that held it; fixed by reordering (this commit).
 
 The scripted model makes the work identical across backends, so the gallery
-becomes a rendering diff: same flows, same moments, one variable changed. A
-`pi`-backed backend was in progress as of the same date.
+becomes a rendering diff: same flows, same moments, one variable changed.
+Verified 2026-08-18, now that the key holds the backend: 25/25 green against
+`cloudflare-agents` on `:8002`, then 25/25 against `pi` on `:8003`, and both
+sets of captures are in the same gallery — three bands per moment, since `jinja`
+comes along outside the grid.
 
 The assertion to watch is `resume`'s `expect the history to resume as the cell
 declares`. It reads `resumes` from each adapter in `frontends.ts` and holds the
