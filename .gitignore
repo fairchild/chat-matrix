@@ -25,3 +25,6 @@ data/
 
 # screenshots, recordings and reports from scripts/probe.sh
 probes/artifacts/
+
+# maildir-shared backend — in-flight dir lives in git-common-dir
+backlog/doing
