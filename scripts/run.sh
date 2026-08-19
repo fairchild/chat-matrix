@@ -50,6 +50,15 @@ for entry in "${FRONTENDS[@]}"; do
   fi
 done
 
+# Ergonomics notes, rendered fresh from the stack READMEs — index/notes/ is
+# gitignored, so this has to run before the hub can show them; a stack whose
+# README lost its heading fails this loudly rather than serving a stale page.
+printf '\033[1mgenerating ergonomics notes\033[0m\n'
+notes_args=()
+for entry in "${BACKENDS[@]}"; do notes_args+=(--backend "$(name_of "$entry")"); done
+for entry in "${FRONTENDS[@]}"; do notes_args+=(--frontend "$(name_of "$entry")"); done
+uv run --with markdown-it-py "$ROOT/index/generate_notes.py" --out "$ROOT/index/notes" "${notes_args[@]}"
+
 # The hub isn't a cell in the matrix, so it lives here rather than in stacks.sh.
 # Static, and scoped to index/ so the rest of the repo isn't served over HTTP.
 printf '\033[1mstarting index\033[0m\n'

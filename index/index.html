@@ -101,6 +101,14 @@
   th.b .err.bad { color: #b91c1c; }
   @media (prefers-color-scheme: dark) { th.b .err.bad { color: #f87171; } }
 
+  /* A header names a stack; this is where its README's Ergonomics notes are,
+     one click from the axis it labels rather than buried in a "More" list. */
+  .notes-link {
+    display: inline-block; margin: 5px 0 0 14px; font-size: 11px; color: var(--faint);
+    text-decoration: none; border-bottom: 1px solid transparent;
+  }
+  .notes-link:hover { color: var(--ink); border-color: var(--accent); }
+
   /* A square: a link when it runs, an inert mark when it doesn't. */
   td .sq {
     display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -128,9 +136,10 @@
   .readout .say { display: block; color: var(--dim); font-size: 12.5px; }
 
   /* The frontend that isn't in the matrix, and shouldn't be drawn as if it were. */
+  .outside-wrap { margin-top: 16px; }
   .outside {
     display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px;
-    margin-top: 16px; padding: 13px 15px; border: 1px dashed var(--line);
+    padding: 13px 15px; border: 1px dashed var(--line);
     border-radius: 9px; text-decoration: none; color: inherit;
   }
   .outside:hover { border-color: var(--dim); }
@@ -138,6 +147,7 @@
   .outside .why { padding: 0; margin: 0; color: var(--dim); font-size: 12.5px; }
   .outside .go { margin-left: auto; font-size: 12.5px; color: var(--dim); }
   .outside:hover .go { color: var(--ink); }
+  .outside-wrap .notes-link { display: block; margin: 6px 2px 0; }
 
   .probes { display: grid; gap: 8px; }
   .probe {
@@ -206,7 +216,10 @@
   </div>
   <p class="readout" id="readout"></p>
 
-  <a class="outside" id="outside" hidden></a>
+  <div class="outside-wrap" id="outsideWrap" hidden>
+    <a class="outside" id="outside"></a>
+    <a class="notes-link" id="outsideNotes">notes →</a>
+  </div>
 
   <h2>What to try</h2>
   <div class="probes" id="probes"></div>
@@ -320,9 +333,10 @@ BACKENDS.forEach((b, c) => {
   th.className = "b";
   th.scope = "col";
   th.dataset.c = c;
-  th.innerHTML = `<span class="hdr"><span class="dot"></span><span class="name"></span></span><span class="why"></span><select class="model" hidden></select><span class="err"></span>`;
+  th.innerHTML = `<span class="hdr"><span class="dot"></span><span class="name"></span></span><span class="why"></span><a class="notes-link">notes →</a><select class="model" hidden></select><span class="err"></span>`;
   th.querySelector(".name").textContent = b.name;
   th.querySelector(".why").textContent = b.why;
+  th.querySelector(".notes-link").href = `notes/${b.name}.html`;
   const modelSelect = th.querySelector("select.model");
   // Four comboboxes in a header row need names of their own; the column heading
   // is a backend, not a label for the control inside it.
@@ -337,9 +351,10 @@ FRONTENDS.forEach((f, r) => {
   th.className = "f";
   th.scope = "row";
   th.dataset.r = r;
-  th.innerHTML = `<span class="hdr"><span class="dot"></span><span class="name"></span></span><span class="why"></span>`;
+  th.innerHTML = `<span class="hdr"><span class="dot"></span><span class="name"></span></span><span class="why"></span><a class="notes-link">notes →</a>`;
   th.querySelector(".name").textContent = f.name;
   th.querySelector(".why").textContent = f.why;
+  th.querySelector(".notes-link").href = `notes/${f.id}.html`;
   tr.appendChild(th);
   BACKENDS.forEach((b, c) => {
     const td = document.createElement("td");
@@ -563,14 +578,16 @@ matrixEl.addEventListener("focusout", (e) => { if (!matrixEl.contains(e.relatedT
 
 // ---- the frontend outside the matrix --------------------------------------
 
+const outsideWrapEl = document.getElementById("outsideWrap");
 const outsideEl = document.getElementById("outside");
 outsideEl.innerHTML = `<span class="name"></span><span class="why"></span><span class="go"></span>`;
 outsideEl.querySelector(".name").textContent = OUTSIDE.name;
 outsideEl.querySelector(".why").textContent = OUTSIDE.why;
+document.getElementById("outsideNotes").href = `notes/${OUTSIDE.id}.html`;
 
 function renderOutside() {
   const ok = up[OUTSIDE.id] === true;
-  outsideEl.hidden = Boolean(HOSTED) && !HOSTED.cells?.[OUTSIDE.id];
+  outsideWrapEl.hidden = Boolean(HOSTED) && !HOSTED.cells?.[OUTSIDE.id];
   outsideEl.href = ok ? frontendUrl(OUTSIDE) : "";
   outsideEl.querySelector(".go").textContent = ok
     ? `${new URL(frontendUrl(OUTSIDE)).host} — open →`
@@ -614,6 +631,11 @@ const PAGES = [
     href: "monolith.html",
     name: "the monolith",
     why: "The one cell outside the grid: the reference agent in-process, every byte of HTML rendered on the server and streamed as DOM patches. How it works, what it showed, how it was built, and a recording.",
+  },
+  {
+    href: "notes/index.html",
+    name: "ergonomics notes",
+    why: "What building each stack actually cost, straight from its README — generated fresh from the source, grouped by axis so all nine read side by side. Also linked from each header in the grid above.",
   },
 ];
 

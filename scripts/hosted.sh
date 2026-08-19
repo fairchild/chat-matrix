@@ -62,6 +62,28 @@ marker = "const HOSTED = null;"
 assert marker in html, "index.html has no HOSTED marker"
 open(dst, "w").write(html.replace(marker, f"const HOSTED = {os.environ['HOSTED']};"))
 PY
+
+  # index.html is the only file build_index used to touch — every other page
+  # that lives beside it (golden.html, monolith.html, …) and the gif each one
+  # embeds also has to reach dist/, or the published hub 404s on its own links.
+  # Gifs are symlinks in the worktree; dereference them, since a Worker's
+  # static assets need real files.
+  local f
+  for f in "$ROOT"/index/*.html; do
+    [ "$(basename "$f")" = index.html ] && continue
+    cp "$f" "$ROOT/index/dist/"
+  done
+  for f in "$ROOT"/index/*.gif; do
+    [ -e "$f" ] && cp -L "$f" "$ROOT/index/dist/"
+  done
+
+  # Ergonomics notes, same generator as the local run — see run.sh. Every
+  # stack in the matrix gets a page, not just the hosted subset: the notes are
+  # about the stack, not about whether Cloudflare can run it.
+  local notes_args=() entry
+  for entry in "${BACKENDS[@]}"; do notes_args+=(--backend "$(name_of "$entry")"); done
+  for entry in "${FRONTENDS[@]}"; do notes_args+=(--frontend "$(name_of "$entry")"); done
+  uv run --with markdown-it-py "$ROOT/index/generate_notes.py" --out "$ROOT/index/dist/notes" "${notes_args[@]}"
 }
 
 build_all() { # build_all <mode>
