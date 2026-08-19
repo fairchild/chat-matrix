@@ -18,6 +18,9 @@ out/
 worker-configuration.d.ts
 index/dist/
 
+# generated from the stack READMEs' Ergonomics notes; the README is the source
+index/notes/
+
 # local config and data
 .env.local
 data/
