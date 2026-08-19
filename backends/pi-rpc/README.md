@@ -22,6 +22,7 @@ bun run dev            # :8004 — or PORT=… bun run src/main.ts
 |---|---|---|
 | `DEMO_MODEL` | `scripted` | boot default: a shared id, `auto`, or pi's `provider/model[:thinking]` (`anthropic/claude-opus-4-5:high`) |
 | `DEMO_SESSIONS` | `data/sessions` | where the pi children write their session files |
+| `DEMO_HOST` | `127.0.0.1` | what to bind. `POST /model` can reach a `pi auth login` session, so it stays off the network unless you say otherwise |
 | `DEMO_IDLE_SECONDS` | `60` | how long an idle child stays warm before it is shut down |
 | `DEMO_MAX_CHILDREN` | `4` | resident children before the oldest idle one is evicted (each idles at ~200 MB) |
 

@@ -17,20 +17,20 @@ export const BACKEND_NAME = "pi-rpc";
 /** Credentials only — the child resolves and streams; this runtime just answers "can it?". */
 const runtime = await authRuntime();
 
-export const MODEL_SPEC = initial(runtime, process.env.DEMO_MODEL ?? SCRIPTED);
 /** The boot default. The running model is `current` — the hub can change it. */
+export const MODEL_SPEC = initial(runtime, process.env.DEMO_MODEL ?? SCRIPTED);
 
 const PORT = Number(process.env.PORT ?? 8004);
 const store = new ThreadStore(process.env.DEMO_SESSIONS ?? "data/sessions");
+/** `scripted` is the extension's provider; anything else is pi's `provider/model[:thinking]`. */
+const bootSpec = spec(runtime, MODEL_SPEC);
+
 const pool = new Pool({
-  model: spec(runtime, MODEL_SPEC),
+  model: bootSpec,
   sessionDir: store.dir,
   idleMs: Number(process.env.DEMO_IDLE_SECONDS ?? 60) * 1000,
   max: Number(process.env.DEMO_MAX_CHILDREN ?? 4),
 });
-
-/** `scripted` is the extension's provider; anything else is pi's `provider/model[:thinking]`. */
-const model = spec(runtime, MODEL_SPEC);
 
 let current = MODEL_SPEC;
 
@@ -40,7 +40,7 @@ let current = MODEL_SPEC;
  * process can be told.
  */
 function useModel(id: string): void {
-  const reason = unavailable(runtime, id);
+  const reason = unavailable(runtime, MODEL_SPEC, id);
   if (reason) throw new Error(reason);
   pool.setModel(spec(runtime, id));
   current = id;
@@ -48,7 +48,7 @@ function useModel(id: string): void {
 
 /** Fail at boot, not on the first message: ask a throwaway child what `--model` resolved to. */
 async function checkModel() {
-  const child = new PiChild("_probe", [...childArgs({ model, sessionDir: store.dir, sessionId: "probe" }), "--no-session"]);
+  const child = new PiChild("_probe", [...childArgs({ model: bootSpec, sessionDir: store.dir, sessionId: "probe" }), "--no-session"]);
   try {
     const state = await child.request({ type: "get_state" });
     const resolved = (state as { data?: { model?: { provider: string; id: string } } }).data?.model;
@@ -109,7 +109,7 @@ async function handle(request: Request): Promise<Response> {
 
   /** Every model this backend knows about, available or not, each with its reason. */
   if (request.method === "GET" && path === "/models") {
-    return json({ current, models: catalogue(runtime, current) });
+    return json({ current, models: catalogue(runtime, MODEL_SPEC) });
   }
 
   /** Switch the running model. Process-wide on purpose: the model is the control variable. */
@@ -168,6 +168,10 @@ async function handle(request: Request): Promise<Response> {
 
 Bun.serve({
   port: PORT,
+  // Loopback by default — see backends/pi/src/main.ts for why: `POST /model`
+  // can reach a credential stored by `pi auth login`, so an open port would
+  // hand that session to the network.
+  hostname: process.env.DEMO_HOST ?? "127.0.0.1",
   idleTimeout: 120,
   fetch: (request) =>
     handle(request).catch((error) =>

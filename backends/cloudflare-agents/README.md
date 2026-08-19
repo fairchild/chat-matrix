@@ -18,7 +18,7 @@ bun run deploy         # publish the Worker
 
 | Env / var | Default | |
 |---|---|---|
-| `DEMO_MODEL` | `scripted` | boot default: `scripted`, `openai/gpt-5.6-luna`, or `auto` |
+| `DEMO_MODEL` | `scripted` | boot default: `scripted`, `openai/gpt-5.6-luna`, or `auto` — a **binding** too, so it goes in `wrangler.jsonc` or `.dev.vars`; exporting it in your shell does nothing |
 | `OPENAI_API_KEY` | — | a **binding**, not an environment variable — see below |
 
 `GET /models` and `POST /model {"id": …}` are the hub's dropdown, and this

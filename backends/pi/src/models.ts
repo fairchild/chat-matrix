@@ -17,8 +17,8 @@ import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 
 import { SCRIPTED } from "./scripted.ts";
 
-export const AUTO = "auto";
 /** `DEMO_MODEL=auto` takes the first candidate whose credentials are present. */
+export const AUTO = "auto";
 
 export type Candidate = {
   id: string;
@@ -75,7 +75,7 @@ export function servedBy(runtime: ModelRuntime, candidate: Candidate): string | 
   );
 }
 
-export function catalogue(runtime: ModelRuntime, current: string): Entry[] {
+export function catalogue(runtime: ModelRuntime, boot: string): Entry[] {
   const entries: Entry[] = [
     { id: SCRIPTED, label: "scripted", available: true, via: "built in", why: null },
   ];
@@ -89,14 +89,17 @@ export function catalogue(runtime: ModelRuntime, current: string): Entry[] {
       why: provider ? null : `no credentials for ${candidate.providers.join(" or ")}`,
     });
   }
-  if (current !== SCRIPTED && !BY_ID.has(current))
-    entries.push({ id: current, label: `${current} · from DEMO_MODEL`, available: true, via: "DEMO_MODEL", why: null });
+  // Listed whatever is current: `DEMO_MODEL` takes native spellings the closed
+  // set does not, and showing the row only while it happened to be running made
+  // leaving it a one-way door — one switch to `scripted` and back meant a restart.
+  if (boot !== SCRIPTED && !BY_ID.has(boot))
+    entries.push({ id: boot, label: `${boot} · from DEMO_MODEL`, available: true, via: "DEMO_MODEL", why: null });
   return entries;
 }
 
 /** Why this id can't be selected, or undefined if it can. The picker is a closed set; `DEMO_MODEL` isn't. */
-export function unavailable(runtime: ModelRuntime, id: string): string | undefined {
-  if (id === SCRIPTED) return undefined;
+export function unavailable(runtime: ModelRuntime, boot: string, id: string): string | undefined {
+  if (id === SCRIPTED || id === boot) return undefined;
   const candidate = BY_ID.get(id);
   if (!candidate) return `unknown model ${JSON.stringify(id)} — GET /models lists what this backend offers`;
   if (!servedBy(runtime, candidate))

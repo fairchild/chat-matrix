@@ -155,8 +155,8 @@ export const TOOL_NAMES = TOOLS.map((tool) => tool.name);
 const modelRuntime = await ModelRuntime.create();
 modelRuntime.registerNativeProvider(scriptedProvider());
 
-export const MODEL_SPEC = initial(modelRuntime, process.env.DEMO_MODEL ?? SCRIPTED);
 /** The boot default. The running model is `currentModel()` — the hub can change it. */
+export const MODEL_SPEC = initial(modelRuntime, process.env.DEMO_MODEL ?? SCRIPTED);
 
 /** `scripted` is registered above; anything else is pi's `provider/model[:thinking]`. */
 export function resolveModel(id: string): { model: Model<string>; thinkingLevel: ThinkingLevel } {
@@ -191,14 +191,14 @@ let current = MODEL_SPEC;
 
 export const currentModel = (): string => current;
 
-export const models = (): Entry[] => modelCatalogue(modelRuntime, current);
+export const models = (): Entry[] => modelCatalogue(modelRuntime, MODEL_SPEC);
 
 /**
  * Swap the running model. Sessions read it when they open, so the next turn
  * picks it up; a turn already streaming finishes on the model it started with.
  */
 export function useModel(id: string): void {
-  const reason = unavailable(modelRuntime, id);
+  const reason = unavailable(modelRuntime, MODEL_SPEC, id);
   if (reason) throw new Error(reason);
   ({ model, thinkingLevel } = resolveModel(id));
   current = id;

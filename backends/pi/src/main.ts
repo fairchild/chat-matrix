@@ -114,6 +114,12 @@ async function handle(request: Request): Promise<Response> {
 
 Bun.serve({
   port: PORT,
+  // Loopback by default. `Bun.serve` binds 0.0.0.0 unless told otherwise, and
+  // since `POST /model` can now reach a credential `pi auth login` stored — one
+  // no env var ever exposed — an open port would hand that session to anyone on
+  // the network. uvicorn and the index already default to localhost; this makes
+  // the pi cells agree, and a LAN demo an explicit DEMO_HOST=0.0.0.0.
+  hostname: process.env.DEMO_HOST ?? "127.0.0.1",
   idleTimeout: 120,
   fetch: (request) =>
     handle(request).catch((error) =>

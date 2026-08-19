@@ -20,6 +20,7 @@ bun run dev            # :8003 — or PORT=… bun run src/main.ts
 |---|---|---|
 | `DEMO_MODEL` | `scripted` | boot default: a shared id, `auto`, or pi's `provider/model[:thinking]` (`anthropic/claude-opus-4-5:high`) |
 | `DEMO_SESSIONS` | `data/sessions` | where the pi session files go |
+| `DEMO_HOST` | `127.0.0.1` | what to bind. `POST /model` can reach a `pi auth login` session, so it stays off the network unless you say otherwise |
 
 A real `DEMO_MODEL` resolves through pi's own model catalogue and credentials —
 the same `~/.pi/agent/auth.json` the `pi` CLI uses — so a provider you have

@@ -30,11 +30,12 @@ change.
 ./scripts/run.sh       # or: mise run run
 ```
 
-Then open **http://localhost:3000** — the hub lists the backends as a radio
-group and the cells as cards; pick a backend, then click into a cell and it
-opens against that backend.
-Stop with `./scripts/stop.sh`; logs are in
-`.run/`.
+Then open **http://localhost:3000** — the hub is the matrix itself: backends
+across, frontends down, and every live square a link into that pairing. Each
+backend's column carries its own model picker.
+Stop with `./scripts/stop.sh`; logs are in `.run/`, and `DEMO_LOG_LEVEL=info
+./scripts/run.sh` makes the Python backends print a line per request, which is
+what you want when you're watching a turn happen rather than leaving it up.
 
 No API keys required. The default model is a deterministic scripted one — see
 below.
@@ -170,7 +171,8 @@ entries it can't serve are shown greyed with the reason rather than hidden —
 "no key" and "not wired here" are different problems.
 
 Credentials are read wherever that stack normally reads them: `OPENAI_API_KEY`,
-`ANTHROPIC_API_KEY` and `GOOGLE_API_KEY` from the environment — `mise env`
+`ANTHROPIC_API_KEY` and `GOOGLE_API_KEY` (or `GEMINI_API_KEY`) from the
+environment — `mise env`
 territory — plus `pi auth login` for the pi backends, which is why those two
 often reach a provider with no variable set at all. The Cloudflare cell is the
 exception: a Worker has no ambient environment, so its key is a binding read
@@ -183,10 +185,20 @@ at boot instead, `DEMO_MODEL` still works, in either a shared id or the
 backend's own spelling, and `auto` takes the first provider you have configured:
 
 ```sh
-DEMO_MODEL=openai/gpt-5.6-luna ./scripts/run.sh   # a shared id, understood everywhere
+DEMO_MODEL=openai/gpt-5.6-luna ./scripts/run.sh   # a shared id, understood by every backend
 DEMO_MODEL=auto ./scripts/run.sh                  # OpenAI, else Anthropic, else Google
-DEMO_MODEL=anthropic:claude-opus-5 ./scripts/run.sh   # pydantic-ai's own spelling still works
+
+# Native spellings are per-backend, so they go to one backend, not to run.sh:
+cd backends/pydantic-ai && DEMO_MODEL=anthropic:claude-opus-5 uv run uvicorn app.main:app --port 8001
 ```
+
+Two caveats on `DEMO_MODEL` that the picker doesn't have. A native spelling is
+only native to one backend — `anthropic:claude-opus-5` is pydantic-ai's, and pi
+exits at boot rather than guess, so putting it in front of `run.sh` takes that
+cell down. And the Cloudflare cell can't see it at all: a Worker reads bindings,
+not the shell, so its boot default lives in `wrangler.jsonc` or `.dev.vars` and
+a `DEMO_MODEL=…` in front of `run.sh` leaves it on `scripted`. The hub's picker
+has neither problem, which is most of why it exists.
 
 `./scripts/golden.sh` refuses to run against anything but `scripted`, and
 `probe.sh` and `conformance.sh` warn — both compare across cells, which only
@@ -246,6 +258,19 @@ A recorded run against the live matrix:
 
 ## Known gaps
 
+- **A reasoning model breaks the second turn on pydantic-ai, and the scripted
+  default hides it.** Picking `openai/gpt-5.6-luna` and asking a follow-up used
+  to return a 500. `gpt-5.6` reasons by default, so turn one streams reasoning
+  parts; assistant-ui is client-authoritative and sends them back on turn two;
+  and pydantic-ai 2.31's inbound `ReasoningUIPart` has no `id` field while every
+  UI part sets `extra='forbid'`, so the one echoed `id` fails the whole request.
+  The AI SDK's own `ReasoningUIPart` declares `id?: string`, so the client is
+  right and the gap is pydantic-ai's — its `DataUIPart` already accepts one.
+  `backends/pydantic-ai/app/main.py` strips the field on the way in; delete that
+  shim when the field lands upstream. Worth knowing for what it says about the
+  harness rather than the bug: this was unreachable until the model became a
+  runtime choice, and it only appears on turn *two*, so neither the scripted
+  default nor a single-shot probe would ever have found it.
 - **A leaked `NODE_ENV=development` breaks production builds**, and this list
   blamed Next 16 for it until someone ran the second control. With that variable
   set in the shell, `next build` dies during prerender with a null React

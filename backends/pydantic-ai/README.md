@@ -12,7 +12,7 @@ uv run uvicorn app.main:app --port 8001
 |---|---|---|
 | `DEMO_MODEL` | `scripted` | boot default: a shared id, `auto`, or any pydantic-ai model string (`anthropic:claude-opus-5`) |
 | `DEMO_DB` | `data/threads.db` | SQLite thread store |
-| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_API_KEY` | — | make the matching model selectable |
+| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_API_KEY` (or `GEMINI_API_KEY`) | — | make the matching model selectable |
 
 `GET /models` lists what this backend can reach and `POST /model {"id": …}`
 switches it while it runs — the hub's dropdown is those two. Credentials come
@@ -63,6 +63,17 @@ layer.
 **Line count.** ~500 lines total, and roughly 250 of those are the scripted model
 and the SQLite store — neither of which is pydantic-ai's fault or credit. The
 actual agent-and-serving glue is about 230 lines, most of it tool definitions.
+
+**The inbound UI-part models are strict, and one missing field is fatal.**
+`CamelBaseModel` sets `extra='forbid'`, so a client that sends a field the
+request model doesn't declare fails the whole request rather than that part.
+That met a real gap: the AI SDK's `ReasoningUIPart` has an optional `id`,
+pydantic-ai 2.31's doesn't (though its `DataUIPart` does), and assistant-ui
+sends it — so every second turn under a reasoning model 500s. Overriding
+`build_run_input` in a `VercelAIAdapter` subclass was the clean seam: it's what
+`dispatch_request` calls, so one classmethod covers both entry points. The
+strictness is defensible on the way out and expensive on the way in, where the
+sender's version is not yours to choose.
 
 **Papercut:** `ThreadSummary` is a `slots=True` dataclass, so `vars()` raises and
 FastAPI can't serialise it. `dataclasses.asdict` is the fix. Cost a 500 that was

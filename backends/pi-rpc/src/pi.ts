@@ -218,6 +218,11 @@ export class Pool {
   release(child: PiChild) {
     child.busy = false;
     child.lastUsed = Date.now();
+    // The same guard `forget` uses. A thread deleted mid-turn is evicted while
+    // busy, and a new request on the same id can be given a fresh child before
+    // the old one's process is reaped — at which point the old one's release
+    // would be arming an idle timer against its replacement.
+    if (this.children.get(child.threadId) !== child) return;
     if (this.spawnedWith.get(child.threadId) !== this.model) return this.evict(child.threadId);
     clearTimeout(this.timers.get(child.threadId));
     this.timers.set(

@@ -70,7 +70,7 @@
   }
   th.corner {
     background: linear-gradient(to top right, transparent calc(50% - 0.5px), var(--line) 50%, transparent calc(50% + 0.5px));
-    width: 27%; height: 62px; position: relative; font-weight: 400;
+    width: 22%; height: 62px; position: relative; font-weight: 400;
   }
   th.corner span {
     position: absolute; font-size: 10.5px; letter-spacing: 0.06em;
@@ -80,7 +80,7 @@
   th.corner .f { bottom: 8px; left: 10px; }
 
   thead th.b { padding: 10px 12px; text-align: left; }
-  tbody th.f { padding: 12px 12px; text-align: left; width: 27%; }
+  tbody th.f { padding: 12px 12px; text-align: left; width: 22%; }
   .hdr { display: flex; align-items: center; gap: 7px; }
   .hdr .name { font-weight: 600; font-size: 13.5px; letter-spacing: -0.01em; }
   .why { display: block; margin-top: 2px; padding-left: 14px;
@@ -91,7 +91,7 @@
      keep the closed control legible; the rest carry their reason. */
   th.b .model {
     display: block; margin: 7px 0 0 14px; max-width: calc(100% - 14px);
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px;
     color: var(--ink); background: var(--chip); border: 1px solid var(--line);
     border-radius: 5px; padding: 2px 4px; cursor: pointer;
   }
@@ -431,13 +431,20 @@ async function refreshModels(b, c) {
     option.value = m.id;
     // The reason belongs on entries you can't pick. The running one is what the
     // closed control displays, so appending a sentence there just clips it.
-    option.textContent = m.available || m.id === data.current ? m.label : `${m.label} — ${m.why}`;
+    // The provider prefix goes too: a column is a quarter of the table wide, and
+    // `gpt-`/`claude-`/`gemini-` already say who serves them.
+    const label = m.label.replace(/^[^·]+ · /, "");
+    option.textContent = m.available || m.id === data.current ? label : `${label} — ${m.why}`;
     if (m.why) option.title = m.why;
     option.disabled = !m.available && m.id !== data.current;
     option.selected = m.id === data.current;
     return option;
   }));
-  modelVia[b.name] = data.models.find((m) => m.id === data.current)?.via ?? "";
+  // A closed <select> is only as wide as its column, and a real model's name is
+  // longer than a scripted one's — so the name it clips stays readable on hover.
+  const running = data.models.find((m) => m.id === data.current);
+  select.title = running ? `${running.label}${running.via ? ` — via ${running.via}` : ""}` : "";
+  modelVia[b.name] = running?.via ?? "";
   th.querySelector(".err").textContent = "";
 }
 

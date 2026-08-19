@@ -47,10 +47,23 @@ Every candidate appears in `/models` whether or not it's available, with the
 reason attached:
 
 ```json
-{"id": "openai/gpt-5.6-luna",  "available": true,  "via": "OPENAI_API_KEY", "why": null}
-{"id": "anthropic/claude-opus-5", "available": true, "via": "anthropic login (pi auth)", "why": null}
-{"id": "google/gemini-3.1-pro-preview", "available": false, "via": null, "why": "no credentials for google"}
+{
+  "current": "scripted",
+  "models": [
+    {"id": "scripted", "label": "scripted", "available": true, "via": "built in", "why": null},
+    {"id": "openai/gpt-5.6-luna", "label": "OpenAI · gpt-5.6-luna",
+     "available": true, "via": "OPENAI_API_KEY", "why": null},
+    {"id": "anthropic/claude-opus-5", "label": "Anthropic · claude-opus-5",
+     "available": true, "via": "anthropic login (pi auth)", "why": null},
+    {"id": "google/gemini-3.1-pro-preview", "label": "Google · gemini-3.1-pro-preview",
+     "available": false, "via": null, "why": "no credentials for google"}
+  ]
+}
 ```
+
+`current` is the same string `/health` reports as `model`. A `POST /model` the
+backend won't take answers `400 {"detail": "<reason>"}` — the same key the other
+routes use for a problem.
 
 Listing the unavailable ones is the point of the shape. A picker that omits what
 it can't reach makes "no key", "not wired for this backend", and "this backend

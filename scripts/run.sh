@@ -5,6 +5,10 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/stacks.sh"
 
 INDEX_PORT="${INDEX_PORT:-3000}"
 
+# uvicorn says nothing per request at `warning`, which is right for a matrix you
+# leave running and wrong the moment you want to watch a turn happen.
+LOG_LEVEL="${DEMO_LOG_LEVEL:-warning}"
+
 mkdir -p "$RUN_DIR"
 
 start() { # start <kind> <name> <port> <dir> <cmd...>
@@ -31,7 +35,7 @@ for entry in "${BACKENDS[@]}"; do
     start backend "$name" "$port" "$ROOT/backends/$name" bun run dev
   else
     start backend "$name" "$port" "$ROOT/backends/$name" \
-      uv run uvicorn app.main:app --port "$port" --log-level warning
+      uv run uvicorn app.main:app --port "$port" --log-level "$LOG_LEVEL"
   fi
 done
 
@@ -40,7 +44,7 @@ for entry in "${FRONTENDS[@]}"; do
   name="$(name_of "$entry")"; port="$(port_of "$entry")"
   if [ -f "$ROOT/frontends/$name/pyproject.toml" ]; then
     start frontend "$name" "$port" "$ROOT/frontends/$name" \
-      uv run uvicorn app.main:app --port "$port" --log-level warning
+      uv run uvicorn app.main:app --port "$port" --log-level "$LOG_LEVEL"
   else
     start frontend "$name" "$port" "$ROOT/frontends/$name" bun run dev
   fi

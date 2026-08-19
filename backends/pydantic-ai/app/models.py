@@ -71,7 +71,7 @@ def entry(id: str, label: str, available: bool, via: str | None, why: str | None
     return {"id": id, "label": label, "available": available, "via": via, "why": why}
 
 
-def catalogue(current: str) -> list[dict[str, Any]]:
+def catalogue() -> list[dict[str, Any]]:
     """Every candidate, available or not, plus whatever `DEMO_MODEL` set if it's off-list."""
     entries = [entry(SCRIPTED, "scripted", True, "built in", None)]
     for candidate in CANDIDATES:
@@ -79,8 +79,8 @@ def catalogue(current: str) -> list[dict[str, Any]]:
         entries.append(
             entry(candidate.id, candidate.label, via is not None, via, None if via else candidate.missing)
         )
-    if current != SCRIPTED and current not in BY_ID:
-        entries.append(entry(current, f"{current} · from DEMO_MODEL", True, "DEMO_MODEL", None))
+    if BOOT != SCRIPTED and BOOT not in BY_ID:
+        entries.append(entry(BOOT, f"{BOOT} · from DEMO_MODEL", True, "DEMO_MODEL", None))
     return entries
 
 
@@ -94,7 +94,7 @@ def build(model_id: str) -> Model:
 
 def unavailable(model_id: str) -> str | None:
     """Why this id can't be selected, or None if it can. The picker is a closed set; `DEMO_MODEL` isn't."""
-    if model_id == SCRIPTED:
+    if model_id in (SCRIPTED, BOOT):
         return None
     candidate = BY_ID.get(model_id)
     if candidate is None:
@@ -109,3 +109,11 @@ def initial(spec: str) -> str:
     if spec != AUTO:
         return spec
     return next((candidate.id for candidate in CANDIDATES if candidate.credential()), SCRIPTED)
+
+
+BOOT = initial(os.getenv("DEMO_MODEL", SCRIPTED))
+"""What the backend started on, and a permanent row in the catalogue.
+
+`DEMO_MODEL` takes native spellings the picker's closed set doesn't, so listing
+that row only while it happens to be current made leaving it a one-way door —
+switch to `scripted` once and the only way back was a restart."""
