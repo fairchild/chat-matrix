@@ -286,10 +286,10 @@ A recorded run against the live matrix:
   four reads them: reload starts a fresh thread, and no thread list is rendered
   anywhere. [FastAPI + Jinja](frontends/jinja/README.md) is the exception — it
   rehydrates from the store on `GET /t/{id}` and renders a thread list — because
-  the history is already in its process. The `resume` flow in `probes/` was
-  written to pin the old behaviour and fail loudly the day a frontend
-  rehydrated, so it now fails for that cell by design; read the red as the
-  feature landing. (An earlier draft of this line claimed reload resumed the
+  the history is already in its process. The `resume` flow in `probes/` reads
+  each cell's `resumes` declaration from `probes/frontends.ts` and asserts it
+  both ways, so jinja is green for putting the thread back and a React cell
+  that starts rehydrating goes red until someone declares it. (An earlier draft of this line claimed reload resumed the
   current thread — driving it is what showed otherwise.)
 - **Human-in-the-loop approval isn't wired.** pydantic-ai supports deferred tool
   approval, and it's the sharpest test of the generative-UI axis, but it's not

@@ -288,14 +288,16 @@ and CSS and no evidence at all about anything the client touches.
 
 ## Probes
 
-Four flows are green. `resume` fails, and the failure is the feature landing:
-the flow asserts `expect 0 user messages` after a reload, written when nothing
-rehydrated and meant to fail loudly the day something did. Read the red as the
-thing working. One side effect is worth knowing — the assertion fails before
-`capture after-reload`, so this is the only cell with a `before-reload` capture
-and no `after-reload` one, which means the screenshot that would show the thread
-surviving is precisely the one the failure prevents. The `/t/{id}` page and the
-`follow-up` flow show it instead.
+All five flows are green. `resume` was the exception for a while: the flow
+asserted `expect 0 user messages` after a reload, written when nothing
+rehydrated and meant to fail loudly the day something did, and this cell was
+that day. It now asks each cell to match its own declaration — this adapter
+says `resumes: true` in `probes/frontends.ts`, and `expect the history to
+resume as the cell declares` holds it to that in both directions: a declaring
+cell must put the thread back, a silent one must come back empty. The
+`after-reload` capture exists as a result, so the gallery's `resume` row shows
+the thread surviving here and an empty transcript everywhere else; the `/t/{id}`
+page and the `follow-up` flow show the same thing from other angles.
 
 Two framing notes for anyone reading the gallery. `capture` is a viewport
 screenshot of an autoscrolled transcript, so on long transcripts it frames the

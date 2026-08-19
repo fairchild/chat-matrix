@@ -40,12 +40,12 @@ cells against the preview, exit 0:
 ```
 
 The skip is the design: `jinja` is a Python process, not a static export, so it
-is outside `HOSTED_CELLS` and there is nothing at `:4005` to photograph. One
-thing to know when reading the gallery afterwards: artifacts are keyed by the
-backend's `/health` name, and the preview's backend *is* `cloudflare-agents`, so
-this run overwrote the local matrix's `cloudflare-agents` captures. The `pi` band
-is untouched. Nothing in the gallery says whether a band came from `:3001` or
-`:4001`.
+is outside `HOSTED_CELLS` and there is nothing at `:4005` to photograph. This
+run predates `528aa3a`: it was keyed by the backend's `/health` name alone, so
+it overwrote the local matrix's `cloudflare-agents` captures. A preview run now
+lands under `cloudflare-agents-preview` with `preview: true` in its manifest and
+a captioned band in the gallery, so the two builds sit side by side and the
+gallery says which is which.
 
 ## Caveat 1 — hosted CopilotKit ignores `?backend=`
 
@@ -57,11 +57,15 @@ reads it per request, so locally the picker works. In production the fallback is
 a public `https:` URL, and the choice is silently dropped. The preview can't show
 this — its backend is `http://localhost:8002`, which passes.
 
-Given the hosted subset ships exactly one backend, the behaviour is right and the
-UI is the lie. Recommendation: accept it, and stop offering the choice where it
-does nothing — in `index/index.html`, when `HOSTED` is set, render the backend
-radio group as a single fixed label. Alternative if the picker should stay real:
-allow the header when its origin is in an allowlist built from `HOSTED`.
+Given the hosted subset ships exactly one backend, the behaviour is right, and
+the hub already agrees with it: under `HOSTED` a non-hosted backend is never
+probed and its square renders as an inert `local` span with no link
+(`localOnly` and the square renderer in `index/index.html`), so nothing the hub
+offers is silently dropped. What remains is a hand-edited `?backend=` on the
+hosted CopilotKit page, which `safeBackend` ignores without saying so.
+Recommendation: accept it — the root README already states it. Alternative if
+the choice should be real in production: allow the header when its origin is in
+an allowlist built from `HOSTED`.
 
 ## Caveat 2 — `/threads` is public and unscoped
 
@@ -91,6 +95,10 @@ running preview all four are 404 while `/` is 200. Either copy them in
 `build_index` (dereference the two gif symlinks; 4.0 MB largest) or gate the
 `PAGES` list on `HOSTED`. Second-order: `index/monolith.html:337,345` points at
 `http://localhost:3005` and `index/golden.html:179` mentions `localhost:8002`.
+As of the evening of 2026-08-18 the copy is being taken inside the
+ergonomics-notes task (`backlog/doing/surface-ergonomics-notes-plan.md`), whose
+`build_index` change also generates the notes pages — re-run the gate once that
+lands, since it changes what `index/dist/` holds.
 
 ## The command, and after
 

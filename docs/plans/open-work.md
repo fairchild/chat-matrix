@@ -28,11 +28,20 @@ Every claim below was re-checked against the running tree on 2026-08-17, not
 recalled — where a line number appears, that's where it was. Items are ordered
 by how ready they are, not by how much they matter.
 
+Items 1–7 were run by the fable session described in
+[`open-work.handoff.md`](open-work.handoff.md); each carries its outcome under its
+heading. Items 8 onward were added by other sessions as they found things.
+
 ---
 
 ## 1. `assistant-ui · notes` asserts the tool name before expanding
 
 **Bug · one line · ready to fix**
+
+**Fixed 2026-08-17 (`c00aebe`).** `expand the tool call` now precedes the
+mention assertion in the `notes` flow, and the four `@assistant-ui/*` `latest`
+specifiers are pinned to what was installed (`^0.15.14`, `^1.4.5`, `^0.14.10`,
+`^0.0.15`; `bun install` changed nothing on disk). `--grep notes` 5/5 green.
 
 `probes/flows.yaml:43` asserts `expect the reply to mention "search_notes"`, and
 `:44` then says `expand the tool call`. assistant-ui renders the collapsed group
@@ -62,6 +71,10 @@ asserts against it in the wrong order.
 
 **Bug · one line · ready to fix**
 
+**Fixed 2026-08-17 (`d9471e3`).** Demonstrated on a red run (`jinja · resume`,
+before item 3 landed): the gallery line printed, `index.html` was rebuilt, and
+the exit status was still 1.
+
 `scripts/probe.sh:5` is `set -euo pipefail`; `:57` runs `bunx playwright test`;
 `:58` captures `status=$?` and `:62` builds the gallery with the comment "build
 it even when a flow failed — a broken cell is exactly the thing you want to look
@@ -77,6 +90,16 @@ the stated behaviour.
 ## 3. `resume` needs a per-adapter capability, not a global assumption
 
 **Design · small**
+
+**Done 2026-08-17 (`ce21295`) — the capability, made honest by asserting both
+directions.** `resumes?: true` on the adapter (jinja declares it), the runner
+records the user-message count at `reload the page`, and a new sentence —
+`expect the history to resume as the cell declares` — holds a declaring cell to
+showing the thread again and a silent one to coming back empty, so the flag
+can't absorb a regression and a React cell that starts rehydrating goes red
+until someone declares it. Verified 5/5 green; with the flags swapped, jinja and
+shadcn both went red with messages naming the declaration. "Currently nothing
+rehydrates" is gone from `flows.yaml`.
 
 `probes/flows.yaml:80` asserts `expect 0 user messages` after a reload, and the
 `about` at `:85` explains why: "Currently nothing rehydrates". The jinja cell
@@ -101,6 +124,14 @@ makes "all green" impossible. Pick deliberately.
 
 **Design · small**
 
+**Done 2026-08-17/18 (`10105b8`, `528aa3a`).** The key is the backend's
+`/health` name, resolved in `probe.sh` (which now always exports
+`PROBE_BACKEND`, matching the hub); layout `artifacts/<backend>/<flow>/…`,
+`manifest/<backend>--<flow>--<frontend>.json`. jinja files under its own name
+(`ownAgent`) and the gallery shows it once, outside the grid; a preview run
+lands under `<backend>-preview`. Two full runs (`:8002`, `:8003`) 25/25 each,
+both bands in the gallery.
+
 `probes/matrix.spec.ts` writes captures to `artifacts/<flow>/…` and manifest
 entries to `artifacts/manifest/<flow>--<frontend>.json`. Neither key includes
 the backend. `PROBE_BACKEND=…` runs the same flows against a different backend
@@ -116,6 +147,10 @@ artifact path changes.
 ## 5. "cell" names two things now
 
 **Naming decision · needs Michael · touches ~24 files**
+
+**Proposal written (`5498256`): [cell-naming.md](cell-naming.md).** Recommends
+B narrow — "cell" stays a frontend, the square is a "pair", 2–8 files and no
+identifiers, against A's 57-file meaning flip. Waiting on the decision.
 
 "Cell" has meant one frontend app since the first version, when the demo was a
 strip of frontends against one backend. The hub is a 4×4 table now, where a cell
@@ -135,6 +170,11 @@ needs the decision first.
 
 **Hardening · small**
 
+**Fixed 2026-08-17 (`ddc14cb`; recording `f58041f`,
+`docs/recordings/hub-backend-param.gif`).** All 16 squares carry `?backend=`,
+the first column included; hosted CopilotKit's `safeBackend` drops a
+non-localhost value silently and lands on the same configured URL.
+
 `index/index.html:306` omits `?backend=` when the chosen backend is
 `BACKENDS[0]`, and all four cells default to `http://localhost:8001`
 (`frontends/*/lib/backend.ts:6`). Those two facts agree only because
@@ -149,6 +189,14 @@ the default case.
 ## 7. Publish the cells
 
 **The hosting arc's last step**
+
+**Prepared, not published.** Preview rebuilt and gated on `10105b8`: 20 passed,
+1 skipped (jinja, by design). [publish-readiness.md](publish-readiness.md)
+(`497a315`) is the go/no-go page — what deploys, the two caveats with a
+recommendation each, and a third finding from the gate: `build_index` copies
+only `index.html` into `index/dist/`, so the hosted hub's `golden.html` /
+`monolith.html` cards 404. That copy is landing inside the ergonomics-notes task
+(`backlog/doing/`), after which the gate wants one more run. Waiting on Michael.
 
 The backend is live —
 `https://chat-stack-backend-cloudflare-agents.irons-in-the-fire8698.workers.dev/health`

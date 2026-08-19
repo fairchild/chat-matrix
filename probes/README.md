@@ -154,7 +154,8 @@ two lists, so it can't ask for a cell the tests won't run. Verified 2026-08-17:
 20 flows across the four hosted cells against the preview at `:4001–:4004`, one
 skip row for jinja, no `:3005` in the run — 19 green, and the one red
 (`assistant-ui · notes`) was the flow asserting the tool name before expanding
-the collapsed group that held it; fixed by reordering (this commit).
+the collapsed group that held it; fixed by reordering the two steps (`c00aebe`,
+the `notes` flow in `flows.yaml`).
 
 The scripted model makes the work identical across backends, so the gallery
 becomes a rendering diff: same flows, same moments, one variable changed.
