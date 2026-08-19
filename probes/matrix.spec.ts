@@ -5,7 +5,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "@playwright/test";
 import { loadFlows } from "./flow.ts";
-import { captureKey, frontends, ROOT } from "./frontends.ts";
+import { captureKey, frontends, isPreview, ROOT } from "./frontends.ts";
 import { Runner, type Shot } from "./runner.ts";
 
 const ARTIFACTS = join(ROOT, "probes", "artifacts");
@@ -75,6 +75,7 @@ for (const frontend of supported) {
                 axis: flow.axis,
                 frontend: frontend.name,
                 shots: runner.shots,
+                ...(isPreview() ? { preview: true } : {}),
               },
               null,
               2,

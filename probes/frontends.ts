@@ -162,6 +162,16 @@ export type Unsupported = { name: string; why: "no-adapter" | "not-hosted" };
 
 const portOffset = (): number => Number(process.env.PROBE_PORT_OFFSET ?? 0);
 
+/** Whether this run is driving the hosted preview rather than the local
+ *  matrix — scripts/preview.sh's static exports at port+offset, as opposed to
+ *  scripts/run.sh's dev servers. Defined once here so backendKey() and the
+ *  gallery agree about what a preview run is. */
+export const isPreview = (): boolean => portOffset() !== 0;
+
+/** The suffix backendKey() appends for a preview run. Exported so the gallery
+ *  can recognise a preview key without re-deriving the rule. */
+export const PREVIEW_SUFFIX = "-preview";
+
 /** `PROBE_BACKEND=http://localhost:8002` drives every cell against that backend
  *  instead of its default — the hub's `?backend=` carried through the open step.
  *  `PROBE_PORT_OFFSET=1000` drives the hosted preview (scripts/preview.sh),
@@ -205,12 +215,22 @@ const urlSlug = (url: string): string => {
  *  effective backend's /health and exports it; a bare `bunx playwright test` has
  *  no such resolution, so the URL's host-port stands in and the captures still
  *  land somewhere legible. With neither, each cell talks to whatever backend it
- *  was built against, which is all this can honestly say. */
+ *  was built against, which is all this can honestly say.
+ *
+ *  A preview run (isPreview()) gets PREVIEW_SUFFIX appended. The backend named
+ *  above is the same one a local run would drive — PROBE_PORT_OFFSET only moves
+ *  which servers hold the frontends, from run.sh's dev servers to preview.sh's
+ *  static exports, the build that would actually publish. Those are two
+ *  different things to look at side by side, not one thing run twice, so a
+ *  preview run has to land on its own key rather than overwrite a local run
+ *  against the same backend — otherwise the gallery couldn't say which build a
+ *  band came from. */
 export const backendKey = (): string => {
   const named = process.env.PROBE_BACKEND_NAME?.trim();
-  if (named) return slug(named);
-  const url = process.env.PROBE_BACKEND?.trim();
-  return url ? urlSlug(url) : "cell-default";
+  const base = named ? slug(named) : (process.env.PROBE_BACKEND?.trim()
+    ? urlSlug(process.env.PROBE_BACKEND.trim())
+    : "cell-default");
+  return isPreview() ? `${base}${PREVIEW_SUFFIX}` : base;
 };
 
 /** Where one cell's captures belong: under the backend it was driven against,

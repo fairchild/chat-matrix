@@ -132,6 +132,17 @@ plus 1000 — which is how the production artifacts get driven before they deplo
 PROBE_PORT_OFFSET=1000 ./scripts/probe.sh
 ```
 
+A preview run keys its artifacts under `<backend>-preview` rather than
+`<backend>` — `cloudflare-agents-preview`, not `cloudflare-agents` — even
+though it drives the same backend a local run would. The backend is identical;
+what changed is which build is serving the frontends, `preview.sh`'s static
+exports instead of `run.sh`'s dev servers, and that's the build that would
+actually publish. Landing on the same key as a local run against that backend
+would silently replace one set of captures with the other, and the gallery
+would have no way to say which build a band came from — so the two runs get
+separate bands, with the preview band sorting directly after its base
+backend's.
+
 An offset run drives only `HOSTED_CELLS` from `scripts/hosted.sh`, because that
 is the list `preview.sh` and `publish.sh` build from — Cloudflare serves four
 static exports, and `jinja` is a Python process rather than an export, so there

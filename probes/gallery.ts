@@ -10,10 +10,17 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { loadFlows } from "./flow.ts";
-import { matrixOrder, outsideGrid, ROOT } from "./frontends.ts";
+import { matrixOrder, outsideGrid, PREVIEW_SUFFIX, ROOT } from "./frontends.ts";
 import type { Shot } from "./runner.ts";
 
-type Entry = { backend: string; flow: string; axis: string; frontend: string; shots: Shot[] };
+type Entry = {
+  backend: string;
+  flow: string;
+  axis: string;
+  frontend: string;
+  shots: Shot[];
+  preview?: boolean;
+};
 
 const ARTIFACTS = join(ROOT, "probes", "artifacts");
 const MANIFEST = join(ARTIFACTS, "manifest");
@@ -32,10 +39,18 @@ const order = matrixOrder();
 const escape = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-/** stacks.sh order first, then anything it doesn't list, alphabetically. */
+/** stacks.sh order first, then anything it doesn't list, alphabetically. A
+ *  preview key (`<backend>-preview`) ranks with its base backend, then sorts
+ *  after the non-preview band — so the preview sits directly beside the local
+ *  run it's a build of, rather than off at the end with strangers. */
 const by = (list: string[]) => (a: string, b: string) => {
-  const rank = (n: string) => (list.indexOf(n) === -1 ? list.length : list.indexOf(n));
-  return rank(a) - rank(b) || a.localeCompare(b);
+  const baseOf = (n: string) => (n.endsWith(PREVIEW_SUFFIX) ? n.slice(0, -PREVIEW_SUFFIX.length) : n);
+  const rank = (n: string) => {
+    const i = list.indexOf(baseOf(n));
+    return i === -1 ? list.length : i;
+  };
+  const previewRank = (n: string) => (n.endsWith(PREVIEW_SUFFIX) ? 1 : 0);
+  return rank(a) - rank(b) || previewRank(a) - previewRank(b) || a.localeCompare(b);
 };
 
 const band = (heading: string, note: string, figures: string) => `<div class="band">
@@ -45,6 +60,13 @@ const band = (heading: string, note: string, figures: string) => `<div class="ba
 
 const OUTSIDE_NOTE =
   "one process, its own agent — it ignores ?backend=, so this is the same capture whichever backend a run drives";
+
+const PREVIEW_NOTE =
+  "the hosted preview: static exports served by scripts/preview.sh — the build that would publish — against the same backend";
+
+/** A preview band's caption note, or "" for a local band — band() only prints
+ *  a note when it's non-empty. */
+const bandNote = (backend: string): string => (backend.endsWith(PREVIEW_SUFFIX) ? PREVIEW_NOTE : "");
 
 const sections = flows
   .map((flow) => {
@@ -83,7 +105,7 @@ const sections = flows
           ...backends.map((backend) =>
             band(
               backend,
-              "",
+              bandNote(backend),
               columns
                 .map((name) =>
                   figure(
@@ -121,7 +143,7 @@ const sections = flows
       ...backends.map((backend) =>
         band(
           backend,
-          "",
+          bandNote(backend),
           columns
             .filter((name) => grid.some((e) => e.backend === backend && e.frontend === name))
             .map((name) => video(name, backend))
