@@ -79,7 +79,7 @@ it, and both now say so themselves rather than trusting how the backend started.
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` | `/health` | backend name, current model, tool names, thread count |
+| `GET` | `/health` | backend name, current model, tool names, thread count, `history` |
 | `GET` | `/models` | every model this backend knows, each with availability and reason † |
 | `POST` | `/model` | switch the running model — `{"id": "…"}`, 400 with a reason if it can't † |
 | `POST` | `/chat` | Vercel AI data stream protocol (AI SDK v7) |
@@ -145,6 +145,31 @@ so it never meets either model. The day a cell rehydrates, the two diverge
 exactly there: after a restart with a wiped store, a client-authoritative
 backend keeps going from what the client sends, and a session-authoritative one
 starts a fresh session behind messages the client still shows.
+
+`/health` says which one a backend is, as `history: "client" | "session"`, and
+`conformance.sh` holds it to the declaration from both sides: it runs a second
+turn that echoes nothing — the shape a second tab or a windowing client produces
+without meaning to — and then requires a `client` backend to have followed the
+shorter history and a `session` backend to have kept its own turns. Declaring
+one and doing the other is the failure. Without the second direction the field
+would be a note that could go stale silently; with it, a backend that changes
+behaviour goes red until someone edits the declaration.
+
+The consequence the two words hide, said plainly: **on a client-authoritative
+backend the stored thread mirrors the client's last view, so a client that sends
+fewer messages than the server holds destroys the rest.** `GET /threads/{id}` is
+a rehydration aid there, not a system of record. Nothing in the matrix hits this
+— the four React cells keep the whole list in `useChat` memory and none of them
+rehydrates — but anything built on the reference should know it before pointing
+a second tab at one thread.
+
+The wire already distinguishes the two cases, and a backend that wants to be
+stricter should read it rather than guess: `RequestData` is a union discriminated
+on `trigger`, and a shorter history under `regenerate-message` is deliberate —
+that is how the AI SDK expresses edit and regenerate, and it carries the
+`messageId` to regenerate from — while a shorter history under `submit-message`
+is nobody's intention. Merging blindly would resurrect turns a user deleted on
+purpose, which is why the reference doesn't merge.
 
 Consequences worth knowing, per model:
 

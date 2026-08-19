@@ -38,6 +38,7 @@ async function route(request: Request, env: Env): Promise<Response> {
       protocols: { "vercel-ai": `/chat (sdk v${SDK_VERSION})`, "ag-ui": "/ag-ui" },
       tools: TOOL_NAMES,
       threads: await registry.count(),
+      history: "client",
     });
   }
 

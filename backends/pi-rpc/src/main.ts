@@ -103,6 +103,7 @@ async function handle(request: Request): Promise<Response> {
       protocols: { "vercel-ai": "/chat (sdk v7)", "ag-ui": "/ag-ui" },
       tools: TOOL_NAMES,
       threads: (await store.list()).length,
+      history: "session",
       children: pool.size,
     });
   }

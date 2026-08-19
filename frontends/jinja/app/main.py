@@ -173,6 +173,7 @@ async def health() -> dict[str, Any]:
         "protocols": {"vercel-ai": f"/chat (sdk v{SDK_VERSION})", "ag-ui": "/ag-ui"},
         "tools": list(TOOL_NAMES),
         "threads": len(store.list()),
+        "history": "client",
         "ui": "server-rendered",
     }
 
@@ -184,7 +185,7 @@ class ModelChoice(BaseModel):
 @protocol.get("/models")
 async def list_models() -> dict[str, Any]:
     """Every model this backend knows about, available or not, each with its reason."""
-    return {"current": current_model(), "models": catalogue(current_model())}
+    return {"current": current_model(), "models": catalogue()}
 
 
 @protocol.post("/model")

@@ -26,6 +26,8 @@ if curl -sf "$BACKEND/health" -o "$health"; then
     assert "health exposes $field" "$field" "$health"
   done
   model="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["model"])' "$health")"
+  authority="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1])).get("history",""))' "$health")"
+  assert "health declares where history lives" '"history"' "$health"
   printf '    backend=%s model=%s\n' \
     "$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["backend"])' "$health")" \
     "$model"
@@ -145,6 +147,87 @@ else
   bad "second turn on the same thread (request failed)"
   sed 's/^/    /' "$why" | tail -4
 fi
+
+# Where history lives is a real difference between these backends, not a defect
+# in either, so the contract admits both and `/health` declares which. This holds
+# a backend to its own declaration, from both sides: a `client` backend has to
+# follow the client's shorter history, and a `session` backend has to ignore it.
+# Declared one way and behaving the other is the failure — which is what keeps
+# the flag from excusing a regression rather than describing a design.
+head_ "history authority ($authority)"
+partial=$(mktemp)
+whyp=$(mktemp)
+if [ -z "$authority" ]; then
+  bad "health declares history authority (missing, so nothing to hold it to)"
+elif python3 - "$BACKEND" "$THREAD-auth" >"$partial" 2>"$whyp" <<'PYEOF'
+import json, sys, urllib.request
+
+backend, thread = sys.argv[1], sys.argv[2]
+
+def send(text, messages):
+    body = json.dumps({
+        "id": thread, "trigger": "submit-message",
+        "messages": messages + [
+            {"id": f"u{len(messages)}", "role": "user",
+             "parts": [{"type": "text", "text": text}]}
+        ],
+    }).encode()
+    request = urllib.request.Request(
+        f"{backend}/chat", data=body, headers={"content-type": "application/json"}
+    )
+    with urllib.request.urlopen(request, timeout=60) as response:
+        response.read()
+
+def stored():
+    with urllib.request.urlopen(f"{backend}/threads/{thread}?protocol=vercel-ai", timeout=30) as r:
+        return json.load(r)["messages"]
+
+send("What is the weather in Tokyo?", [])
+after_first = stored()
+# The second turn deliberately echoes nothing: the shape a second tab, or a
+# client that windows a long thread, produces without meaning to.
+send("What is the weather in Oslo?", [])
+after_second = stored()
+
+def cities(messages):
+    found = []
+    def walk(node):
+        if isinstance(node, dict):
+            kind = node.get("type")
+            if isinstance(kind, str) and (kind.startswith("tool-") or kind == "dynamic-tool"):
+                value = node.get("input")
+                if isinstance(value, dict) and isinstance(value.get("city"), str):
+                    found.append(value["city"])
+            for key, item in node.items():
+                if key not in ("input", "output"):
+                    walk(item)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+    walk(messages)
+    return found
+
+print(len(after_first), " ".join(sorted(set(cities(after_second)))) or "-")
+PYEOF
+then
+  read -r first kept <"$partial"
+  case "$authority:$kept" in
+    client:Oslo)
+      ok "client-authoritative: a shorter history shrinks the stored thread (kept $kept)" ;;
+    session:Oslo\ Tokyo)
+      ok "session-authoritative: the server's own session survives a partial echo (kept $kept)" ;;
+    client:*)
+      bad "declares client-authoritative but kept '$kept' — a client-authoritative store follows the client's history" ;;
+    session:*)
+      bad "declares session-authoritative but kept '$kept' — a session-authoritative store keeps its own turns" ;;
+    *)
+      bad "history is '$authority'; expected \"client\" or \"session\"" ;;
+  esac
+else
+  bad "history authority probe (request failed)"
+  sed 's/^/    /' "$whyp" | tail -4
+fi
+curl -s -X DELETE "$BACKEND/threads/$THREAD-auth" >/dev/null 2>&1 || true
 
 head_ "ag-ui stream (/ag-ui)"
 agui=$(mktemp)

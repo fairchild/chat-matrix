@@ -203,9 +203,9 @@ protects against it — which is why the gate is the durable half of this fix.
 
 ---
 
-## 9. A partial echo wipes the server's thread, and reissues a live call id
+## 9. ~~A partial echo wipes the server's thread~~ — decided and held
 
-**Bug · the client-authoritative routes · design decision needed**
+**Design · the client-authoritative routes · settled 2026-08-18**
 
 `/chat` on the reference (`backends/pydantic-ai/app/main.py`), its jinja copy
 (`frontends/jinja/app/main.py`) and cloudflare-agents
@@ -229,12 +229,31 @@ the cell's, which is why item 8b's `dom` id can't reach it.
 
 The React cells always echo the full transcript, so nothing in the matrix hits
 this today. It is reachable from a second tab, or any client that windows a long
-thread. The fix is a decision, not a patch: either merge the client's messages
-into the stored history instead of replacing it, or say in `CONTRACT.md` that
-these routes are client-authoritative and the server's copy is a cache the
-client may truncate. Worth doing deliberately — "client-authoritative history is
-the AI SDK default" is a real position, but silently losing turns isn't part of
-it.
+thread.
+
+**Decided: declare it and hold it, rather than erase it.** Where history lives
+is one of the few real design differences this repo exists to show, and
+`CONTRACT.md` already admitted both models — what it hadn't said is that on the
+client-authoritative side a shorter echo destroys stored turns. So `/health` now
+carries `history: "client" | "session"`, the contract states the consequence in
+those words, and `conformance.sh` holds each backend to its own declaration from
+both sides: a `client` backend must follow the shorter history, a `session`
+backend must keep its own turns, and declaring one while doing the other is red.
+Verified against a copy that declares `session` while behaving `client` — it
+fails, naming both halves.
+
+This follows `ce21295`'s reasoning for `resume` deliberately: a two-sided
+assertion is what stops a capability flag from excusing a regression instead of
+describing a design.
+
+Merging was the alternative and it lost on cost and on honesty. `RequestData` is
+discriminated on `trigger`, so a shorter history under `regenerate-message` is
+deliberate and under `submit-message` is not — a merge would have to read that
+or it resurrects turns a user deleted. And stored `ModelMessage`s carry no client
+message ids, so "which turns were omitted" is a positional comparison whose
+wrong answers land in the regenerate flow, where users notice most. Worth
+revisiting only if the reference stops being an illustration and starts being a
+template people ship.
 
 ---
 

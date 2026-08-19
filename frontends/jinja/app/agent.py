@@ -8,15 +8,14 @@ structured value, `search_notes` returns a list worth rendering as cards, and
 from __future__ import annotations
 
 import asyncio
-import os
 from dataclasses import dataclass
 
 from pydantic_ai import Agent
 
-from .models import SCRIPTED, build, initial
+from .models import BOOT, build
 
 BACKEND_NAME = "pydantic-ai"
-MODEL_SPEC = initial(os.getenv("DEMO_MODEL", SCRIPTED))
+MODEL_SPEC = BOOT
 """The boot default. The running model is `current_model()` — the hub can change it."""
 
 INSTRUCTIONS = """

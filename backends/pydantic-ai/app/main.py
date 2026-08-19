@@ -88,6 +88,7 @@ async def health() -> dict[str, Any]:
         "protocols": {"vercel-ai": f"/chat (sdk v{SDK_VERSION})", "ag-ui": "/ag-ui"},
         "tools": list(TOOL_NAMES),
         "threads": len(store.list()),
+        "history": "client",
     }
 
 
