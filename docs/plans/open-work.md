@@ -1,5 +1,25 @@
 # Open work
 
+> **Superseded 2026-08-18 — the queue moved to [`../../backlog/`](../../backlog/).**
+> Every item below was re-verified against the running tree before the move;
+> the disposition is in the table. Item numbers are kept because
+> [`publish-readiness.md`](publish-readiness.md) cites them. Add new work as a
+> backlog task, not a section here.
+>
+> | # | disposition |
+> |---|---|
+> | 1 `assistant-ui · notes` assertion order | **fixed** — `probes/flows.yaml` expands before asserting |
+> | 2 `probe.sh`'s `set -e` | **fixed** — `status=0` plus `\|\| status=$?` |
+> | 3 `resume` per-adapter capability | **fixed** — `resumes` in `probes/frontends.ts`, asserted both ways |
+> | 4 artifacts keyed by flow | **fixed** — keyed by backend; `gallery.ts` bands per backend |
+> | 5 what "cell" names | open → `backlog/todo/cell-naming-plan.md` |
+> | 6 hub default-backend joint | **fixed** — the hub always sends `?backend=` |
+> | 7 publish the cells | open → `hosted-pages-ship`, `hosted-exposure-decisions`, `publish-the-cells` |
+> | 8 / 8b shared `tool_call_id` | **fixed** — conformance gates uniqueness |
+> | 9 partial echo wipes the thread | **in flight** — `/health` declares history authority; conformance holds each backend to it |
+> | 10 four ports diverge on an echoed transcript | partly closed by 9 → residue in `echoed-transcript-divergence` |
+> | 11 pi thread ids collide in one session file | open → `pi-session-id-collision` |
+
 What's left after the build sessions closed on 2026-08-17. There is no GitHub
 remote on this repo, so this file is the tracker: one section per item, written
 to be picked up cold by someone who wasn't there.

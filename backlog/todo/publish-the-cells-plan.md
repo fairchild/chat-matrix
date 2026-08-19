@@ -3,8 +3,8 @@ priority: 3
 timeout: 14d
 arc: publish
 dependencies:
-  hosted-pages-ship: "publishing dead cards is worse than not publishing"
-  hosted-exposure-decisions: "the public surface should be a decision, not a default"
+  hosted-pages-ship-plan: "publishing dead cards is worse than not publishing"
+  hosted-exposure-decisions-plan: "the public surface should be a decision, not a default"
 ---
 
 # Publish the cells
