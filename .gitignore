@@ -21,7 +21,18 @@ index/dist/
 # generated from the stack READMEs' Ergonomics notes; the README is the source
 index/notes/
 
-# local config and data
+# local config and data. `.env.local` and `.dev.vars` are the paths setup.sh and
+# every README actually use; the rest are here because a public repo takes
+# contributions from people who have other habits, and a key is not the kind of
+# mistake you want to catch in review.
+.env
+.env.*
+!.env.example
+.dev.vars
+*.pem
+*.key
+*.p12
+*.pfx
 .env.local
 data/
 *.db
