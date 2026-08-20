@@ -173,6 +173,36 @@ that starts rehydrating — or a backend that owns its own sessions, as a
 That failure is the good outcome; read it as the feature landing, not the
 harness rotting.
 
+## Probing what's actually deployed
+
+Every URL above is a port on this machine, which is the one thing a published
+matrix isn't. `--production` swaps the port arithmetic for a base URL per cell,
+read from `scripts/hosted.sh`'s `production_url()` — the same function
+`publish.sh` deploys against, so the run can't drift from what was shipped:
+
+```sh
+./scripts/probe.sh --production            # drive the deployed cells and hub
+```
+
+The mechanism underneath is `PROBE_BASES`, a JSON map of cell name to base URL
+(plus `index` for the hub), and it's worth knowing about because it's also how
+you'd drive a matrix hosted anywhere else:
+
+```sh
+PROBE_BASES='{"index":"https://…","assistant-ui":"https://…"}' ./scripts/probe.sh
+```
+
+Artifacts key under `<backend>-deployed`, for the reason a preview run keys
+under `-preview`: it's a third build of the same cells, and the gallery has to
+be able to say which one a band came from. The hosted subset filter applies too
+— a cell with no `wrangler.jsonc` was never deployed, so there's nothing at the
+other end to drive.
+
+Note what this still can't tell you: the deployed backend publishes neither its
+bulk thread list nor its model switch (`backends/cloudflare-agents/README.md`),
+so a conformance run against it skips the thread-list assertion and prints why.
+The flows themselves don't touch either route, so they run identically.
+
 ## What it found on the first run
 
 **None of the four React cells resume on reload.** Send a message, reload, and

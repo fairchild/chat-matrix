@@ -162,6 +162,30 @@ export type Unsupported = { name: string; why: "no-adapter" | "not-hosted" };
 
 const portOffset = (): number => Number(process.env.PROBE_PORT_OFFSET ?? 0);
 
+/** An explicit base URL per cell, keyed by the names in scripts/stacks.sh plus
+ *  `index` for the hub: `{"assistant-ui": "https://…", "index": "https://…"}`.
+ *  Everything else here derives a URL from a port, which can only ever address
+ *  this machine — this is the one way to drive a matrix that is somewhere else,
+ *  and scripts/probe.sh --production fills it from scripts/hosted.sh so the
+ *  deployed URLs are still read from the topology rather than typed twice. */
+const bases = (): Record<string, string> => {
+  const raw = process.env.PROBE_BASES?.trim();
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new Error(`probes: PROBE_BASES is not JSON — got ${raw.slice(0, 60)}`);
+  }
+};
+
+/** Whether this run is driving somewhere other than this machine's ports. */
+export const isRemote = (): boolean => Object.keys(bases()).length > 0;
+
+/** The suffix backendKey() appends for a run against explicit bases, for the
+ *  same reason preview gets one: the deployed build and the local one are two
+ *  things to compare, not one thing run twice. */
+export const REMOTE_SUFFIX = "-deployed";
+
 /** Whether this run is driving the hosted preview rather than the local
  *  matrix — scripts/preview.sh's static exports at port+offset, as opposed to
  *  scripts/run.sh's dev servers. Defined once here so backendKey() and the
@@ -176,12 +200,23 @@ export const PREVIEW_SUFFIX = "-preview";
  *  instead of its default — the hub's `?backend=` carried through the open step.
  *  `PROBE_PORT_OFFSET=1000` drives the hosted preview (scripts/preview.sh),
  *  which serves each cell's static export at its port plus the offset. */
-const cellUrl = (port: number): string => {
+const cellUrl = (name: string, port: number): string => {
   const backend = process.env.PROBE_BACKEND;
-  const at = port + portOffset();
-  return backend
-    ? `http://localhost:${at}/?backend=${encodeURIComponent(backend)}`
-    : `http://localhost:${at}`;
+  const base = bases()[name] ?? `http://localhost:${port + portOffset()}`;
+  return backend ? `${base}/?backend=${encodeURIComponent(backend)}` : base;
+};
+
+/** The hub, at the same offset as everything else: scripts/run.sh serves it on
+ *  :3000 and scripts/preview.sh on :4000, which is the same +1000 the cells
+ *  move by, so one offset addresses the whole matrix. Read from run.sh rather
+ *  than repeated, for the same reason the cell ports are. */
+export const hubUrl = (): string => {
+  const given = bases().index;
+  if (given) return given;
+  const run = readFileSync(join(ROOT, "scripts", "run.sh"), "utf8");
+  const declared = run.match(/INDEX_PORT="\$\{INDEX_PORT:-(\d+)\}"/);
+  if (!declared) throw new Error("probes: no INDEX_PORT default in scripts/run.sh");
+  return `http://localhost:${Number(declared[1]) + portOffset()}`;
 };
 
 /** The hosted subset, read from scripts/hosted.sh — the same list preview.sh and
@@ -230,6 +265,7 @@ export const backendKey = (): string => {
   const base = named ? slug(named) : (process.env.PROBE_BACKEND?.trim()
     ? urlSlug(process.env.PROBE_BACKEND.trim())
     : "cell-default");
+  if (isRemote()) return `${base}${REMOTE_SUFFIX}`;
   return isPreview() ? `${base}${PREVIEW_SUFFIX}` : base;
 };
 
@@ -272,7 +308,7 @@ export const frontends = (): { supported: Frontend[]; unsupported: Unsupported[]
     const adapter = ADAPTERS[name];
     if (!adapter) unsupported.push({ name, why: "no-adapter" });
     else if (hosted && !hosted.has(name)) unsupported.push({ name, why: "not-hosted" });
-    else supported.push({ name, port, url: cellUrl(port), adapter });
+    else supported.push({ name, port, url: cellUrl(name, port), adapter });
   }
   return { supported, unsupported };
 };

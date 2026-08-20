@@ -17,24 +17,21 @@
 // once earlier in this same thread, and scripted.py assigns tool_call_id as
 // `call_{tool}_{index-within-that-run}` (backends/pydantic-ai/app/scripted.py
 // and this cell's verbatim copy, both `_emit_tool_calls`), so a second call to
-// a tool already used in the thread reuses the first call's id. Confirmed live:
-// asking "What's the weather in Paris?" here stores a second get_weather with
-// tool_call_id `call_get_weather_0` — identical to Tokyo's — and the merged
-// view then shows Paris's card text glued to Tokyo's reply. That's a real,
-// reference-agent-level bug (present in every backend, not jinja-specific),
-// not a driver bug; it's out of scope for this recording to fix, so the beat
-// picks a prompt that doesn't retrigger it instead of showcasing it unlabeled.
-import playwright from "file:///Users/fairchild/orca/workspaces/pydantic-chat/demo/probes/node_modules/playwright/index.js";
-import { mkdirSync, readFileSync, writeFileSync, statSync, unlinkSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+// a tool already used in the thread reused the first call's id — asking "What's
+// the weather in Paris?" here stored a second get_weather with tool_call_id
+// `call_get_weather_0`, identical to Tokyo's, and the merged view then showed
+// Paris's card text glued to Tokyo's reply.
+//
+// That was fixed in 51c0d5d, in all four backends, and protocol/conformance.sh
+// now has a "tool call ids" section that drives exactly this two-turn case so
+// it can't come back. The beat keeps its fallback prompt anyway: it's the one
+// that shows the scripted model's third shape, which is what it was for.
+import { readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
+import { chromium, scratch, toGif } from "./rec.mjs";
 
-const { chromium } = playwright;
-
-const BASE = "http://localhost:3005";
-const OUT_DIR = "/Users/fairchild/orca/workspaces/pydantic-chat/demo/docs/recordings";
-const SCRATCH = "/private/tmp/claude-501/-Users-fairchild-orca-workspaces-pydantic-chat-demo/e2e372ec-ad5d-4945-87a2-02917c774f51/scratchpad/rec";
-mkdirSync(SCRATCH, { recursive: true });
+const BASE = process.env.CELL_URL ?? "http://localhost:3005";
+const SCRATCH = scratch();
 
 const TIMEOUT = 30_000;
 
@@ -136,26 +133,6 @@ console.log(`video 1 (JS on):  ${path1}`);
 console.log(`video 2 (JS off): ${path2}`);
 
 // --- Concatenate and convert to GIF -----------------------------------------
-const listPath = join(SCRATCH, "list.txt");
-writeFileSync(listPath, `file '${path1}'\nfile '${path2}'\n`);
-
-const ffmpeg = "/opt/homebrew/bin/ffmpeg";
-const gifPath = join(OUT_DIR, "jinja-cell.gif");
-
-execFileSync(ffmpeg, [
-  "-y",
-  "-f", "concat", "-safe", "0", "-i", listPath,
-  "-vf", "fps=12,scale=900:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=160[p];[s1][p]paletteuse=dither=bayer:bayer_scale=4",
-  gifPath,
-], { stdio: "inherit" });
-
-const size = statSync(gifPath).size;
-console.log(`gif: ${gifPath} (${(size / 1024 / 1024).toFixed(2)} MB)`);
-
-const probe = execFileSync("/opt/homebrew/bin/ffprobe", [
-  "-v", "error", "-select_streams", "v:0",
-  "-show_entries", "stream=duration",
-  "-of", "default=noprint_wrappers=1:nokey=1",
-  gifPath,
-]).toString().trim();
-console.log(`duration: ${probe}s`);
+// Two contexts, JS on then JS off, joined into one recording. Tool cards and
+// markdown need a wider palette than the hub does.
+toGif([path1, path2], "jinja-cell", { fps: 12, colors: 160 });

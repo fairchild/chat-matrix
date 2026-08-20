@@ -8,16 +8,10 @@
 // with `?backend=http://localhost:8001` in the address bar and the badge
 // confirming it actually talked to that backend. Proves `href(f, b)` no
 // longer special-cases the first column.
-import playwright from "file:///Users/fairchild/orca/workspaces/pydantic-chat/demo/probes/node_modules/playwright/index.js";
-import { mkdirSync, statSync } from "node:fs";
-import { execFileSync } from "node:child_process";
-import { join } from "node:path";
+import { chromium, scratch, toGif } from "./rec.mjs";
 
-const { chromium } = playwright;
-
-const OUT_DIR = "/Users/fairchild/orca/workspaces/pydantic-chat/demo/docs/recordings";
-const SCRATCH = "/private/tmp/claude-501/-Users-fairchild-orca-workspaces-pydantic-chat-demo/e46d4776-cb6d-4b02-8cbe-b87b9a58d1e2/scratchpad/beta/rec";
-mkdirSync(SCRATCH, { recursive: true });
+const HUB = process.env.HUB_URL ?? "http://localhost:3000";
+const SCRATCH = scratch();
 
 const TIMEOUT = 30_000;
 
@@ -30,7 +24,7 @@ const ctx = await browser.newContext({
 const page = await ctx.newPage();
 
 // Beat: the hub, grid resolved.
-await page.goto("http://localhost:3000/", { waitUntil: "networkidle" });
+await page.goto(`${HUB}/`, { waitUntil: "networkidle" });
 await page.waitForSelector("#sq-assistant-ui-pydantic-ai a", { timeout: TIMEOUT });
 await page.waitForTimeout(900);
 
@@ -69,23 +63,5 @@ await browser.close();
 console.log(`video: ${videoPath}`);
 
 // --- Convert to GIF, small and short on purpose -----------------------------
-const ffmpeg = "/opt/homebrew/bin/ffmpeg";
-const gifPath = join(OUT_DIR, "hub-backend-param.gif");
-
-execFileSync(ffmpeg, [
-  "-y",
-  "-i", videoPath,
-  "-vf", "fps=10,scale=900:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=96[p];[s1][p]paletteuse=dither=bayer:bayer_scale=4",
-  gifPath,
-], { stdio: "inherit" });
-
-const size = statSync(gifPath).size;
-console.log(`gif: ${gifPath} (${(size / 1024 / 1024).toFixed(2)} MB)`);
-
-const probe = execFileSync("/opt/homebrew/bin/ffprobe", [
-  "-v", "error", "-select_streams", "v:0",
-  "-show_entries", "stream=duration",
-  "-of", "default=noprint_wrappers=1:nokey=1",
-  gifPath,
-]).toString().trim();
-console.log(`duration: ${probe}s`);
+// Two greys and a green dot: fewer colours than a cell recording needs.
+toGif([videoPath], "hub-backend-param", { fps: 10, colors: 96 });

@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: ".",
-  testMatch: "matrix.spec.ts",
+  testMatch: /(matrix|hub)\.spec\.ts$/,
   outputDir: "artifacts/.playwright",
   // The three frontends are independent processes, so they run concurrently;
   // one worker per cell keeps a slow flow in one stack from serialising the
