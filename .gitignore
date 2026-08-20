@@ -31,3 +31,6 @@ probes/artifacts/
 
 # maildir-shared backend — in-flight dir lives in git-common-dir
 backlog/doing
+
+# a contributor's local Claude permissions, which are theirs and not the repo's
+.claude/settings.local.json
