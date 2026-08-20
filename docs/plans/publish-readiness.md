@@ -3,7 +3,10 @@
 Item 7 of [`open-work.md`](open-work.md) is one command away from public, and the
 command is not mine to run. This is what a `./scripts/publish.sh` today would do,
 what the gate says about it, and the two things that are true about the hosted
-build that aren't true locally. Decide from this page.
+build that aren't true locally. Decide from this page — the two caveats and the
+third exposure below them have since been decided, and what was chosen is under
+[Decided](#decided--2026-08-20); the caveat sections are kept as the reasoning
+that led there.
 
 Gate ran on **`10105b8`** (branch `demo`), against the preview built by
 `scripts/preview.sh` on `:4000`–`:4004` with `PREVIEW_BACKEND=http://localhost:8002`.
@@ -99,6 +102,57 @@ As of the evening of 2026-08-18 the copy is being taken inside the
 ergonomics-notes task (`backlog/doing/surface-ergonomics-notes-plan.md`), whose
 `build_index` change also generates the notes pages — re-run the gate once that
 lands, since it changes what `index/dist/` holds.
+
+Landed in `7fce311`, and generically: `build_index` copies every `*.html` beside
+`index.html` and `cp -L`s every `*.gif`, so a fifth page needs nothing here. Of
+the second-order leaks, one was real and is fixed — `monolith.html`'s footer
+linked `http://localhost:3005`, a live anchor that dies on a public URL, and now
+reads as plain text saying where the cell runs and why it's the one square the
+hosted matrix can't publish. The other two stand: `monolith.html:337` is alt
+text *describing* a recording made at `:3005`, which is what the recording is;
+`golden.html:179` is a shell command inside a "Run it" block, which is an
+instruction for a local clone on either host.
+
+## Decided — 2026-08-20
+
+All three exposures are now closed in code, and closed the same way: bound to a
+var whose default is the locked one, so `wrangler deploy` reading the committed
+config ships the safe shape and the unlock is something a local run carries
+rather than something a publish has to remember. `bun run dev` passes
+`--var PUBLIC_THREAD_LIST:1 --var PUBLIC_MODEL_SWITCH:1`; the deployed Worker
+gets neither.
+
+**`GET /threads`** returns `{"threads": [], "detail": …}` in the published
+shape — empty *and* saying why, because "no threads yet" and "this deployment
+doesn't publish them" are different facts and a bare `[]` can't tell them apart.
+`GET /threads/{id}` still serves a thread whose id you hold, which is as much
+scoping as a demo without identity can honestly do, and `/health` still reports
+the count: it's the titles that are the exposure, not the number.
+
+**`POST /model`** is `403` with the same kind of reason, and `GET /models`
+carries `locked: true` and a `why` alongside the full catalogue. The hub reads
+that and renders the column's control as a fixed chip — same text, no arrow, no
+dimming, the reason on hover and in its `aria-label`. This is the honest version
+of Caveat 1 too: the published grid now states the one model it runs instead of
+drawing a control that would be dropped.
+
+**The token question.** Worth being exact, since it's the reason to care: the
+deployed Worker has no provider secret (`wrangler secret list` → `[]`), and
+`unavailable()` in `src/models.ts` refuses any model whose binding is absent. So
+a stranger could not have spent a provider token even before this change — the
+switch was already gated on credentials that aren't there. What the lock adds is
+that a key arriving later, for whatever reason, doesn't silently turn the public
+grid into a spend surface. Cloudflare request volume is the remaining meter, and
+it's the free tier's to cap.
+
+**What this costs.** A conformance run against the published backend can no
+longer see its own thread in the list. `protocol/conformance.sh` now skips that
+one assertion — but only when the backend states a reason, and it prints the
+backend's words when it does; an unexplained empty list still fails. Verified
+both ways against a locked and an unlocked `wrangler dev`, and against the
+reference backend, which is untouched at 21/21. The thread having persisted is
+still proven either way by the two rehydrate checks right after it, which fetch
+it by id.
 
 ## The command, and after
 

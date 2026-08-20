@@ -65,6 +65,16 @@ reason attached:
 backend won't take answers `400 {"detail": "<reason>"}` — the same key the other
 routes use for a problem.
 
+A backend may also decline to be switched at all, which is a different claim
+from any one model's availability and gets its own field: `"locked": true` beside
+a `"why"`, with the catalogue still listed, and `POST /model` answering `403`
+rather than `400`. Absent means unlocked, so a backend that never thought about
+it behaves as it always did. A published deployment is the case this exists for —
+`backends/cloudflare-agents` ships locked, because a control that mutates what
+every visitor's next turn runs on is cheap on a laptop and not on the open
+internet. A client reading only `models` keeps working; the hub reads `locked`
+and draws what runs instead of a control.
+
 Listing the unavailable ones is the point of the shape. A picker that omits what
 it can't reach makes "no key", "not wired for this backend", and "this backend
 has never heard of it" look identical, and those are three different problems
@@ -81,12 +91,21 @@ it, and both now say so themselves rather than trusting how the backend started.
 |---|---|---|
 | `GET` | `/health` | backend name, current model, tool names, thread count, `history` |
 | `GET` | `/models` | every model this backend knows, each with availability and reason † |
-| `POST` | `/model` | switch the running model — `{"id": "…"}`, 400 with a reason if it can't † |
+| `POST` | `/model` | switch the running model — `{"id": "…"}`, 400 with a reason if it can't, 403 if the backend is locked † |
 | `POST` | `/chat` | Vercel AI data stream protocol (AI SDK v7) |
 | `POST` | `/ag-ui` | AG-UI protocol |
-| `GET` | `/threads` | thread summaries, newest first |
+| `GET` | `/threads` | thread summaries, newest first — or `[]` plus a `detail` saying the deployment doesn't publish them ‡ |
 | `GET` | `/threads/{id}?protocol=…` | stored messages in that protocol's wire format |
 | `DELETE` | `/threads/{id}` | delete a thread |
+
+‡ The bulk list is the one route whose contents are other people's words —
+`title` is a thread's first user message — so a deployment may decline to serve
+it, and says so in `detail` rather than returning a bare `[]` that reads as an
+empty store. `GET /threads/{id}` is unaffected: the id is the capability, which
+is the only scoping a demo without identity can honestly offer. The conformance
+gate skips its thread-list assertion when a backend states that reason, and
+prints it; an empty list with no reason still fails, and the thread having
+persisted is proven either way by rehydrating it by id.
 
 `/health` is what the frontend badge reads. It's there so you can always tell
 which cell of the matrix you're looking at — easy to lose track of once there

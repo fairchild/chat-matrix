@@ -135,10 +135,25 @@ https://chat-stack-backend-cloudflare-agents.irons-in-the-fire8698.workers.dev
 ```
 
 Conformance passes against it from the edge. The cells aren't published yet —
-that's `./scripts/publish.sh`, once the preview looks right. Two things to know
-about the hosted cells: CopilotKit's runtime forwards only localhost backends,
-so `?backend=` can't move that cell off its configured backend once hosted; and
-`/threads` on a public backend lists every visitor's thread.
+that's `./scripts/publish.sh`, once the preview looks right.
+
+A published deployment runs the same code as a local one and publishes less of
+it, and the difference is two vars whose default is the closed one, so the
+committed config is already the public shape and it's the local run that carries
+the unlock (`bun run dev`, in the backend's `package.json`). `GET /threads`
+returns an empty list and says why — the list is every visitor's first message —
+while `GET /threads/{id}` still serves a thread whose id you hold. `POST /model`
+is `403`, and `GET /models` says `locked` so the hub draws the column's model as
+a fixed chip instead of a control it couldn't honour. That last one matters
+beyond tidiness: the published Worker holds no provider key, and a model whose
+binding is absent can't be selected anyway, so the lock is what keeps that true
+if a key ever arrives. A conformance run against a published backend skips the
+thread-list assertion and prints the backend's reason for it; everything else
+still asserts.
+
+The remaining thing to know about the hosted cells is that CopilotKit's runtime
+forwards only localhost backends, so `?backend=` can't move that cell off its
+configured backend once hosted.
 
 The topology column is a real difference, not a detail. assistant-ui and
 AI Elements talk straight to the backend; CopilotKit requires a server-side runtime

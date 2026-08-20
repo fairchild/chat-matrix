@@ -7,9 +7,13 @@ BACKEND="${1:-http://localhost:8001}"
 THREAD="conformance-$$"
 PASS=0
 FAIL=0
+SKIP=0
 
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$1"; PASS=$((PASS + 1)); }
 bad()  { printf '  \033[31m✗\033[0m %s\n' "$1"; FAIL=$((FAIL + 1)); }
+# A check the backend has told us it doesn't answer. It carries the backend's own
+# words and is counted separately, so a skip can never be read as a pass.
+skip() { printf '  \033[33m–\033[0m %s\n    \033[33m%s\033[0m\n' "$1" "$2"; SKIP=$((SKIP + 1)); }
 head_() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 
 # assert <label> <needle> <haystack-file>
@@ -59,7 +63,17 @@ assert "tool actually ran"           'Tokyo'                          "$stream"
 head_ "persistence"
 threads=$(mktemp)
 curl -sf "$BACKEND/threads" -o "$threads"
-assert "thread recorded after run" "$THREAD" "$threads"
+# A deployment may decline to publish the bulk list — it's every visitor's first
+# message — and says so in `detail`. That's a different fact from an empty store,
+# so it's skipped rather than failed, and only when the backend states it: an
+# unexplained empty list is still a failure. The thread having persisted is
+# proven either way by the rehydrate checks below, which fetch it by id.
+list_off="$(python3 -c 'import json,sys;b=json.load(open(sys.argv[1]));print(b["detail"] if not b.get("threads") and b.get("detail") else "")' "$threads" 2>/dev/null || echo "")"
+if [ -n "$list_off" ]; then
+  skip "thread recorded after run" "$list_off"
+else
+  assert "thread recorded after run" "$THREAD" "$threads"
+fi
 
 for proto in vercel-ai ag-ui; do
   hydrate=$(mktemp)
@@ -242,5 +256,6 @@ assert "emits TEXT_MESSAGE_START" 'TEXT_MESSAGE_START' "$agui"
 assert "emits RUN_FINISHED"       'RUN_FINISHED'       "$agui"
 curl -s -X DELETE "$BACKEND/threads/$THREAD-agui" >/dev/null 2>&1 || true
 
-printf '\n\033[1m%d passed, %d failed\033[0m\n' "$PASS" "$FAIL"
+printf '\n\033[1m%d passed, %d failed%s\033[0m\n' "$PASS" "$FAIL" \
+  "$([ "$SKIP" -gt 0 ] && printf ', %d skipped' "$SKIP")"
 [ "$FAIL" -eq 0 ]

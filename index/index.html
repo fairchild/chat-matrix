@@ -96,6 +96,11 @@
     border-radius: 5px; padding: 2px 4px; cursor: pointer;
   }
   th.b .model:disabled { cursor: default; opacity: .6; }
+  /* A deployment can fix its model, and the published one does. The control
+     then has to read as a statement of what runs rather than as a control
+     that's briefly unavailable — same chip, no arrow, no dimming. */
+  th.b .model.fixed { appearance: none; cursor: default; }
+  th.b .model.fixed:disabled { opacity: 1; }
   th.b .model option:disabled { color: var(--dim); }
   th.b .err { display: block; margin: 3px 0 0 14px; font-size: 11px; color: var(--faint); }
   th.b .err.bad { color: #b91c1c; }
@@ -437,6 +442,14 @@ async function refreshModels(b, c) {
     return;
   }
   select.hidden = false;
+  // Whether the switch is open is the backend's claim, and a separate one from
+  // any single model's availability: the published deployment carries the whole
+  // catalogue and no way to move off `scripted`. A backend that doesn't say
+  // (the other three) is unlocked, which is what it was before this existed.
+  const fixed = Boolean(data.locked);
+  select.disabled = fixed;
+  select.classList.toggle("fixed", fixed);
+  select.setAttribute("aria-label", fixed ? `model for ${b.name} — fixed: ${data.why}` : `model for ${b.name}`);
   // Leave an open menu alone, and don't rebuild a list that hasn't moved.
   const sig = JSON.stringify(data);
   if (sig === modelSig[b.name] || document.activeElement === select) return;
@@ -458,7 +471,8 @@ async function refreshModels(b, c) {
   // A closed <select> is only as wide as its column, and a real model's name is
   // longer than a scripted one's — so the name it clips stays readable on hover.
   const running = data.models.find((m) => m.id === data.current);
-  select.title = running ? `${running.label}${running.via ? ` — via ${running.via}` : ""}` : "";
+  const shown = running ? `${running.label}${running.via ? ` — via ${running.via}` : ""}` : "";
+  select.title = fixed ? [shown, data.why].filter(Boolean).join(" · ") : shown;
   modelVia[b.name] = running?.via ?? "";
   th.querySelector(".err").textContent = "";
 }

@@ -24,6 +24,27 @@ const CORS = {
 const json = (body: unknown, status = 200): Response => Response.json(body, { status });
 const notFound = (detail: string): Response => json({ detail }, 404);
 
+/**
+ * Two routes that are free on a laptop and not free on the open internet: the
+ * bulk thread list, which is every visitor's first message, and the model
+ * switch, which mutates what every visitor's next turn runs on. Both are bound
+ * to a var rather than removed, because the local matrix needs them — the
+ * conformance gate reads `/threads`, and the hub's picker is the model axis.
+ *
+ * The default is the locked one on purpose. `wrangler deploy` from this
+ * directory reads the committed config and nothing else, so anything that has
+ * to be remembered at deploy time is a thing that eventually isn't. `bun run
+ * dev` carries the unlock instead, where forgetting it fails a local gate you
+ * are already looking at. The pi backends make the same call one layer down,
+ * binding to loopback because `POST /model` can reach a stored credential.
+ */
+const unlocked = (value: string | undefined): boolean => value === "1";
+
+const THREAD_LIST_LOCKED =
+  "the bulk thread list is off on this deployment — GET /threads/{id} still serves a thread whose id you hold";
+const MODEL_SWITCH_LOCKED =
+  "the model is fixed on this deployment — a local clone runs the same backend with the switch open";
+
 const RENDERERS = { "vercel-ai": toUIMessages, "ag-ui": toAgUiMessages } as const;
 
 async function route(request: Request, env: Env): Promise<Response> {
@@ -42,14 +63,21 @@ async function route(request: Request, env: Env): Promise<Response> {
     });
   }
 
-  /** Every model this backend knows about, available or not, each with its reason. */
+  /**
+   * Every model this backend knows about, available or not, each with its
+   * reason — and whether the switch itself is open, which is a separate claim
+   * from any one model's availability. A client that only reads `models` still
+   * works; the hub reads `locked` and draws a readout instead of a control.
+   */
   if (request.method === "GET" && url.pathname === "/models") {
     const current = await registry.model();
-    return json({ current, models: catalogue(env, current) });
+    const locked = !unlocked(env.PUBLIC_MODEL_SWITCH);
+    return json({ current, locked, why: locked ? MODEL_SWITCH_LOCKED : null, models: catalogue(env, current) });
   }
 
   /** Switch the running model. Backend-wide on purpose: the model is the control variable. */
   if (request.method === "POST" && url.pathname === "/model") {
+    if (!unlocked(env.PUBLIC_MODEL_SWITCH)) return json({ detail: MODEL_SWITCH_LOCKED }, 403);
     const { id } = (await request.json()) as { id?: unknown };
     if (typeof id !== "string") return json({ detail: 'body must be {"id": "…"}' }, 400);
     const reason = unavailable(env, id);
@@ -68,6 +96,11 @@ async function route(request: Request, env: Env): Promise<Response> {
   }
 
   if (request.method === "GET" && url.pathname === "/threads") {
+    // Empty rather than 404, and carrying why: "no threads yet" and "this
+    // deployment doesn't publish them" are different facts and a caller
+    // reading a bare `[]` can't tell them apart. `/health` still reports the
+    // count — it's the titles that are the exposure, not the number.
+    if (!unlocked(env.PUBLIC_THREAD_LIST)) return json({ threads: [], detail: THREAD_LIST_LOCKED });
     return json({ threads: await registry.list() });
   }
 

@@ -20,6 +20,14 @@ bun run deploy         # publish the Worker
 |---|---|---|
 | `DEMO_MODEL` | `scripted` | boot default: `scripted`, `openai/gpt-5.6-luna`, or `auto` — a **binding** too, so it goes in `wrangler.jsonc` or `.dev.vars`; exporting it in your shell does nothing |
 | `OPENAI_API_KEY` | — | a **binding**, not an environment variable — see below |
+| `PUBLIC_THREAD_LIST` | `0` | `1` serves the bulk `GET /threads`. Off, it returns an empty list saying so; `GET /threads/{id}` is unaffected |
+| `PUBLIC_MODEL_SWITCH` | `0` | `1` opens `POST /model`. Off, it's `403` and `GET /models` carries `locked` so the hub draws a fixed chip |
+
+The two `PUBLIC_*` vars default closed because `wrangler deploy` reads the
+committed config and nothing else: anything a publish has to remember is a
+thing that eventually isn't remembered. `bun run dev` passes both as `1`, so a
+local clone gets the open shape — including the conformance check, which reads
+`/threads`. It's the same call the pi backends make by binding to loopback.
 
 `GET /models` and `POST /model {"id": …}` are the hub's dropdown, and this
 backend is the one where the distinction the list draws matters: Anthropic and

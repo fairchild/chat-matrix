@@ -8,7 +8,11 @@
   // name can shadow a real secret on a deployed Worker. Locally they come from
   // `.dev.vars` (gitignored, see `.dev.vars.example`); in production from
   // `wrangler secret put OPENAI_API_KEY`.
-  "vars": { "DEMO_MODEL": "scripted" },
+  // The published posture, because `wrangler deploy` reads this file and nothing
+  // else. `bun run dev` passes `--var PUBLIC_*:1` to open both for the local
+  // matrix — see the comment on `unlocked` in src/index.ts for why that
+  // direction and not the other.
+  "vars": { "DEMO_MODEL": "scripted", "PUBLIC_THREAD_LIST": "0", "PUBLIC_MODEL_SWITCH": "0" },
   // One Durable Object per thread, plus a singleton that indexes them for /threads.
   "durable_objects": {
     "bindings": [
