@@ -1,6 +1,6 @@
 # What a clean machine can check about this repo without an account anywhere.
 #
-# Nine stacks, three package managers, no root workspace — so every job names its
+# Ten stacks, three package managers, no root workspace — so every job names its
 # own directory and installs there. Two rules shaped what's in here:
 #
 #   - Nothing may need a Cloudflare login, an account id, or a provider key. The
@@ -56,14 +56,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Only shadcn, pi, pi-rpc and cloudflare-agents define a `typecheck`
-          # script. The other cells get tsc directly rather than having a script
-          # added to them purely to satisfy CI.
+          # Only shadcn, folio, pi, pi-rpc and cloudflare-agents define a
+          # `typecheck` script. The other cells get tsc directly rather than
+          # having a script added to them purely to satisfy CI.
           - { name: cloudflare-agents, dir: backends/cloudflare-agents, cmd: "bun run types && bun run typecheck" }
           - { name: pi, dir: backends/pi, cmd: "bun run typecheck" }
           - { name: pi-rpc, dir: backends/pi-rpc, cmd: "bun run typecheck" }
           - { name: probes, dir: probes, cmd: "bunx tsc --noEmit" }
           - { name: shadcn, dir: frontends/shadcn, cmd: "bun run typecheck" }
+          - { name: folio, dir: frontends/folio, cmd: "bun run typecheck" }
           - { name: assistant-ui, dir: frontends/assistant-ui, cmd: "bunx tsc --noEmit" }
           - { name: ai-elements, dir: frontends/ai-elements, cmd: "bunx tsc --noEmit" }
           - { name: copilotkit, dir: frontends/copilotkit, cmd: "bunx tsc --noEmit" }
@@ -99,13 +100,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Three cells are `output: "export"`. CopilotKit's plain build is not:
+          # Four cells are `output: "export"`. CopilotKit's plain build is not:
           # its static export only happens under STATIC_EXPORT=1, which is a
           # publish-time shape, so here it is checked for .next/ instead.
           - { cell: assistant-ui, artifact: out/index.html }
           - { cell: copilotkit, artifact: .next/BUILD_ID }
           - { cell: ai-elements, artifact: out/index.html }
           - { cell: shadcn, artifact: out/index.html }
+          - { cell: folio, artifact: out/index.html }
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -265,7 +267,7 @@ jobs:
         with:
           enable-cache: true
 
-      # index/generate_notes.py exits 1 when any of the nine stacks has lost its
+      # index/generate_notes.py exits 1 when any of the ten stacks has lost its
       # `## Ergonomics notes` heading. The notes are what the published site
       # renders and the README is their only copy, so losing one is a broken
       # page rather than a lint warning. Stack names come from scripts/stacks.sh
@@ -334,14 +336,14 @@ jobs:
 # Deliberately absent, so the absence is a decision rather than an oversight:
 #
 #   probes/            The Playwright suite is the best evidence in the repo and
-#                      the most expensive: 30 tests needing five frontends, the
+#                      the most expensive: 35 tests needing six frontends, the
 #                      hub and a backend all up, plus a chromium download. It
 #                      belongs in a scheduled or dispatched run. The cheapest
 #                      useful slice — `--grep jinja`, which needs only uv and
 #                      chromium — is the obvious first thing to add next.
 #   scripts/publish.sh Needs a Cloudflare account, and publishing is a decision
 #                      someone makes rather than something a green build causes.
-#   scripts/run.sh     Nine long-lived processes on fixed ports, which the
+#   scripts/run.sh     Ten long-lived processes on fixed ports, which the
 #                      contract jobs get at for one backend far more cheaply.
 #   backends/pi*       Both construct a model runtime at module scope and exit
 #                      non-zero without a `pi` login, so they typecheck here but

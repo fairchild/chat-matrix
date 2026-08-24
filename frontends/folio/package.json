@@ -1,0 +1,28 @@
+{
+  "name": "frontend-folio",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port ${PORT:-3006}",
+    "build": "NODE_ENV=production next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/react": "4.0.69",
+    "@fairchild/folio": "file:./vendor/fairchild-folio-0.4.1.tgz",
+    "ai": "7.0.66",
+    "next": "^16.3.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "typescript": "^5.9.3",
+    "wrangler": "^4"
+  }
+}

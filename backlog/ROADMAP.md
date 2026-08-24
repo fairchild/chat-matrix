@@ -5,7 +5,7 @@
 The repo exists to answer a question documentation can't: which chat UI and
 which agent backend do you actually want to work with. It answers it by running
 them against each other on identical work — one reference agent, one scripted
-model, four backends, five frontends — and by writing down what each one cost
+model, four backends, six frontends — and by writing down what each one cost
 while the friction was fresh. The matrix is the instrument; the notes are the
 finding. What's left is to get both in front of people without either of them
 lying.
@@ -27,32 +27,38 @@ lying.
 
 ## Current Focus
 
-**Publishing.** Everything else is downstream of the site being real. The
-backend is deployed; the four cells and the hub have never been. Two things
-stand in the way and both are small: the hosted build drops the pages it links,
-and the public surface (`/threads`, `POST /model`, a picker that can't honour
-its own choice) is currently a default rather than a decision. Then Michael runs
-`./scripts/publish.sh` — that one isn't an agent's to run.
+**Finishing this as an instance in time, and publishing it.** The comparison has
+been made and the notes have been written; what's left is to stop adding to the
+instrument and let people read what it produced. That means the repository goes
+open source, the hosted subset gets deployed, and every present tense in the
+prose is true against the tree at the moment it goes public.
+[`docs/publishing.md`](../docs/publishing.md) is the ordered sequence — the
+commands, what each one changes, how to check it worked, and what the undo
+recovers. Running it is Michael's, not an agent's.
 
-**Making the notes readable.** Nine stack READMEs hold the ergonomics notes and
-the site carries none of them. That work is claimed and in flight. Its sibling
-is `docs/reflection.md`, the cross-cutting synthesis, which still describes a
-repo with one backend and treats `pi` as future work.
+**Folio is the last addition, and it's the reason the instrument exists.** Folio
+is the interface this matrix was built to evaluate: a conversation surface whose
+position is that a transcript should read as a document rather than a chat log.
+The five cells beside it are what makes that reading mean anything — same three
+tools, same scripted model, same bytes, surfaces that made different choices
+about them. Its notes go in its README like every other stack's;
+`frontends/folio/folio-in-context.md` is the study to read its captures against.
 
 Behind those, three known divergences that don't hurt anyone today and would
-embarrass us the first time an external client shows up.
+embarrass us the first time an external client shows up — and `cell-naming`,
+the one open decision that gets more expensive rather than less once strangers
+are reading.
 
 ## Priorities
 
-1. **publish** — `hosted-pages-ship`, `hosted-exposure-decisions`, then
-   `publish-the-cells`. The first two gate the third.
-2. **payload** — `surface-ergonomics-notes` (in flight), then the reflection
-   half of `docs-sync-after-the-matrix`. The site becomes a resource here or it
-   stays a launcher.
-3. **prose** — `docs-sync-after-the-matrix` for the mechanical drift,
-   `cell-naming` for the one word that now means two things. Cheap, visible,
-   and the longer it waits the more prose gets written in the old vocabulary.
-4. **honest-axes** — `hub-model-visibility`, `pi-session-id-collision`,
+1. **publish** — `publish-the-cells`, which is now a sequence to run rather than
+   work to do. Its two dependencies are closed: the hosted build ships the pages
+   it links, and the public surface is bound to vars whose default is the locked
+   one.
+2. **prose** — `cell-naming`, the one word that names two things. It needs
+   Michael, and a public repo is where the cost of leaving it compounds: every
+   reader learns the word in whichever sense the docs teach it.
+3. **honest-axes** — `hub-model-visibility`, `pi-session-id-collision`,
    `echoed-transcript-divergence`. Each is a place where the harness's own
    promise is stronger than what it enforces.
 
@@ -62,7 +68,10 @@ embarrass us the first time an external client shows up.
   mean anything; a provider is a thing you switch to deliberately, per backend.
 - Identity, auth or per-visitor scoping on the hosted demo. If a route can't be
   public without it, the route gets gated, not an account system.
-- More frontends or backends before the notes surface. The sixth stack adds
-  nothing a reader can see while the first five haven't been read.
+- More frontends or backends before the notes surface. The notes have surfaced —
+  the site renders every stack's, generated from the README that holds them —
+  and Folio landed as the sixth frontend for exactly that reason: it is the
+  interface the matrix exists to evaluate, so it belongs in the instrument
+  rather than beside it. That closes the list rather than reopening it.
 - Human-in-the-loop approval. It's the sharpest test of the generative-UI axis
   and it's still not in the reference agent — a real gap, deliberately not now.

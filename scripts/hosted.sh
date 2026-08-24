@@ -2,8 +2,8 @@
 # The hosted subset of the matrix, as data, and how to build it. Sourced by
 # preview.sh and publish.sh; not run directly.
 #
-# A local clone runs everything; Cloudflare runs this subset: the four cells as
-# Workers (three static exports, CopilotKit's export plus its runtime hop), the
+# A local clone runs everything; Cloudflare runs this subset: the five cells as
+# Workers (four static exports, CopilotKit's export plus its runtime hop), the
 # index, and the cloudflare-agents backend. Two modes build the same artifacts
 # with different URLs baked in:
 #   preview     everything on localhost — cells at :PORT+1000, index at :4000,
@@ -11,7 +11,7 @@
 #   production  https://chat-stack-<name>.<WORKERS_SUBDOMAIN>.workers.dev
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/stacks.sh"
 
-HOSTED_CELLS=(assistant-ui copilotkit ai-elements shadcn)   # each has a wrangler.jsonc
+HOSTED_CELLS=(assistant-ui copilotkit ai-elements shadcn folio)   # each has a wrangler.jsonc
 HOSTED_BACKEND="cloudflare-agents"
 PREVIEW_OFFSET=1000
 PREVIEW_INDEX_PORT=4000

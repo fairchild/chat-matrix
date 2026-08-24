@@ -10,11 +10,14 @@ BACKENDS=(
   "pi-rpc:8004"
 )
 
+# Cells in the grid first, then the ones outside it — probes/hub.spec.ts reads
+# the grid as this list's leading run, against the rows index.html drew.
 FRONTENDS=(
   "assistant-ui:3001"
   "copilotkit:3002"
   "ai-elements:3003"
   "shadcn:3004"
+  "folio:3006"
   "jinja:3005"
 )
 

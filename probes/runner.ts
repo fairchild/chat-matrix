@@ -186,7 +186,15 @@ export class Runner {
       case "capture": {
         mkdirSync(this.captureDir, { recursive: true });
         const path = join(this.captureDir, `${step.label}--${this.frontend.name}.png`);
-        await page.screenshot({ path });
+        // Finite animations are fast-forwarded to their end state, infinite
+        // ones held at their first frame. A capture is meant to show what a
+        // reader sees, and a cell with a half-second entry animation is a cell
+        // whose in-flight moment can arrive before its own frame has faded in —
+        // folio's tool row lands ~17ms after send, against 550ms of rise, so
+        // the untouched screenshot was of a nearly empty page. That is the
+        // shutter's timing rather than the stack's, and the flows compare
+        // stacks. The video beside it still records the motion.
+        await page.screenshot({ path, animations: "disabled" });
         this.shots.push({ label: step.label, path, step: source });
         return;
       }

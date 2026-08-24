@@ -132,6 +132,33 @@ const ADAPTERS: Record<string, Adapter> = {
     // so there is no disclosure to open.
   },
 
+  // Folio ships data-testid on the workings apparatus — the ledger block, its
+  // rows, their bodies, the activity line — and marks each message with
+  // data-message-role, so most of this is the package's own handwriting rather
+  // than the cell's. Two exceptions are the cell's. `data-turn-follow-scope` is
+  // the value it passes as turnFollowScopeId, a prop Folio documents as being
+  // for exactly this. And the busy tell is a decision rather than a state:
+  // Folio renders ■ whenever the host hands it a stopTurn callback, so a cell
+  // that always passes one shows a Stop button that is never a signal. This one
+  // passes it only while a turn is in flight — stopping an idle turn is not a
+  // capability — which is what makes the button's presence mean something here.
+  // Rows fold their bodies away until asked, hence expandToolCall; and the
+  // reference agent's three tools are all outside Folio's coding-verb table, so
+  // a row stands as the tool's own name and toolNamed's default finds it.
+  folio: {
+    composer: (p) => p.locator("[data-compose-boundary] textarea"),
+    stop: (p) => p.locator('button[aria-label="Stop"]'),
+    userMessages: (p) => p.locator('article[data-message-role="user"]'),
+    assistantMessages: (p) => p.locator('article[data-message-role="assistant"]'),
+    toolCalls: (p) => p.locator('[data-testid="tool-row"]'),
+    transcript: (p) => p.locator('main[data-turn-follow-scope="folio-cell"]'),
+    expandToolCall: async (p) => {
+      const twist = p.locator('[data-testid="tool-row"] button[aria-expanded="false"]').first();
+      if ((await twist.count()) === 0) return;
+      await twist.click();
+    },
+  },
+
   // Server-rendered: every selector below is a Jinja template's handwriting,
   // written to this file's interface on purpose (frontends/jinja, plan §3.3).
   // The Stop button exists only while a run is in flight, which is the busy
