@@ -57,12 +57,12 @@ runs that can't connect — the other two still gate the thing being published.
 And `probe.sh` refuses to start if any cell or the hub isn't answering, naming
 the URL, which is almost always `run.sh` still coming up.
 
-CI is the one check that can't be green yet, and it isn't the repo's fault: the
-only workflow run there has ever been (2026-08-20, on `main`) came back with all
-seventeen jobs refused — *"The job was not started because recent account
-payments have failed or your spending limit needs to be increased"*. Private
-repositories bill Actions minutes; public ones don't. So CI green is a check on
-step 1 rather than a gate before it.
+CI is the one check that can't be green yet, and it isn't the repo's fault. The
+only workflow run there has ever been — 2026-08-20, on `main` — had all
+seventeen jobs refused before their first step, for account-billing reasons.
+Private repositories bill Actions minutes and public ones don't, so the flip in
+step 1 is what makes CI run at all. That makes CI green a check *on* step 1
+rather than a gate before it.
 
 **Undo:** nothing to undo. `./scripts/stop.sh` is the last line for a reason —
 leaving the whole matrix up makes the next step's builds slower and nothing
@@ -133,7 +133,9 @@ bunx wrangler whoami
 The subdomain it prints has to equal `WORKERS_SUBDOMAIN` in `scripts/hosted.sh`
 (`irons-in-the-fire8698`), because `production_url()` builds every published URL
 from it and `probe.sh --production` reads the same function. If the login has
-lapsed, `bunx wrangler login` and re-run.
+lapsed, `bunx wrangler login` and re-run. Anyone running this from a fork sets
+`WORKERS_SUBDOMAIN` to their own first; the committed default is Michael's
+account and would otherwise deploy under names the hub points elsewhere.
 
 One thing to know before the deploy, because it changes what this step is for.
 The backend Worker that has been live since before this document is an old
@@ -248,10 +250,12 @@ decision is recorded in `docs/plans/cell-naming.md` when it's made.
 ## When Folio publishes
 
 `frontends/folio` consumes `@fairchild/folio` as a vendored tarball, because no
-registry carries it while Folio's own repository is private. Nothing about the
-cell depends on that: the tarball is the package its release workflow built, so
-the code, the version and the exports are the ones npm would serve. The pin is
-the only difference, and swapping it is one line plus a directory:
+registry carries it while Folio's own repository is private. The tarball is the
+package Folio's release workflow built, so the code, the version and the exports
+are the ones npm would serve. Two things change when it publishes, and only one
+of them is the pin.
+
+The pin first — one line plus a directory:
 
 ```diff
  # frontends/folio/package.json, under "dependencies"
@@ -267,9 +271,15 @@ cd frontends/folio && bun install
 Commit `package.json`, `bun.lock` and the deleted directory together. The check
 is that `bun run build` still emits `out/index.html` and the cell still renders
 a turn — if the published package and the tarball differ, that's where it shows.
-Until then the vendored pin is the honest state, and it's worth saying plainly
-in the cell's README rather than leaving a reader to wonder why a dependency
-points at a file.
+
+The other thing is the sourcemaps. The vendored tarball carries the compiled
+`dist/` JavaScript without the seven `.map` files that would normally sit beside
+it, because a sourcemap embeds the TypeScript it was built from and Folio's
+repository is private until it has its own flip;
+`frontends/folio/vendor/PROVENANCE.md` records the derivation and the hashes on
+both sides. The registry pin restores them. Until it lands, stepping into
+`@fairchild/folio` in devtools arrives in compiled JS — a cost to debugging the
+cell and to nothing else, since the code that runs is the same code either way.
 
 ## What is deliberately not done
 

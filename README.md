@@ -163,6 +163,12 @@ anything is public: `PROBE_PORT_OFFSET=1000 ./scripts/probe.sh` drives them.
 deployed, reading the URLs from the function `publish.sh` deploys against, so a
 run can't drift from what was shipped.
 
+Every published URL is built from `WORKERS_SUBDOMAIN` in `scripts/hosted.sh`,
+which defaults to the one these docs name. On a fork it has to be yours — the
+subdomain `bunx wrangler whoami` prints — or set `WORKERS_SUBDOMAIN` in the
+environment, otherwise `publish.sh` deploys to your account under names the hub
+then points somewhere else entirely.
+
 The backend is already deployed:
 
 ```
