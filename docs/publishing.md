@@ -196,29 +196,43 @@ Re-deploying is cheaper than deleting in almost every case.
 
 ## 4. Make the README true again
 
-One sentence in the README's hosting section says the cells aren't published.
-It is true up to step 3 and false after it, so the edit belongs here rather than
-earlier:
+A paragraph in the README's hosting section describes the deployment as it is
+before step 3 — a backend on a stale build, no cells, no hub. Every sentence of
+it is true up to step 3 and false after it, and the paragraph after it leans on
+the same tense, so both go together:
 
 ```diff
- # README.md, in "Hosting a subset"
--Conformance passes against it from the edge. The cells aren't published yet —
--that's `./scripts/publish.sh`, and [`docs/publishing.md`](docs/publishing.md) is
--the ordered sequence around it: what each command changes, how to check it
--worked, and what the undo actually recovers.
-+Conformance passes against it from the edge, and the cells and the hub are
-+published beside it — start at
+ # README.md, in "Hosting a subset", the two paragraphs under the backend URL
+-That Worker is a build from before the model routes and the exposure decisions
+-below — checked 2026-08-23: `/health` answers `200` with `model: scripted` and
+-31 threads, `/models` answers `not found`, and `/threads` still serves the bulk
+-list. The cells and the hub aren't published at all. Both of those are the same
+-one command, `./scripts/publish.sh`, and
+-[`docs/publishing.md`](docs/publishing.md) is the ordered sequence around it:
+-what each command changes, how to check it worked, and what the undo actually
+-recovers.
++The cells and the hub are published beside it, all one build — start at
 +<https://chat-stack-index.irons-in-the-fire8698.workers.dev>.
 +[`docs/publishing.md`](docs/publishing.md) is the sequence that put them there:
 +what each command changes, how to check it worked, and what the undo actually
 +recovers.
+ 
+-What that command publishes is the shape described next, which is the committed
+-one. A published deployment runs the same code as a local one and publishes less
+-of it, and the difference is two vars whose default is the closed one, so the
++What is published is the shape described next, which is the committed one. A
++published deployment runs the same code as a local one and publishes less of
++it, and the difference is two vars whose default is the closed one, so the
+ committed config is already the public shape and it's the local run that carries
 ```
 
 ```sh
 git add README.md && git commit -m "docs: the cells are published" && git push
 ```
 
-**Verify:** `rg -n "aren't published" README.md` returns nothing.
+**Verify:** `rg -n "aren't published|not found" README.md` returns nothing. Both
+strings live only in that first paragraph today, so an empty result is the whole
+check.
 
 **Undo:** revert the commit. Nothing downstream reads this sentence; it's prose
 being held to the same standard as an assertion, which is this repo's rule
