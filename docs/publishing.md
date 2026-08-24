@@ -97,7 +97,9 @@ git rev-list --all --objects -- frontends/folio/vendor \
 ```
 
 Every line has to end `maps=0`; a line that doesn't is a commit to rewrite
-before the branch reaches `main`, not a file to fix on top of it. Actions history and logs
+before the branch reaches `main`, not a file to fix on top of it.
+
+Actions history and logs
 become readable too — and Actions minutes become free, which is what unblocks
 `ci.yml` and turns the run above from a billing error into an actual signal.
 Forks become possible, and stars and watchers are lost.
@@ -207,7 +209,8 @@ failed**: five hosted cells × five flows, plus four of the five hub tests. The
 second skip is one worth knowing about — `isPreview()` is `PROBE_PORT_OFFSET !==
 0`, and `--production` sets base URLs rather than an offset, so the hub test that
 checks a hosted build offers only what it can serve skips against the realest
-hosted build there is. The preview run is what actually exercises it. Conformance against the published
+hosted build there is. The preview run is what actually exercises it.
+Conformance against the published
 backend is the one run that *should* end with a skip: exactly one, the bulk
 thread list, printed with the backend's own words for why it declines to serve
 it. An empty list with no reason still fails, and everything else asserts.
