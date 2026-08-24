@@ -1,0 +1,91 @@
+/*
+ * The host's stylesheet. Folio's own scopes everything to [data-folio-root] and
+ * brings no reset, no fonts and no page background, so those are here — this is
+ * the whole of the CSS a cell has to write, and it is short on purpose.
+ */
+
+:root {
+  /* The package resolves its type through these two and nothing else. The
+     stacks are the host's: next/font names the family, and the rest is what
+     shows while the file is still in flight. */
+  --folio-font-serif: var(--font-newsreader), "Iowan Old Style", Georgia, serif;
+  --folio-font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
+
+  --bar-height: 33px;
+  --bar-border: 1px;
+
+  --bar-bg: #efeadd;
+  --bar-ink: #3b362b;
+  --bar-hint: #6d685c;
+  --bar-line: #ddd6c5;
+}
+
+[data-theme="dark"] {
+  --bar-bg: #100e0b;
+  --bar-ink: #d8d2c4;
+  --bar-hint: #8d8778;
+  --bar-line: #2a251d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bar-bg);
+}
+
+/*
+ * Folio's masthead sticks below the host's chrome in the same scroller, and
+ * turn follow measures the stack rather than assuming the masthead is the top.
+ * The min-height is the other half of the same fact: without it the surface
+ * still asks for a whole viewport underneath the bar and every page overflows
+ * by exactly the bar.
+ */
+[data-folio-root="surface"] {
+  --folio-chrome-top: calc(var(--bar-height) + var(--bar-border));
+  --folio-min-height: calc(100dvh - var(--bar-height) - var(--bar-border));
+}
+
+.host-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 9px;
+  min-height: var(--bar-height);
+  padding: 0 20px;
+  border-bottom: var(--bar-border) solid var(--bar-line);
+  background: color-mix(in srgb, var(--bar-bg) 88%, transparent);
+  backdrop-filter: blur(10px) saturate(1.1);
+  color: var(--bar-ink);
+  font-family: var(--folio-font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+}
+
+.host-bar a {
+  color: var(--bar-hint);
+  text-decoration: none;
+}
+
+.host-bar a:hover {
+  color: var(--bar-ink);
+}
+
+.host-bar-cell {
+  font-weight: 500;
+}
+
+.host-bar-sep,
+.host-bar-quiet {
+  color: var(--bar-hint);
+}
