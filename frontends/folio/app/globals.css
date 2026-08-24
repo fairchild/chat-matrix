@@ -37,6 +37,24 @@ body {
   padding: 0;
 }
 
+/*
+ * "Hosts keep their own resets" is load-bearing, and this is the part of it the
+ * package can't do for you. Folio's components style buttons with utilities
+ * that assume a Tailwind-preflight baseline underneath — nothing in them says
+ * `border: 0` — and its stylesheet is scoped to [data-folio-root], so without
+ * these six lines the ◐, the ✕ and every ledger row's twist render with the
+ * user agent's 2px outset border and grey face.
+ */
+button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
 body {
   background: var(--bar-bg);
 }
