@@ -179,11 +179,61 @@ footprint.** `bun pm ls --all | wc -l` — the metric the other cells use:
 
 Folio brings no Tailwind build, no markdown pipeline, no icon set and no theme
 library: `styles.css` ships pre-compiled and scoped to `[data-folio-root]`, and
-the host's own CSS is 91 lines including the bar. The cost is on the other side
+the host's own CSS is 109 lines including the bar. The cost is on the other side
 of the ledger — no syntax highlighting, no streaming-markdown repair, no code
 themes — and against the scripted model, which emits a paragraph and a list,
 that difference is invisible. Against a real model mid-code-block it would not
 be.
+
+**"Hosts keep their own resets" is a sentence with six lines of CSS behind it,
+and skipping them is visible.** Folio's stylesheet is scoped to
+`[data-folio-root]` and deliberately brings no reset, no fonts and no page
+background. Its own components, though, style buttons with utilities that assume
+a Tailwind-preflight baseline underneath — nothing in them says `border: 0` —
+so with no host reset the ◐ in the masthead, the ✕ on the status line and every
+ledger row's twist rendered with the user agent's 2px outset border and grey
+face. The build was green and the types were clean the whole time; the only
+thing that catches it is looking at the page. Worth naming as the shape of the
+bug rather than the bug: a package that scopes its styles this tightly has drawn
+a boundary, and the host's side of that boundary starts at `button { border: 0 }`.
+
+**The AI SDK streams into a message; Folio models a live turn as a separate
+thing; a host bridging them shows the agent's name twice.** `SessionView`
+renders `activeTurn` as its own assistant article, because Folio's port emits
+`active-turn` events and only upserts the message once it lands. `useChat` does
+the opposite — it creates the assistant message immediately and streams parts
+into it. So during `analyze` the transcript reads `PYDANTIC-AI / ▸ analyze /
+PYDANTIC-AI / ● Calling analyze…`: one article holding the ledger row, one
+holding the activity line. Every way out costs something real. Dropping
+`activeTurn` while a message exists loses the activity line exactly during the
+three seconds the latency axis is about. Withholding the message until it
+completes loses the live ledger row, which is the thing the ledger is for.
+Projecting the row into `activeTurn.details` instead puts it behind a hover.
+This cell keeps both and pays the repeated label, and the redundancy is a true
+statement about the two models rather than a slip.
+
+**The entry animation outruns the stream, which turned a probe capture into
+evidence of nothing.** A turn's frame rises over 550ms; against the scripted
+model the first tool row arrives about 17ms after send. The `analyze` flow
+captures in-flight the moment that row appears, so the screenshot was of a frame
+at opacity 0.02 — measured, not guessed. Nothing was wrong with the cell and
+nothing was wrong with the flow; the shutter was simply faster than the fade.
+`probes/runner.ts` now takes captures with `animations: "disabled"`, which
+settles finite animations to their end state and holds infinite ones at their
+first frame — what a reader sees a beat later, which is what a capture is for.
+Every other cell's captures were checked against that change and are unchanged
+in substance; AI Elements keeps its Pending badge, shadcn its spinner. The
+videos beside the stills still record the motion.
+
+**The short transcript parks the composer mid-page, exactly where the design doc
+says it does.** The dock is `position: sticky; bottom: 0`, which pins to the
+viewport only when the page scrolls. Set `--folio-min-height` correctly and a
+one-turn thread doesn't scroll, so the dock sits at its static position: on an
+empty page at 1280×900 the composer's top lands at y=524 with 226px of paper
+below it. Leave the variable out and the page overflows by exactly the host
+bar's height, the dock pins to the bottom, and it looks better for the wrong
+reason. This is Folio's own named gap rather than a discovery, and the matrix's
+one-tool turns sit at precisely the end of the density range where it shows.
 
 **Host chrome is two CSS variables and both are load-bearing.**
 `--folio-chrome-top` is what Folio's masthead sticks below, and turn follow
@@ -232,7 +282,7 @@ Absent because the harness decided it elsewhere:
   chosen once per backend at the hub, so the status line stays the static text
   it is on Folio's own fixtures.
 
-## Inert
+## Inert components
 
 - **`activeTurn.details`.** The activity line takes a hover-revealed step list.
   The ledger row directly below already says which tool is running, so filling
