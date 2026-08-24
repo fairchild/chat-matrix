@@ -86,17 +86,35 @@ every message, and the activity line's sentence.
 
 ## Folio is vendored
 
-`vendor/fairchild-folio-0.4.1.tgz` — sha256
-`0d629b6ae4e52946f10f518b133171be8492966de6c7ef21b1678f529e321c51`, 119505
-bytes, built by Folio's own release workflow from commit `d9bb824c` on a clean
-tree. `vendor/SHA256SUMS` and `vendor/manifest.json` are that build's own
-receipts, including a per-file digest.
+`vendor/fairchild-folio-0.4.1.tgz` is derived from the tarball Folio's own
+release workflow built from commit `d9bb824c` on a clean tree. That artifact is
+sha256 `0d629b6ae4e52946f10f518b133171be8492966de6c7ef21b1678f529e321c51`,
+119505 bytes, and `vendor/SHA256SUMS` and `vendor/manifest.json` are its
+receipts, including a per-file digest. The copy here is that artifact minus its
+seven `dist/*.map` files — sha256
+`d2feb981af61cefe382ab6236bf4ad121d4629c034f7580eb7a1305809a2db51`, 58550
+bytes; every other file is byte-identical, and `vendor/PROVENANCE.md` records
+the derivation and how to check it. The maps went because a sourcemap embeds
+the TypeScript it was compiled from, and Folio's repository is private until
+its own public flip; this repository goes public first, and a flip publishes
+history. The cost is that devtools step into compiled JavaScript until the
+registry pin brings the maps back.
 
 It is vendored because no registry carries it: Folio's source repository is
 private, npmjs and GitHub Packages both 404, and there is no GitHub Release. The
 tarball exists only as an Actions artifact, which needs a token and expires.
 `bun install --frozen-lockfile` has to work on a fresh clone with no credentials
 — CI does exactly that — so the artifact lives in the tree.
+
+`bun.lock` records the tarball's integrity and a fresh install checks it: a
+wrong hash fails with `Integrity check failed for tarball`, which is what a file
+dependency should do. One thing to know when the tarball changes: bun's global
+cache keys a `file:` tarball by its path (`~/.bun/install/cache/@T@…`), so a
+machine that has installed from that path before serves the cached extraction
+and never reads the new bytes, and the lock keeps naming the old hash. Evict
+that entry before trusting a frozen install. And a repository scanner sees a
+`.tgz` as an opaque blob (`gitleaks --max-archive-depth` defaults to 0), so an
+audit has to extract it.
 
 When Folio publishes, the swap is one line in `package.json`:
 

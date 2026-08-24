@@ -156,6 +156,8 @@ side of Folio's boundary: `useChat`'s typed `tool-<name>` parts become the
 `/health` fills the masthead and status line, and a turn timer fills the
 receipt. That projection's size is recorded in the README beside the other
 cells' numbers. Folio is consumed as the tarball its own release workflow
-built from `d9bb824c` — 0.4.1, sha256 `0d629b6a…` — vendored into this
-directory, because no registry carries it while the source repository is
-private; the swap to `^0.4.1` from npmjs is one line when it publishes.
+built from `d9bb824c` (0.4.1, sha256 `0d629b6a…`), vendored into this
+directory without its sourcemaps — they embed the source, and that is Folio's
+to publish — because no registry carries it while the source repository is
+private. `vendor/PROVENANCE.md` has both hashes, and the swap to `^0.4.1`
+from npmjs is one line when it publishes.
