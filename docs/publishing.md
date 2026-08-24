@@ -47,8 +47,12 @@ greps for the word and fails on it. Golden covers all four backends and prints
 the one recorded exception, cloudflare-agents' `finishReason`
 (`protocol/golden/exceptions.json`); anything else printed is a real drift.
 `probe.sh` runs every flow in `probes/flows.yaml` against every frontend in
-`scripts/stacks.sh`, plus five hub tests — six cells × five flows + five, so
-**35 passed**, and it prints the gallery path at the end.
+`scripts/stacks.sh`, plus five hub tests — six cells × five flows + five, so 35
+collected and **34 passed, 1 skipped, 0 failed**. The skip is structural, not a
+gap: `probes/hub.spec.ts` guards "a hosted build offers only what it can serve"
+with `test.skip(!isPreview(), …)`, because a local run serves the whole matrix
+and withholds nothing for that assertion to catch. It prints the gallery path at
+the end.
 
 Two things that can stop this before it starts. The `pi` backends build a model
 runtime at module scope and exit non-zero without a `pi` login, so a machine
@@ -77,7 +81,23 @@ gh repo edit fairchild/chat-matrix --visibility public --accept-visibility-chang
 The consent flag is mandatory when `--visibility` is used, and the consequences
 it wants acknowledged are real ones. Every commit in the history becomes
 readable, so this is the moment the audit of what's in that history has to have
-already happened rather than the moment to start it. Actions history and logs
+already happened rather than the moment to start it — and *history*, not the
+working tree, which is the distinction that makes an audit worth running. One
+known instance: the vendored Folio tarball must carry no `dist/*.map`, and
+because a repack is a new commit rather than an edit to an old one, the check is
+over every version of that blob, not the current one:
+
+```sh
+git rev-list --all --objects -- frontends/folio/vendor \
+  | awk '$2 ~ /\.tgz$/ {print $1}' | sort -u \
+  | while read -r obj; do
+      printf '%s maps=%s\n' "${obj:0:8}" \
+        "$(git cat-file blob "$obj" | tar tz 2>/dev/null | grep -c '\.map$')"
+    done
+```
+
+Every line has to end `maps=0`; a line that doesn't is a commit to rewrite
+before the branch reaches `main`, not a file to fix on top of it. Actions history and logs
 become readable too — and Actions minutes become free, which is what unblocks
 `ci.yml` and turns the run above from a billing error into an actual signal.
 Forks become possible, and stars and watchers are lost.
@@ -182,7 +202,12 @@ paths, so `/` 404s there and `/health` is its liveness probe.
 the deployed cells and the deployed hub — the hosted-subset filter applies, so
 `jinja` reports as a skip with the list that made the decision in its title, and
 the captures key under `<backend>-deployed` so they land beside the local and
-preview bands rather than on top of them. Conformance against the published
+preview bands rather than on top of them. Expect **29 passed, 2 skipped, 0
+failed**: five hosted cells × five flows, plus four of the five hub tests. The
+second skip is one worth knowing about — `isPreview()` is `PROBE_PORT_OFFSET !==
+0`, and `--production` sets base URLs rather than an offset, so the hub test that
+checks a hosted build offers only what it can serve skips against the realest
+hosted build there is. The preview run is what actually exercises it. Conformance against the published
 backend is the one run that *should* end with a skip: exactly one, the bulk
 thread list, printed with the backend's own words for why it declines to serve
 it. An empty list with no reason still fails, and everything else asserts.
@@ -286,14 +311,26 @@ Commit `package.json`, `bun.lock` and the deleted directory together. The check
 is that `bun run build` still emits `out/index.html` and the cell still renders
 a turn — if the published package and the tarball differ, that's where it shows.
 
-The other thing is the sourcemaps. The vendored tarball carries the compiled
-`dist/` JavaScript without the seven `.map` files that would normally sit beside
-it, because a sourcemap embeds the TypeScript it was built from and Folio's
-repository is private until it has its own flip;
-`frontends/folio/vendor/PROVENANCE.md` records the derivation and the hashes on
-both sides. The registry pin restores them. Until it lands, stepping into
-`@fairchild/folio` in devtools arrives in compiled JS — a cost to debugging the
-cell and to nothing else, since the code that runs is the same code either way.
+The other thing is the sourcemaps, and it is the half with a deadline on it. A
+sourcemap's `sourcesContent` embeds the TypeScript it was built from, and
+Folio's repository is private until it has its own flip, so the vendored copy
+has to carry the compiled `dist/` without the seven `.map` files that would
+normally sit beside it. `frontends/folio/vendor/PROVENANCE.md` is where the
+derivation and the hashes on both sides belong. Check it rather than assume it:
+
+```sh
+tar tzf frontends/folio/vendor/fairchild-folio-0.4.1.tgz | grep -c '\.map$'   # 0
+```
+
+Repacking fixes the working tree and not the history, which is the trap worth
+naming: if a tarball carrying maps was ever committed, the commit that carried
+it is one of the commits step 1 publishes. That check belongs with step 1's
+history audit, not here.
+
+The registry pin restores the sourcemaps properly, because npm serves what
+Folio's release workflow built. Until it lands, stepping into `@fairchild/folio`
+in devtools arrives in compiled JS — a cost to debugging the cell and to nothing
+else, since the code that runs is the same code either way.
 
 ## What is deliberately not done
 
