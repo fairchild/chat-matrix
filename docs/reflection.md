@@ -5,6 +5,18 @@ the repo proves — where something is measured I say so, and where I'm
 extrapolating from one build I say that too. Treat the strong claims as
 hypotheses you now have a harness to test.
 
+*Updated 2026-08-23. Most of this was written when the repo had one backend and
+two frontends; it has four and six now. The largest change is a new section, "On
+the backend axis", and it is a synthesis rather than a memory — every claim in
+it is traceable to what a backend's own README recorded during its build, to
+`protocol/CONTRACT.md`, or to `protocol/golden/exceptions.json`, and it says
+which. "What this still can't tell you" was rewritten, because most of what it
+listed has since been done. The rest is smaller: the package counts moved onto
+one metric, two notes were added about the harness, and the places where a
+prediction written here has since been settled now say so inline. Every opinion
+that was already here stayed, including the ones the later work has put pressure
+on.*
+
 ## The short version
 
 If you want a chat UI that looks finished in an afternoon and you don't much
@@ -22,10 +34,15 @@ black box you configure.
 
 ## On the two frontends
 
-*Written when there were two. There are four now — AI Elements and shadcn each
-carry their own ergonomics notes in their READMEs, and `probes/` can re-derive
-any rendering claim below on demand. The assistant-ui/CopilotKit contrast is
-still the sharpest one, so it stays as written.*
+*Written when there were two. There are five on the grid now, plus the monolith
+outside it — [AI Elements](../frontends/ai-elements/README.md),
+[shadcn](../frontends/shadcn/README.md) and
+[Folio](../frontends/folio/README.md) each carry their own ergonomics notes in
+their READMEs, and `probes/` can re-derive any rendering claim below on demand.
+Folio is the newest and I haven't formed an opinion on it worth writing down;
+[`frontends/folio/folio-in-context.md`](../frontends/folio/folio-in-context.md)
+is the study it was built to be read against. The assistant-ui/CopilotKit
+contrast is still the sharpest one, so it stays as written.*
 
 The sharpest measured difference is what happens when a tool is called and you
 haven't written any code for it. assistant-ui renders a collapsed `1 tool call ›`
@@ -50,10 +67,13 @@ a Node service to run, deploy, and keep healthy for a frontend. If you already
 have a BFF, this costs nothing and buys something. If you were hoping to deploy
 a static frontend, it's a real change.
 
-Two smaller things I'd want to know before choosing. CopilotKit installs 777
-packages to assistant-ui's 259, and `@copilotkit/runtime` declares peer deps on
-openai, groq, langchain, and the Anthropic SDK — optional in practice, but heavy
-for something that only proxies AG-UI. And in dev it fetches product
+Two smaller things I'd want to know before choosing. CopilotKit's tree resolves
+about four times as many packages as assistant-ui's — 1,325 against 356 when
+each cell's README recorded it with `bun pm ls --all`, which is the metric the
+whole repo uses now, and higher for all four today because the trees have moved
+since. The ratio is the durable part. `@copilotkit/runtime` also declares peer
+deps on openai, groq, langchain, and the Anthropic SDK — optional in practice,
+but heavy for something that only proxies AG-UI. And in dev it fetches product
 announcements from a CDN and renders them over your app; I couldn't turn the
 overlay off (`showDevConsole={false}` didn't do it), and it sat on top of my
 header in every screenshot. Telemetry at least has a documented off switch.
@@ -91,7 +111,109 @@ client-authoritative during a turn and server-persisted after it, because that's
 what the AI SDK transport wants. It works, but a backend that owns its own
 sessions — `pi` — will want to be the source of truth, and I think that's a
 genuine divergence in the contract rather than an implementation detail. I'd
-expect to revisit it rather than paper over it.
+expect to revisit it rather than paper over it. *(It went that way. Both pi
+backends are session-authoritative, the contract names both models, and
+`conformance.sh` holds each backend to the one its `/health` declares — see "On
+the backend axis" below.)*
+
+## On the backend axis
+
+Three more backends landed after the section above was written, and this is what
+their notes add up to. I built none of them in one sitting the way I built the
+first two, so this is a synthesis of what each README recorded while its stack
+was fresh rather than a recollection — I've said whose note each claim comes
+from, and marked the opinions as opinions.
+
+**What a backend costs is mostly whether its library already ships a wire
+format.** That is the one number that moves. The pydantic-ai README records
+serving a protocol as one line, `dispatch_request`, with the two endpoints
+differing by an adapter class. The cloudflare-agents README records the AI SDK
+doing the same work in one call — `toUIMessageStreamResponse()` — with AG-UI as
+a forty-line `switch` over `fullStream`, "because the events map one-to-one".
+The pi README records the other end of the range: pi has an event stream and no
+wire format, so each protocol is roughly 130 lines plus a shared run loop, and
+it names that as this backend's cost where pydantic-ai gets it from its library.
+The totals follow: ~500 lines for pydantic-ai, ~800 for cloudflare-agents,
+~1090 for pi, ~1310 for pi-rpc, each README apportioning its own difference. My
+reading of that spread, and it is a reading: the framework you pick decides
+almost nothing about the agent and almost everything about the translation layer
+around it.
+
+**The tell that a backend's event model is well-shaped is that its adapter is a
+`switch`.** Both pi READMEs reach for that word independently, and neither was
+looking for it — `toolcall_start/delta/end` maps to
+`tool-input-start/delta/available`, `tool_execution_end` to
+`tool-output-available`, and nothing needed buffering. The cloudflare-agents
+README says the same of `fullStream`. The one place a state machine was needed
+is the one place the wire is lossy, below.
+
+**Where the history lives is the real axis, and it isn't the framework.**
+`protocol/CONTRACT.md` now names two models rather than pretending there is one:
+**client-authoritative**, where the AI SDK sends the full list each turn and the
+server records the result, and **session-authoritative**, where the backend owns
+a durable record and reads only the latest user message. pydantic-ai and
+cloudflare-agents are the first; both pi backends are the second, because pi
+already owns the session file and replaying the client's copy into it would mean
+two sources of truth. The consequence the CONTRACT states plainly is the one I'd
+want a reader to take away: on a client-authoritative backend the stored thread
+mirrors the client's last view, so a client that sends fewer messages than the
+server holds destroys the rest. `/health` declares which model a backend is, and
+`conformance.sh` holds it to the declaration from both sides — a backend that
+changes behaviour goes red until someone edits the word. That check is the part
+I'd defend: a declaration nothing verifies is a comment.
+
+**When persistence happens differs, and it shows up as a different failure.**
+The pydantic-ai README records `on_complete` firing on stream completion, so a
+client that disconnects mid-stream writes nothing. The contract records the
+other shape and its consequence side by side: pi appends each entry as it
+happens, once the first assistant message has landed, so the same disconnect
+leaves the user message and a partial assistant message marked `aborted`.
+Neither is wrong. They fail differently, and I'd want to know which before
+building anything that reconnects.
+
+**Two backends removed the store and one of them paid a tax for it.** The
+cloudflare-agents README records the Durable Object per thread owning its own
+SQLite, so persistence is fifteen lines and there is no store class — then
+records the bill: Durable Objects don't enumerate, so `/threads` needs a
+singleton `Registry` every thread reports to, sixty lines and a second hop that
+"exists only because the contract has a list endpoint". The pi README reports
+the same shape with pi's session files and a 90-line store module. Worth noticing
+that both bills were for the list route, which is also the one route a published
+deployment declines to serve.
+
+**Inheriting a runtime means inheriting everything else in it.** This is the pi
+notes' sharpest observation and it generalises. The pi README records
+`DEMO_MODEL=anthropic/claude-haiku-4-5` working first try through an OAuth login
+already on the machine — a convenience the Python backend can't offer — and in
+the same breath that `DefaultResourceLoader` would just as happily load your
+extensions, skills, prompt templates and `AGENTS.md` into a comparison harness,
+which is why that backend passes five `no*` flags. The pi-rpc README finds the
+other half out of process: the child reads `~/.pi/agent/settings.json` and warns
+about patterns it can't match, and `PI_CODING_AGENT_DIR` is the isolation knob,
+at the cost of the shared `auth.json` that made real models keyless. Free
+credentials and ambient configuration are the same feature.
+
+**The process boundary costs exactly one thing, and it's the thing a chat UI
+wants most.** The pi-rpc README records that pi strips `partial` from
+`message_update` to keep the stream linear in size — sound for a log — and that
+this takes the tool call's id and name with it until `toolcall_end`, so an
+out-of-process client can't stream arguments. The in-process adapters were a
+`switch`; these are a `switch` plus a per-call buffer, under ten lines each. It
+also costs 200 MB of resident memory per idle child, measured, for a scripted
+model that calls none of the provider SDKs that memory is holding. That the same
+agent runs at both distances at all is the more interesting half: the pi-rpc
+README records the provider, the tools and the system prompt moving into a
+single extension file unchanged.
+
+**Golden is the reason any of this is comparable.** Four backends, five fixed
+prompts, both protocols, reduced to a canonical form and diffed byte for byte
+against fixtures captured from the reference, and
+`protocol/golden/exceptions.json` holds exactly one entry: cloudflare-agents'
+`finishReason`, which the AI SDK stamps unconditionally and no cell reads. I did
+not expect four independent implementations to agree that closely, and I'd have
+believed a hand-written comparison far less. What it can't see is pacing —
+pi-rpc's burst at `toolcall_end` is identical bytes in a different rhythm — which
+is a real limit of byte comparison rather than a gap in the check.
 
 ## On the monolith
 
@@ -145,8 +267,34 @@ The version that only checks "does it stream text" would have passed while
 `tool-input-delta` was missing, which is precisely the event that lets a UI show
 arguments arriving.
 
-**One line in `stacks.sh` really was the whole registration.** I was braced for
-that claim to be a lie when the second frontend landed. It wasn't.
+**One line in `stacks.sh` really was the whole registration — for a while.** I
+was braced for that claim to be a lie when the second frontend landed. It
+wasn't. It has since grown to three places: the line in `stacks.sh`, a row or
+column in `index/index.html`, and an adapter in `probes/frontends.ts`. Each of
+those arrived with something the harness gained — a hub that draws the grid,
+flows that run against every cell — and each is a few lines, so I'd still call
+the design right. But "one line" stopped being true two cells ago, and the
+README's "Adding a stack" now lists what it actually costs.
+
+**Making the model a runtime choice found a bug the whole design was hiding.**
+The hub's per-backend picker was meant as a convenience — a dropdown instead of
+`DEMO_MODEL` in front of `run.sh`. What it actually did was make a reasoning
+model reachable, and the second turn under one 500'd on pydantic-ai over a
+missing optional field. That was unreachable before, and it only shows up on
+turn *two*, so neither the scripted default nor a single-shot probe would ever
+have found it. The general version, which I'd now believe about any harness: a
+control variable you can't change at runtime is a region of the space you have
+never visited.
+
+**Publishing a subset was cheaper than publishing everything, and more honest.**
+Cloudflare runs one backend and the grid cells; a local clone runs all ten
+stacks. What I didn't expect is that the constraint improved the code. The
+public surface had to become a decision rather than a default, so the bulk
+thread list and the model switch are now bound to vars whose default is the
+locked one — the committed config ships the safe shape and the local run carries
+the unlock — and the hub draws a fixed chip where it would otherwise draw a
+control it couldn't honour. The version of this that goes wrong is the one where
+the safe shape is something a publish has to remember.
 
 ## Mistakes worth recording
 
@@ -211,22 +359,43 @@ of trusting that I looked carefully.
 it the moment threads get long enough to reload slowly, which will be before it
 becomes obviously wrong.
 
-**Stop assigning ports by hand.** Two frontends is fine. Six won't be.
+**Stop assigning ports by hand.** I wrote "two frontends is fine, six won't be".
+There are six now, and it is still fine — `stacks.sh` holds ten `name:port`
+pairs and the only thing that has actually bitten is having to keep the preview
+offset clear of both ranges. So the prediction was wrong about where the pain
+starts, and I'd still make the change, just no longer as the next one.
 
 ## What this still can't tell you
 
-One backend. The backend axis is entirely untested — every conclusion here is
-about frontends and protocols, and `pi` is the first thing that will stress the
-contract, because a subprocess-driven agent that owns its own sessions is a
-genuinely different shape than a library you import.
+The backend axis is no longer the blank this section used to name. Four
+backends implement the contract, `pi` shipped twice — in-process and as a child
+process — and golden holds all four to the reference's bytes, so the section
+above is a reading rather than the hypothesis this line used to be. What's left
+is different.
 
-No real model. No tool chaining, no multi-step traces, no failure modes.
+**No real model, by default and on purpose.** The scripted model is what makes
+the comparisons mean anything, and it means no tool chaining, no multi-step
+traces, no failure modes, and none of the messy work that is exactly where
+frontends differ most. You can switch a backend to a provider at the hub and see
+all of it; what you can't do is compare two cells afterwards, because the thing
+being rendered stopped being identical. That trade is the harness rather than a
+defect in it, but it does mean every rendering conclusion here is drawn from
+one-tool turns.
 
-No human-in-the-loop. pydantic-ai supports deferred tool approval and it's the
-sharpest test of the generative-UI axis — where AG-UI and the AI SDK actually
-diverge rather than merely differing. Skipping it means the protocol axis is
-currently under-tested even though both protocols work.
+**No human-in-the-loop.** pydantic-ai supports deferred tool approval and it's
+the sharpest test of the generative-UI axis — where AG-UI and the AI SDK
+actually diverge rather than merely differing. It's still not in the reference
+agent, so the protocol axis stays under-tested even though both protocols work.
 
-If I could only do one more thing, it would be the `pi` backend, because it's
-the experiment most likely to tell me the architecture is wrong — and that's
-worth more right now than another frontend confirming it's right.
+**The day a cell rehydrates.** This is the one I'd watch.
+`protocol/CONTRACT.md` names two history models and `conformance.sh` holds each
+backend to the one it declares, but the two have never actually met: none of the
+five grid cells rehydrates on reload, and the one frontend that does — the
+monolith — reads its own store and has no backend to point elsewhere. So nothing
+in the matrix has yet held a history a session-authoritative backend disagrees
+with. The contract predicts what happens; nothing has run it.
+
+If I could only do one more thing now, it would be a cell that rehydrates from
+`/threads/{id}` — for the same reason `pi` was the answer last time. It's the
+experiment most likely to tell me the contract is wrong, and that's worth more
+than another surface confirming it's right.
