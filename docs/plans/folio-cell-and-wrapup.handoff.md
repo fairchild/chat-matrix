@@ -73,3 +73,28 @@ reconcile, don't inherit), `docs/architecture.md`, and folio's `README.md` +
 - Report in this terminal, structured: status; study path; cell status with
   gate results; audit findings (facts vs judgment calls for Michael); the
   documented publish sequence; commits + PR; deviations; unknowns.
+
+## Retrospective — 2026-08-24
+
+Three lanes with disjoint files (cell, audit, wrap-up prose) ran in one shared
+worktree without a collision; every commit was staged by explicit path. The
+audit lane's most consequential finding came from extracting the vendored
+tarball rather than scanning it — its seven sourcemaps carried Folio's
+TypeScript — and it arrived before the tarball reached history. The wrap-up
+lane's live checks changed the publish sequence: the deployed backend is a
+pre-exposure-decision build still serving thread titles, and CI has never run
+because Actions billed a private repo.
+
+What surprised. The cell lane finished without applying a mid-run instruction
+to strip the maps — a message to a busy lane is not a change until the artifact
+shows it, and the branch had to be rebuilt afterwards (cherry-pick, not rebase:
+the auto-mode classifier blocks compound history rewrites). bun's cache keys a
+`file:` tarball by path, so two "successful" frozen installs served the old
+extraction and kept the old integrity in the lock; only evicting `@T@…` and
+proving a wrong hash fails settled it. Orca's runtime was down all session, so
+the card was never updated. `frontends/folio/.env.example` is the one file left
+unwritten — a path rule denies env-shaped writes, and routing around it was not
+the right call.
+
+What to keep: verify each lane's most consequential claim by reading the
+artifact — the tarball, the captures, the lock — not the report.
