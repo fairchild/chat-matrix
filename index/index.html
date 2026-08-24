@@ -4,10 +4,10 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>chat-stack matrix</title>
-<meta name="description" content="Four chat frontends against four agent backends, all running the same agent, so the differences you see are the stack rather than the answer." />
+<meta name="description" content="Five chat frontends against four agent backends, all running the same agent, so the differences you see are the stack rather than the answer." />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="chat-stack matrix" />
-<meta property="og:description" content="Four chat frontends against four agent backends, all running the same agent, so the differences you see are the stack rather than the answer." />
+<meta property="og:description" content="Five chat frontends against four agent backends, all running the same agent, so the differences you see are the stack rather than the answer." />
 <meta name="twitter:card" content="summary" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='%2371717a'%3E%3Crect x='1' y='1' width='6' height='6' rx='1.5'/%3E%3Crect x='9' y='1' width='6' height='6' rx='1.5'/%3E%3Crect x='1' y='9' width='6' height='6' rx='1.5'/%3E%3C/g%3E%3Crect x='9' y='9' width='6' height='6' rx='1.5' fill='%234ade80'/%3E%3C/svg%3E" />
 <style>
@@ -132,7 +132,8 @@
   .matrix[data-hc="0"] [data-c="0"], .matrix[data-hc="1"] [data-c="1"],
   .matrix[data-hc="2"] [data-c="2"], .matrix[data-hc="3"] [data-c="3"],
   .matrix[data-hr="0"] [data-r="0"], .matrix[data-hr="1"] [data-r="1"],
-  .matrix[data-hr="2"] [data-r="2"], .matrix[data-hr="3"] [data-r="3"] { background: var(--chip); }
+  .matrix[data-hr="2"] [data-r="2"], .matrix[data-hr="3"] [data-r="3"],
+  .matrix[data-hr="4"] [data-r="4"] { background: var(--chip); }
 
   /* One line under the grid, so a square's detail costs a hover instead of a
      card. Fixed height: reading the matrix shouldn't reflow the page. */
@@ -288,6 +289,11 @@ const FRONTENDS = [
     id: "shadcn", name: "shadcn", port: 3004, speaks: "vercel-ai",
     why: "Vercel v7 · direct",
     long: "Vercel AI data stream (v7), straight to the backend, a hand-written component per tool.",
+  },
+  {
+    id: "folio", name: "Folio", port: 3006, speaks: "vercel-ai",
+    why: "Vercel v7 · direct",
+    long: "Vercel AI data stream (v7), straight to the backend, read as a document — tool calls are a ledger of folded rows and the turn closes with a receipt.",
   },
 ];
 
@@ -649,7 +655,7 @@ const PAGES = [
   {
     href: "notes/index.html",
     name: "ergonomics notes",
-    why: "What building each stack actually cost, straight from its README — generated fresh from the source, grouped by axis so all nine read side by side. Also linked from each header in the grid above.",
+    why: "What building each stack actually cost, straight from its README — generated fresh from the source, grouped by axis so all ten read side by side. Also linked from each header in the grid above.",
   },
 ];
 
