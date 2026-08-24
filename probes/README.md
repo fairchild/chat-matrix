@@ -4,7 +4,7 @@ The flows every frontend has to survive, written in something close to English,
 run against every cell of the matrix, and photographed at the same moments so the
 results sit side by side.
 
-The root README names four axes and one probe prompt each. Reading those prompts
+The root README names four axes with a probe prompt each. Reading those prompts
 tells you what to type; it doesn't tell you what the UI did with them. This is
 that part — the same prompts driven for real, captured at the moment each one
 gets interesting.
@@ -23,7 +23,7 @@ beside the first; see "Adding a backend" below.
 `./scripts/probe.sh` passes its arguments straight through to Playwright, so
 `--grep analyze`, `--headed` and `--ui` all work.
 
-## How a flow stays honest across four UIs
+## How a flow stays honest across six UIs
 
 A flow is a list of sentences:
 
@@ -40,7 +40,8 @@ A flow is a list of sentences:
 ```
 
 None of those sentences name a selector, a component or a framework, which is
-what lets one flow run against four unrelated UIs. Every sentence resolves
+what lets one flow run against six unrelated UIs — every cell in
+`scripts/stacks.sh`, the monolith included. Every sentence resolves
 through an adapter in `frontends.ts`, and that file is the only place any stack's
 DOM is described. `flow.ts` holds the whole grammar — one regex per sentence the
 flows are allowed to say, and an unknown sentence fails with the list of known
@@ -58,8 +59,9 @@ are generated from the pair of those two files. A cell that appears in
 nothing, which is how the fourth cell announced itself while this was being
 written.
 
-The fourth cell cost one adapter block of about ten lines. That number is the
-claim this directory is really making.
+That fourth cell cost one adapter block of about ten lines. That number is the
+claim this directory is really making, and the cells added since have been the
+test of it.
 
 ## Adding a flow
 
@@ -69,7 +71,7 @@ frontend can answer has stopped describing an axis and started describing a
 stack. When a cell needs the same sentence resolved differently, that belongs in
 its adapter, the way `toolNamed` does.
 
-## Adding a backend — the open follow-up
+## Adding a backend
 
 A backend needs no adapter and no flow change: adapters are per-frontend, and the
 flows drive whichever backend a cell resolves. That much is verified — the whole
@@ -128,7 +130,7 @@ local matrix — `scripts/preview.sh` serves each cell's static export at its po
 plus 1000 — which is how the production artifacts get driven before they deploy:
 
 ```sh
-./scripts/preview.sh                       # build + serve the subset on :4000–:4004
+./scripts/preview.sh                       # build + serve the subset: hub :4000, each cell at its port + 1000
 PROBE_PORT_OFFSET=1000 ./scripts/probe.sh
 ```
 
@@ -144,9 +146,10 @@ separate bands, with the preview band sorting directly after its base
 backend's.
 
 An offset run drives only `HOSTED_CELLS` from `scripts/hosted.sh`, because that
-is the list `preview.sh` and `publish.sh` build from — Cloudflare serves four
-static exports, and `jinja` is a Python process rather than an export, so there
-is nothing at `:4005` to photograph. It reports as skipped rather than failing,
+is the list `preview.sh` and `publish.sh` build from — Cloudflare serves the
+grid cells as static exports, and `jinja` is a Python process rather than an
+export, so there is nothing at `:4005` to photograph. It reports as skipped
+rather than failing,
 which is the distinction worth keeping: a cell with no adapter is a gap in
 `frontends.ts` and still fails loudly, while a cell outside the subset is a
 decision someone made in `hosted.sh`. The preflight in `probe.sh` reads the same
@@ -165,13 +168,18 @@ sets of captures are in the same gallery — three bands per moment, since `jinj
 comes along outside the grid.
 
 The assertion to watch is `resume`'s `expect the history to resume as the cell
-declares`. It reads `resumes` from each adapter in `frontends.ts` and holds the
-cell to it in both directions: a cell that declares it has to put the thread
-back, and a cell that declares nothing has to come back empty. So a frontend
-that starts rehydrating — or a backend that owns its own sessions, as a
-`pi`-backed one might — goes red until someone writes the new behaviour down.
-That failure is the good outcome; read it as the feature landing, not the
-harness rotting.
+declares`. This section used to predict that a `pi` backend would be the thing
+to break it — a backend that owns its own sessions putting history back a cell
+never asked for. What broke it first was a frontend. `frontends/jinja` renders
+from its own store, so a reload resumes, and a flow asserting one outcome for
+every cell could only read that as a failure. The fix was to stop asserting one
+number for everyone: each adapter declares `resumes` in `frontends.ts`, and the
+flow holds the cell to its own declaration in both directions — a cell that
+declares it has to put the thread back, and a cell that declares nothing has to
+come back empty. The pi prediction is still open and now has somewhere to land:
+a cell that starts rehydrating against a session-authoritative backend goes red
+until someone writes the new behaviour down. That failure is the good outcome;
+read it as the feature landing, not the harness rotting.
 
 ## Probing what's actually deployed
 
@@ -205,14 +213,13 @@ The flows themselves don't touch either route, so they run identically.
 
 ## What it found on the first run
 
-**None of the four React cells resume on reload.** Send a message, reload, and
-they come back empty — a fresh thread, not the one you were in. The backend is
-persisting correctly and `/threads/{id}` serves the history; none of them asks
-for it. The root README describes this as "reload resumes the current thread
-rather than letting you pick one", which is a more generous reading than those
-four support.
+**No cell on the grid resumes on reload.** Send a message, reload, and it comes
+back empty — a fresh thread, not the one you were in. The backend is persisting
+correctly and `/threads/{id}` serves the history; none of them asks for it. That
+was four cells on the first run and is five now, and it is the finding that
+turned a generous line in the root README into the plain one in its Known gaps.
 
-The fifth cell changed the picture. `jinja` arrived later and does resume: the
+The monolith changed the picture. `jinja` arrived later and does resume: the
 thread lives in the process that renders the page, so a reload re-renders it.
 That is why the flow no longer asserts a single number for everyone — each
 adapter declares `resumes` in `frontends.ts`, and the assertion holds the cell
@@ -231,8 +238,11 @@ model, same bytes on the wire:
 | CopilotKit | name + `inProgress`/`complete` pill | collapsed |
 | AI Elements | name, status, arguments streaming in live | open, because `page.tsx` passes `defaultOpen` |
 | shadcn | a component per tool: a weather card, note cards, "Analyzing …" | no disclosure to open |
+| Folio | see [`frontends/folio/README.md`](../frontends/folio/README.md) | — |
+| jinja | a card per tool — `templates/partials/tool_<name>.html`, with a JSON card as the fallback — under a header carrying the tool's name and state | no disclosure to open; the whole thing is server-rendered |
 
-shadcn is the odd one out, and it's the only cell where the tool's *name* never
+shadcn was the odd one out among the first four, and it is the only cell there
+where the tool's *name* never
 appears on screen — the weather card reads "Tokyo · crisp and sunny". Its
 adapter overrides `toolNamed` to match the `data-tool` attribute instead of
 visible text, which is the one place a flow sentence resolves through something
@@ -245,7 +255,7 @@ what a library actually gives you to hold on to, shadcn/ui sits with
 assistant-ui — `data-slot` on every primitive.
 
 The `analyze` flow is where the difference is sharpest, because the tool sleeps
-~3s and the in-flight screenshot catches all four mid-gap.
+~3s and the in-flight screenshot catches every cell mid-gap.
 
 ## Known noise
 

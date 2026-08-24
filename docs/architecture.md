@@ -39,6 +39,7 @@ flowchart LR
     A2R["CopilotRuntime<br/>/api/copilotkit"]
     A3["AI Elements<br/>:3003"]
     A4["shadcn<br/>:3004"]
+    A5["Folio<br/>:3006"]
   end
   subgraph P["protocol"]
     P1["Vercel AI<br/>data stream v7"]
@@ -51,10 +52,11 @@ flowchart LR
     B4["pi-rpc<br/>:8004"]
   end
 
-  H -->|"?backend="| A1 & A2 & A3 & A4
+  H -->|"?backend="| A1 & A2 & A3 & A4 & A5
   A1 --> P1
   A3 --> P1
   A4 --> P1
+  A5 --> P1
   A2 --> A2R
   A2R --> P2
   P1 --> B1
@@ -68,10 +70,11 @@ flowchart LR
 
 ```
 
-Four cells and four backends are live; the hub's picker chooses the backend and
-every cell reaches any of them.
+Five cells and four backends are live — twenty squares — plus one cell outside
+the grid entirely, further down. The hub's picker chooses the backend and every
+cell reaches any of them.
 
-The asymmetry in that diagram is worth reading carefully. Three of the four
+The asymmetry in that diagram is worth reading carefully. Four of the five
 frontends speak their protocol from the browser, so the arrow goes straight to
 Python. CopilotKit requires a **server-side runtime** in its own Next process, so
 the browser talks to that and the runtime talks AG-UI onward. Both are legitimate
@@ -79,7 +82,7 @@ designs — the hop is a natural home for auth and rate limiting — but it mean
 "frontend" isn't uniformly a pure client.
 
 That asymmetry resurfaces in backend switching. The hub passes the chosen backend
-to a cell as `?backend=`, which the three direct cells read in the browser. In
+to a cell as `?backend=`, which the four direct cells read in the browser. In
 CopilotKit the hop that talks to the backend runs server-side, so the choice has
 to be forwarded: the provider sends it as an `x-demo-backend` header and the
 route's per-request agents factory builds the `HttpAgent` for it. Same axis, two
@@ -88,7 +91,7 @@ mechanisms, because the topologies genuinely differ.
 ## How a request actually flows
 
 Taking assistant-ui over the Vercel AI data stream as the representative case —
-the same path AI Elements and shadcn use. Nothing sits between the two: the
+the same path AI Elements, shadcn and Folio use. Nothing sits between the two: the
 browser posts directly to the Python process, which is why swapping backends is a
 URL change rather than a redeploy.
 
@@ -167,29 +170,38 @@ a frontend, because a UI that owns a model client can't be compared cleanly
 against one that doesn't.
 
 `scripts/` is lifecycle. The matrix itself lives in `scripts/stacks.sh` as two
-arrays of `name:port`; nothing else in the repo knows the list, so registering a
-stack is one line.
+arrays of `name:port`, and every script reads it from there rather than keeping
+a second copy, so registering a stack with the lifecycle is one line. The hub
+keeps its own richer lists in `index/index.html` — a row needs a blurb and the
+protocol it speaks, which a `name:port` can't carry — and `probes/hub.spec.ts`
+asserts the two agree.
 
 `index/` is the hub on :3000 — harness furniture rather than a cell, which is why
-it is started from `run.sh` instead of being registered in `stacks.sh`.
+it is started from `run.sh` instead of being registered in `stacks.sh`. It
+serves two hand-written pages beside the grid, [the golden
+check](../index/golden.html) and [the monolith](../index/monolith.html), plus a
+set of ergonomics-notes pages generated from the stack READMEs at run time and
+never committed, so there is one source of truth and one staleness clock.
 
 `probes/` is the flows harness: the axes written as plain-sentence steps, run
 against every cell and captured at the same moments so the results sit side by
 side. It answers the question conformance can't — not "does this stack work" but
 "what did this UI actually do with the same input".
 
-`docs/` is this file. Per-stack ergonomics notes deliberately live in each
-stack's own README instead, written during the build while the friction is still
-fresh — they are the notes you reread when deciding, and they age better than
-recollection does.
+`docs/` is this file, `reflection.md` for what the comparison showed, and
+`publishing.md` for the sequence that puts it on the internet. Per-stack
+ergonomics notes deliberately live in each stack's own README instead, written
+during the build while the friction is still fresh — they are the notes you
+reread when deciding, and they age better than recollection does.
 
 ## Adding to the matrix
 
 Three shapes of addition, in increasing cost.
 
 **A new frontend** is cheapest: point it at an existing backend's URL, delete
-whatever provider client its scaffold shipped with, and add a line to
-`stacks.sh`. No backend work if it speaks a protocol already served.
+whatever provider client its scaffold shipped with, add a line to `stacks.sh`
+and an entry to the `FRONTENDS` list in `index/index.html` so the hub draws its
+row. No backend work if it speaks a protocol already served.
 
 **A new protocol** on an existing backend is next. Because `dispatch_request` is
 symmetric across adapters, this is close to free on the pydantic-ai backend —
@@ -237,16 +249,18 @@ everything downstream of the event stream: same three tools, same scripted
 model, same chunks, rendered into HTML on the server rather than into components
 in the browser. It can't be compared on protocol or topology, having one of each
 by construction and nowhere else to point. It also does two things none of the
-four cells do — reload resumes the thread, and there is a thread list — which
-says less about the frameworks than about where the history was already sitting.
+five grid cells do — reload resumes the thread, and there is a thread list —
+which says less about the frameworks than about where the history was already
+sitting.
 
 ## Where this will strain
 
 Being honest about the limits, roughly in the order they'll bite.
 
-Ports are assigned by hand in `stacks.sh`. Fine for a handful of stacks, annoying
-at a dozen; the fix is dynamic allocation written back into the run state, and
-it isn't worth doing yet.
+Ports are assigned by hand in `stacks.sh`, and there are ten of them now — six
+frontends, four backends, plus the hub and a preview offset that has to stay
+clear of both. Still fine; annoying at a dozen. The fix is dynamic allocation
+written back into the run state, and it isn't worth doing yet.
 
 History is client-authoritative during a turn and server-persisted after it in
 two of the four backends, following the AI SDK's default rather than fighting
@@ -254,19 +268,28 @@ the transport. The two pi backends are the predicted exception: they own their
 sessions, read only the latest user message from a request, and persist
 incrementally rather than on completion. The contract now names both models
 rather than pretending there is one. It hasn't bitten yet, for a reason worth
-naming: the four cells don't rehydrate on reload, and the one frontend that
-does — `frontends/jinja` — reads its own store and has no `?backend=` to point
-elsewhere, so nothing in the matrix has yet held a history a pi backend
+naming: none of the five grid cells rehydrates on reload, and the one frontend
+that does — `frontends/jinja` — reads its own store and has no `?backend=` to
+point elsewhere, so nothing in the matrix has yet held a history a pi backend
 disagrees with. The day a cell rehydrates, this is where the seam is.
 
 Threads are one JSON blob per row. Fine at demo scale and honest about being a
 demo, but it's the first thing to change if threads get long.
 
-The sharpest gap is that nothing captures comparisons. Conformance proves a stack
-works; it doesn't record that assistant-ui collapses tool calls behind a
-disclosure while some other frontend shows them inline. Right now that lives in
-prose in each README, which is fine for two stacks and won't be at six. If this
-grows, a per-axis scorecard is the thing to add — not more automation.
+What `probes/` captures is the rendering, not the reading of it. Conformance
+proves a stack works and the flows record what each one did with identical
+input — that assistant-ui collapses tool calls behind a disclosure while AI
+Elements shows arguments arriving — so the gallery is a real side-by-side rather
+than a recollection of one. Deciding which of those is better is a judgement
+nobody has automated, and probably shouldn't. It lives in prose in each stack's
+README, which was fine at two stacks and is a lot of reading at ten. If this
+grows further, a per-axis scorecard over the captures is the thing to add — not
+more automation.
+
+Developer ergonomics is the axis with no probe at all, and there isn't an
+obvious one. What it costs to build a cell is recorded by whoever built it,
+while the friction was fresh, and nothing checks that record beyond a CI gate
+asserting the section still exists.
 
 The point of all this is to make the eventual decision cheap and well-founded:
 change one variable, see what actually differs, and have written down why.
