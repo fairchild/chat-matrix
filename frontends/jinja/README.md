@@ -336,9 +336,9 @@ Everything it doesn't override still resolves to the packaged copy.
 
 **Tool cards are found by convention.** `partials/tool_<tool name>.html` if it
 exists, `partials/tool_generic.html` otherwise — so a host app's own tool gets
-its own card by adding a file. This is why the two cards here are named
-`tool_get_weather.html` and `tool_search_notes.html`: the filename is the tool
-name, and the mapping that used to be a dict in `part_tool.html` is gone.
+its own card by adding a file. This is why the three cards here are named
+`tool_get_weather.html`, `tool_search_notes.html` and `tool_analyze.html`: the
+filename is the tool name, and the mapping that used to be a dict in `part_tool.html` is gone.
 
 **The client is already prefix-agnostic.** `app.js` derives every URL from the
 composer form's `action`, so it doesn't hard-code where the chat lives.
