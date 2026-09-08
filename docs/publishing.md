@@ -61,12 +61,13 @@ runs that can't connect — the other two still gate the thing being published.
 And `probe.sh` refuses to start if any cell or the hub isn't answering, naming
 the URL, which is almost always `run.sh` still coming up.
 
-CI is the one check that can't be green yet, and it isn't the repo's fault. The
-only workflow run there has ever been — 2026-08-20, on `main` — had all
-seventeen jobs refused before their first step, for account-billing reasons.
-Private repositories bill Actions minutes and public ones don't, so the flip in
-step 1 is what makes CI run at all. That makes CI green a check *on* step 1
-rather than a gate before it.
+CI runs here. The first run — 2026-08-20, on `main` — had all seventeen jobs
+refused before their first step for account-billing reasons, and that is the
+only run it ever happened to. Every run since has executed its jobs, on `main`
+and on pull requests alike, with the repository private throughout: green apart
+from one push cancelled by the push that superseded it and one job that failed
+in a dependency-cache step. So CI green is a gate you can hold this to before
+step 1, not a check that waits on it.
 
 **Undo:** nothing to undo. `./scripts/stop.sh` is the last line for a reason —
 leaving the whole matrix up makes the next step's builds slower and nothing
@@ -99,9 +100,7 @@ git rev-list --all --objects -- frontends/folio/vendor \
 Every line has to end `maps=0`; a line that doesn't is a commit to rewrite
 before the branch reaches `main`, not a file to fix on top of it.
 
-Actions history and logs
-become readable too — and Actions minutes become free, which is what unblocks
-`ci.yml` and turns the run above from a billing error into an actual signal.
+Actions history and logs become readable too, and Actions minutes become free.
 Forks become possible, and stars and watchers are lost.
 
 **Verify:**
