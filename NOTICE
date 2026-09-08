@@ -30,17 +30,18 @@ License:  MIT
 
     Copyright (c) 2026 shadcn
 
-This cell was created by adapting the template, so the whole directory is
-template source except where noted. Unmodified template source: all fifteen
-files in `components/ui/`, `components/theme-provider.tsx`, `app/globals.css`,
+This cell was created by adapting the template. All 52 of its tracked files fall
+into one of three groups. Unmodified template source, 31 files: the fifteen in
+`components/ui/`, `components/theme-provider.tsx`, `app/globals.css`,
 `app/layout.tsx`, `app/typeset.css`, `lib/utils.ts`, `components.json`,
 `tsconfig.json`, `postcss.config.mjs`, `.prettierrc`, `.prettierignore`,
-`.gitignore` and `AGENTS.md`. Modified template source: the components that draw
-the chat, `app/page.tsx`, `next.config.ts`, `package.json`, `README.md` and
-`.env.example`. Written for this repository:
-`components/parts/weather-part.tsx`, `components/parts/notes-part.tsx`,
-`components/parts/analyze-part.tsx`, `lib/backend.ts`, `lib/messages.ts`,
-`wrangler.jsonc` and `CLAUDE.md`.
+`.gitignore`, `AGENTS.md` and the four `.gitkeep` markers. Modified template
+source, 13 files: the eight components that draw the chat, `app/page.tsx`,
+`next.config.ts`, `package.json`, `README.md` and `.env.example`. Written or
+generated for this repository, 8 files: `components/parts/weather-part.tsx`,
+`components/parts/notes-part.tsx`, `components/parts/analyze-part.tsx`,
+`lib/backend.ts`, `lib/messages.ts`, `wrangler.jsonc`, `CLAUDE.md` and
+`bun.lock`.
 
 
 frontends/ai-elements/components/ai-elements/

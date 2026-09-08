@@ -61,12 +61,13 @@ runs that can't connect — the other two still gate the thing being published.
 And `probe.sh` refuses to start if any cell or the hub isn't answering, naming
 the URL, which is almost always `run.sh` still coming up.
 
-CI runs here, and has been green since 2026-08-24. The first run — 2026-08-20,
-on `main` — had all seventeen jobs refused before their first step for
-account-billing reasons, and it is the only run that ever hit that. Every run
-since has completed while the repository was private, on `main` and on pull
-requests alike. So CI green is a gate you can hold this to before step 1, not a
-check that waits on it.
+CI runs here. The first run — 2026-08-20, on `main` — had all seventeen jobs
+refused before their first step for account-billing reasons, and that is the
+only run it ever happened to. Every run since has executed its jobs, on `main`
+and on pull requests alike, with the repository private throughout: green apart
+from one push cancelled by the push that superseded it and one job that failed
+in a dependency-cache step. So CI green is a gate you can hold this to before
+step 1, not a check that waits on it.
 
 **Undo:** nothing to undo. `./scripts/stop.sh` is the last line for a reason —
 leaving the whole matrix up makes the next step's builds slower and nothing
