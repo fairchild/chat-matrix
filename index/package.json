@@ -4,6 +4,6 @@
   "license": "Apache-2.0",
   "private": true,
   "devDependencies": {
-    "wrangler": "^4"
+    "wrangler": "^4.129.1"
   }
 }
