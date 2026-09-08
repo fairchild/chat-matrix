@@ -68,10 +68,10 @@ have a BFF, this costs nothing and buys something. If you were hoping to deploy
 a static frontend, it's a real change.
 
 Two smaller things I'd want to know before choosing. CopilotKit's tree resolves
-about four times as many packages as assistant-ui's — 1,325 against 356 when
-each cell's README recorded it with `bun pm ls --all`, which is the metric the
-whole repo uses now, and higher for all four today because the trees have moved
-since. The ratio is the durable part. `@copilotkit/runtime` also declares peer
+more than three times as many packages as assistant-ui's — 1,435 against 450
+with `bun pm ls --all`, the metric the whole repo uses, measured across the
+cells on 2026-09-08. Every absolute count here moves with the next dependency
+update; the ratio is the durable part. `@copilotkit/runtime` also declares peer
 deps on openai, groq, langchain, and the Anthropic SDK — optional in practice,
 but heavy for something that only proxies AG-UI. And in dev it fetches product
 announcements from a CDN and renders them over your app; I couldn't turn the

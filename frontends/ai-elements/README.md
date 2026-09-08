@@ -148,8 +148,8 @@ Pinning the app to `shiki@^3.23.0` dedupes it. Expect this class of failure
 whenever a registry writes source files that import a package the registry also
 version-ranges independently.
 
-**Dependency weight sits between the other two.** 477 resolved packages against
-assistant-ui's 356 and CopilotKit's 1,325 (`bun pm ls --all`). Most of the
+**Dependency weight sits between the other two.** 572 resolved packages against
+assistant-ui's 450 and CopilotKit's 1,435 (`bun pm ls --all`). Most of the
 difference from assistant-ui is Streamdown's markdown stack — shiki, mermaid,
 katex — which you get whether or not the model emits code.
 

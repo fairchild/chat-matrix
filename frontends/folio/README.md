@@ -189,11 +189,14 @@ footprint.** `bun pm ls --all | wc -l` — the metric the other cells use:
 
 | cell | packages |
 |---|---|
-| folio | **177** |
-| assistant-ui | 442 |
-| ai-elements | 563 |
-| shadcn | 614 |
-| copilotkit | 1436 |
+| folio | **184** |
+| assistant-ui | 450 |
+| ai-elements | 572 |
+| shadcn | 617 |
+| copilotkit | 1435 |
+
+Measured 2026-09-08. Absolute counts move with every dependency update; the
+order and the spread are what the comparison rests on.
 
 Folio brings no Tailwind build, no markdown pipeline, no icon set and no theme
 library: `styles.css` ships pre-compiled and scoped to `[data-folio-root]`, and

@@ -120,8 +120,8 @@ files, the client is 62, and `static/app.css` is 834 — more than the Python an
 the client put together. That's what it costs to sit next to four React cells with no design
 system underneath: the framework you skip is not the work you skip, it just moves
 into a stylesheet you own. Six direct dependencies resolve to 106 packages
-(`uv pip list`), against 356 for assistant-ui, 477 for AI Elements, 529 for
-shadcn and 1,325 for CopilotKit — a Python venv's distributions and a bun
+(`uv pip list`), against 450 for assistant-ui, 572 for AI Elements, 617 for
+shadcn and 1,435 for CopilotKit — a Python venv's distributions and a bun
 dependency tree aren't the same unit, so read the shape rather than the ratio.
 Most of the 106 is pydantic-ai and its transitive pydantic/httpx world, which
 this cell would need to run the agent anyway; Jinja, markdown-it-py and

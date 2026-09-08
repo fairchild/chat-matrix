@@ -139,7 +139,7 @@ multi-tool one; against pydantic-ai it differs only by pydantic-ai's
 is held until the assistant message ends, the same fix `backends/pi` carries;
 `protocol/golden.ts` holds it there. `/ag-ui` is identical to `backends/pi` and
 identical to pydantic-ai modulo JSON key order (`timestamp` first vs last).
-Conformance is 18/18.
+Conformance is 21/21.
 
 **Arguments don't stream across the process boundary.** pi's wire events omit
 `partial`, and `toolcall_start` names neither the tool nor the call id — those
