@@ -24,7 +24,7 @@ bunx ai-elements@1.9.0 add conversation message prompt-input tool suggestion \
   shimmer reasoning sources inline-citation chain-of-thought code-block attachments
 ```
 
-which is 12 element files plus 25 shadcn primitives that they depend on.
+which is 12 element files plus 17 shadcn primitives that they depend on.
 
 | Component | What it does here |
 |---|---|
