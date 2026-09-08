@@ -89,9 +89,9 @@ every message, and the activity line's sentence.
 `vendor/fairchild-folio-0.4.1.tgz` is derived from the tarball Folio's own
 release workflow built from commit `d9bb824c` on a clean tree. That artifact is
 sha256 `0d629b6ae4e52946f10f518b133171be8492966de6c7ef21b1678f529e321c51`,
-119505 bytes, and `vendor/SHA256SUMS` and `vendor/manifest.json` are its
-receipts, including a per-file digest. The copy here is that artifact minus its
-seven `dist/*.map` files — sha256
+119505 bytes, and `vendor/SHA256SUMS.upstream` and `vendor/manifest.json` are
+its receipts, including a per-file digest. The copy here is that artifact
+minus its seven `dist/*.map` files — sha256
 `d2feb981af61cefe382ab6236bf4ad121d4629c034f7580eb7a1305809a2db51`, 58550
 bytes; every other file is byte-identical, and `vendor/PROVENANCE.md` records
 the derivation and how to check it. The maps went because a sourcemap embeds

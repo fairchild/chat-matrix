@@ -7,7 +7,7 @@ Actions artifact `folio-release-0.4.1`.
 
 | file | sha256 | bytes |
 |---|---|---|
-| the CI artifact, as `SHA256SUMS` and `manifest.json` describe it | `0d629b6ae4e52946f10f518b133171be8492966de6c7ef21b1678f529e321c51` | 119505 |
+| the CI artifact, as `SHA256SUMS.upstream` and `manifest.json` describe it | `0d629b6ae4e52946f10f518b133171be8492966de6c7ef21b1678f529e321c51` | 119505 |
 | this file | `d2feb981af61cefe382ab6236bf4ad121d4629c034f7580eb7a1305809a2db51` | 58550 |
 
 The difference is the seven `package/dist/*.map` files, removed. Everything

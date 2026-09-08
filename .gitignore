@@ -10,6 +10,11 @@ __pycache__/
 node_modules/
 .next/
 *.tsbuildinfo
+# Next writes next-env.d.ts itself and says so in the file. Its two import
+# lines point at .next/types under `build` and .next/dev/types under `dev`, so a
+# tracked copy flips with whichever ran last and `run.sh` dirties a fresh clone.
+# The shadcn and folio cells already ignore it; this covers the other three.
+next-env.d.ts
 
 # hosted builds: static exports, OpenNext output, wrangler state, generated types
 out/
