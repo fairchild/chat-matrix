@@ -2,6 +2,7 @@
 name = "frontend-jinja"
 version = "0.1.0"
 description = "the reference agent server-rendered from one FastAPI process — a monolith cell outside the matrix"
+license = "Apache-2.0"
 requires-python = ">=3.11"
 dependencies = [
     "pydantic-ai[ui,ag-ui]==2.31.0",

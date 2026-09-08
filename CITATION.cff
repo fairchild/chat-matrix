@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: If you use this software or its findings, please cite it as below.
+title: chat-stack matrix
+type: software
+authors:
+  - family-names: Fairchild
+    given-names: Michael
+date-released: '2026-09-07'
+repository-code: https://github.com/fairchild/chat-matrix
+license: Apache-2.0
+abstract: >-
+  A harness for deciding which chat UI and which agent backend you actually
+  like, by running them against each other instead of reading their READMEs.
