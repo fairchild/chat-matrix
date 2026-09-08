@@ -10,7 +10,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Folio is vendored, not published
 
-`@fairchild/folio` resolves to `vendor/fairchild-folio-0.4.1.tgz`, checksummed in
-`vendor/SHA256SUMS` and described in `vendor/PROVENANCE.md`. Don't reach for a
-registry, and don't edit Folio's own repository from here — this cell is only
-allowed to consume its released artifact. See README.md for the swap to npmjs.
+`@fairchild/folio` resolves to `vendor/fairchild-folio-0.4.1.tgz`, checksummed
+in `vendor/SHA256SUMS.upstream` and described in `vendor/PROVENANCE.md`. Don't
+reach for a registry, and don't edit Folio's own repository from here — this
+cell is only allowed to consume its released artifact. See README.md for the
+swap to npmjs.

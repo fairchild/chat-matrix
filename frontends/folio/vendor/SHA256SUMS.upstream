@@ -1,0 +1,6 @@
+# The sha256 of the CI artifact this directory's tarball was derived FROM, not
+# of the tarball sitting beside it — those differ by the seven removed
+# dist/*.map files, which is why this is not named SHA256SUMS and why
+# `shasum -c` here is not the check you want. PROVENANCE.md carries both
+# hashes and the steps to reproduce the derivation.
+0d629b6ae4e52946f10f518b133171be8492966de6c7ef21b1678f529e321c51  fairchild-folio-0.4.1.tgz
