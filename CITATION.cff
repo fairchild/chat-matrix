@@ -5,7 +5,7 @@ type: software
 authors:
   - family-names: Fairchild
     given-names: Michael
-date-released: '2026-09-07'
+date-released: '2026-09-08'
 repository-code: https://github.com/fairchild/chat-matrix
 license: Apache-2.0
 abstract: >-

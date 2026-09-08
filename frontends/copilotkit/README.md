@@ -86,7 +86,7 @@ that is the whole cost. The tradeoff from the styling note holds in both
 directions: the part the library owns needed nothing, the part you own needed
 all of it.
 
-**Dependency weight.** 1,325 resolved packages against assistant-ui's 356
+**Dependency weight.** 1,435 resolved packages against assistant-ui's 450
 (`bun pm ls --all`, the count every cell reports). `@copilotkit/runtime`
 declares peer deps on openai, groq, langchain, and `@anthropic-ai/sdk` — optional
 in practice, but the install is heavy for a frontend that only proxies to AG-UI.

@@ -105,7 +105,7 @@ repair, no code highlighting, no mermaid or math — shadcn/typeset styles the
 output, it doesn't parse it. Against the scripted model, which emits a paragraph
 and a bullet list, the difference from AI Elements' Streamdown is invisible.
 Against a real model mid-code-block you see the raw fence until it closes. It's
-also most of why this cell resolves 529 packages to AI Elements' 477.
+also most of why this cell resolves 617 packages to AI Elements' 572.
 
 **The card makes the prose redundant, which is the argument for cards.** The
 scripted reply restates each tool result in text — `search_notes returned:
@@ -136,8 +136,8 @@ that renders as a link. Same visual vocabulary as any other shadcn/ui app, a
 different composition idiom — worth knowing before moving a component between
 this cell and the AI Elements one, which ships Radix primitives.
 
-**529 resolved packages** (`bun pm ls --all`), against assistant-ui's 356, AI
-Elements' 477 and CopilotKit's 1,325. eslint and its config were dropped on the
+**617 resolved packages** (`bun pm ls --all`), against assistant-ui's 450, AI
+Elements' 572 and CopilotKit's 1,435. eslint and its config were dropped on the
 way in — no other cell has them and the harness has no lint step — so that
 number is comparable to the others rather than to the upstream template.
 
