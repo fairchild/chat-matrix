@@ -31,13 +31,16 @@ License:  MIT
     Copyright (c) 2026 shadcn
 
 This cell was created by adapting the template, so the whole directory is
-template source except where noted. All fifteen files in `components/ui/` are
-unmodified template source, as are the styles, the layout and the build
-configuration. The components that draw the chat are modified template source.
-Written for this repository: `components/parts/weather-part.tsx`,
-`components/parts/notes-part.tsx`, `components/parts/analyze-part.tsx`,
-`lib/backend.ts`, `lib/messages.ts`, `wrangler.jsonc`, `README.md` and
-`CLAUDE.md`.
+template source except where noted. Unmodified template source: all fifteen
+files in `components/ui/`, `components/theme-provider.tsx`, `app/globals.css`,
+`app/layout.tsx`, `app/typeset.css`, `lib/utils.ts`, `components.json`,
+`tsconfig.json`, `postcss.config.mjs`, `.prettierrc`, `.prettierignore`,
+`.gitignore` and `AGENTS.md`. Modified template source: the components that draw
+the chat, `app/page.tsx`, `next.config.ts`, `package.json`, `README.md` and
+`.env.example`. Written for this repository:
+`components/parts/weather-part.tsx`, `components/parts/notes-part.tsx`,
+`components/parts/analyze-part.tsx`, `lib/backend.ts`, `lib/messages.ts`,
+`wrangler.jsonc` and `CLAUDE.md`.
 
 
 frontends/ai-elements/components/ai-elements/
