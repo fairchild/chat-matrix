@@ -91,17 +91,21 @@ all of it.
 declares peer deps on openai, groq, langchain, and `@anthropic-ai/sdk` — optional
 in practice, but the install is heavy for a frontend that only proxies to AG-UI.
 
-**Version pinning bit immediately.** `@ag-ui/client@^0.0.58` doesn't type-check
-against CopilotKit, which pins `0.0.57` exactly:
+**Version pinning bit immediately.** An `@ag-ui/client` that doesn't match the
+one CopilotKit depends on won't type-check against it:
 
 ```
 Type 'HttpAgent' is not assignable to type 'AbstractAgent'.
   Types have separate declarations of a private property '_debug'.
 ```
 
-Two copies of the same package, nominal private fields, unassignable. Pinning to
-`0.0.57` (exact, no caret) dedupes it. Expect this whenever you install an AG-UI
-package alongside CopilotKit.
+Two copies of the same package, nominal private fields, unassignable. An exact
+pin (no caret) on the version CopilotKit itself uses dedupes it. The cost is
+that the pin is not independent: it has to move in lockstep. This cell pinned
+`0.0.57` against CopilotKit 1.68, and upgrading to 1.70.1 — whose own
+dependency is `0.0.59` — reopened exactly this error until the pin moved to
+`0.0.59` too. Expect both halves whenever you install an AG-UI package
+alongside CopilotKit.
 
 **It calls home.** In dev the app fetches `https://cdn.copilotkit.ai/announcements.json`
 and renders product announcements over the UI — the "Channels SDK is live" banner
