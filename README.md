@@ -367,6 +367,7 @@ A recorded run against the live matrix:
 
 ## License
 
-Apache-2.0 — see [`LICENSE`](LICENSE). Three of the cells carry component
-directories copied from other projects, and [`NOTICE`](NOTICE) names each one
-with its upstream, that project's license and its copyright notice.
+Apache-2.0 — see [`LICENSE`](LICENSE). Three of the cells were built by running
+another project's scaffold or registry command, so they carry source under its
+license rather than this one. [`NOTICE`](NOTICE) names each path with its
+upstream, that project's license and its copyright notice.

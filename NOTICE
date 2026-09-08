@@ -13,25 +13,35 @@ The full text is in LICENSE.
 Third-party source copied into this repository
 ==============================================
 
-The directories below hold source copied from other projects, mostly by running
-those projects' own registry or scaffold commands, which write files into the
-consuming repository rather than into node_modules. Each entry names the
-directory, the upstream project, that project's license, and the copyright
-notice as the upstream publishes it. Everything outside these directories is
-covered by LICENSE.
+Three of the frontend cells were built by running another project's scaffold or
+registry command, which writes source files into the consuming repository rather
+than installing them into node_modules. Those files stay under their upstream
+licenses, and the entries below name each one: the paths, the upstream project,
+its license, and the copyright notice as the upstream publishes it. Everything
+in this repository that is not covered by an entry below is the work of the
+copyright holder named above.
 
 
-frontends/shadcn/components/ui
-------------------------------
+frontends/shadcn/
+-----------------
 Upstream: shadcn-ui/chatbot-template
           https://github.com/shadcn-ui/chatbot-template
 License:  MIT
 
     Copyright (c) 2026 shadcn
 
+This cell was created by adapting the template, so the whole directory is
+template source except where noted. All fifteen files in `components/ui/` are
+unmodified template source, as are the styles, the layout and the build
+configuration. The components that draw the chat are modified template source.
+Written for this repository: `components/parts/weather-part.tsx`,
+`components/parts/notes-part.tsx`, `components/parts/analyze-part.tsx`,
+`lib/backend.ts`, `lib/messages.ts`, `wrangler.jsonc`, `README.md` and
+`CLAUDE.md`.
 
-frontends/ai-elements/components/ai-elements
---------------------------------------------
+
+frontends/ai-elements/components/ai-elements/
+---------------------------------------------
 Upstream: Vercel AI Elements 1.9.0
           https://github.com/vercel/ai-elements
           https://elements.ai-sdk.dev
@@ -51,18 +61,30 @@ License:  Apache License, Version 2.0
     See the License for the specific language governing permissions and
     limitations under the License.
 
+Written into this repository by `bunx ai-elements@1.9.0 add`. That command also
+wrote the shadcn/ui primitives listed further down, the shadcn `cn` helper in
+`lib/utils.ts` and the shadcn token block in `app/globals.css`. The rest of the
+cell was written for this repository.
 
-frontends/assistant-ui/components/assistant-ui
-----------------------------------------------
+
+frontends/assistant-ui/
+-----------------------
 Upstream: assistant-ui
           https://github.com/assistant-ui/assistant-ui
 License:  MIT
 
     Copyright (c) 2025 AgentbaseAI Inc.
 
+The ten files in `components/assistant-ui/` came from the assistant-ui registry.
+The cell was scaffolded with the project's `create` command, so `app/`,
+`components.json`, `postcss.config.mjs` and `tsconfig.json` are modified
+scaffold output. `lib/utils.ts` is the shadcn `cn` helper. Written for this
+repository: `lib/backend.ts`, `components/theme-provider.tsx`, `next.config.js`,
+`wrangler.jsonc`, `README.md` and `CLAUDE.md`.
 
-frontends/ai-elements/components/ui
-frontends/assistant-ui/components/ui
+
+frontends/ai-elements/components/ui/
+frontends/assistant-ui/components/ui/
 ------------------------------------
 Upstream: shadcn/ui
           https://github.com/shadcn-ui/ui
@@ -71,8 +93,9 @@ License:  MIT
 
     Copyright (c) 2023 shadcn
 
-These are shadcn/ui registry primitives that the AI Elements and assistant-ui
-scaffolds pull in as dependencies of the components above.
+Seventeen files and five files respectively, both sets shadcn/ui registry
+primitives pulled in as dependencies of the components above. They match the
+upstream registry apart from rewritten import paths.
 
 
 The MIT License
