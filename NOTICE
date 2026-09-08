@@ -1,0 +1,108 @@
+chat-stack matrix
+Copyright 2026 Michael Fairchild
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+The full text is in LICENSE.
+
+
+Third-party source copied into this repository
+==============================================
+
+The directories below hold source copied from other projects, mostly by running
+those projects' own registry or scaffold commands, which write files into the
+consuming repository rather than into node_modules. Each entry names the
+directory, the upstream project, that project's license, and the copyright
+notice as the upstream publishes it. Everything outside these directories is
+covered by LICENSE.
+
+
+frontends/shadcn/components/ui
+------------------------------
+Upstream: shadcn-ui/chatbot-template
+          https://github.com/shadcn-ui/chatbot-template
+License:  MIT
+
+    Copyright (c) 2026 shadcn
+
+
+frontends/ai-elements/components/ai-elements
+--------------------------------------------
+Upstream: Vercel AI Elements 1.9.0
+          https://github.com/vercel/ai-elements
+          https://elements.ai-sdk.dev
+License:  Apache License, Version 2.0
+
+    Copyright 2023 Vercel, Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+
+frontends/assistant-ui/components/assistant-ui
+----------------------------------------------
+Upstream: assistant-ui
+          https://github.com/assistant-ui/assistant-ui
+License:  MIT
+
+    Copyright (c) 2025 AgentbaseAI Inc.
+
+
+frontends/ai-elements/components/ui
+frontends/assistant-ui/components/ui
+------------------------------------
+Upstream: shadcn/ui
+          https://github.com/shadcn-ui/ui
+          https://ui.shadcn.com
+License:  MIT
+
+    Copyright (c) 2023 shadcn
+
+These are shadcn/ui registry primitives that the AI Elements and assistant-ui
+scaffolds pull in as dependencies of the components above.
+
+
+The MIT License
+===============
+
+This is the permission notice that accompanies each MIT copyright notice above.
+The upstreams publish identical text; only the copyright lines differ.
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+
+Vendored packages
+=================
+
+frontends/folio/vendor/fairchild-folio-0.4.1.tgz is a first-party package,
+Apache-2.0, and ships its own LICENSE inside the tarball.
+frontends/folio/vendor/PROVENANCE.md records how it was built.

@@ -364,3 +364,9 @@ A recorded run against the live matrix:
   about which to use. That's the cost of determinism; pick a real model in the
   backend's row at the hub when you
   need real tool selection.
+
+## License
+
+Apache-2.0 — see [`LICENSE`](LICENSE). Three of the cells carry component
+directories copied from other projects, and [`NOTICE`](NOTICE) names each one
+with its upstream, that project's license and its copyright notice.
