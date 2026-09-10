@@ -6,10 +6,12 @@
 #   ./scripts/publish.sh              build, then deploy everything
 #   ./scripts/publish.sh --no-build   deploy what's already built
 #
-# WORKER_PREFIX deploys the same seven Workers under other names, which is how a
-# throwaway matrix gets published beside the real one instead of over it:
+# WORKER_PREFIX deploys the same Workers under other names, which is how a
+# throwaway matrix gets published beside the real one rather than over it, and
+# DEMO_CELLS narrows which cells are in it. Both are read by hosted.sh, so they
+# move the build and the deploy together:
 #
-#   WORKER_PREFIX=chat-matrix-demo ./scripts/publish.sh
+#   WORKER_PREFIX=chat-matrix-demo DEMO_CELLS="shadcn folio" ./scripts/publish.sh
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/hosted.sh"
 
