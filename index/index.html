@@ -149,6 +149,10 @@
     border-radius: 9px; text-decoration: none; color: inherit;
   }
   .outside:hover { border-color: var(--dim); }
+  /* Present, and plainly not on offer: no href, so no hover lift either. */
+  .outside.absent { opacity: 0.62; }
+  .outside.absent:hover { border-color: var(--line); }
+  .outside.absent:hover .go { color: var(--dim); }
   .outside .name { font-weight: 600; font-size: 13.5px; }
   .outside .why { padding: 0; margin: 0; color: var(--dim); font-size: 12.5px; }
   .outside .go { margin-left: auto; font-size: 12.5px; color: var(--dim); }
@@ -318,6 +322,10 @@ const hostedBackend = (b) => HOSTED?.backends?.find((h) => h.name === b.name);
 const backendUrl = (b) => hostedBackend(b)?.url ?? `http://localhost:${b.port}`;
 const frontendUrl = (f) => HOSTED?.cells?.[f.id] ?? `http://localhost:${f.port}`;
 const localOnly = (b) => Boolean(HOSTED) && !hostedBackend(b);
+// The same claim about a frontend. A hosted build publishes a subset on both
+// axes, and the one cell it can't publish is as much a fact about the matrix as
+// the four backends it doesn't run.
+const cellLocalOnly = (f) => Boolean(HOSTED) && !HOSTED.cells?.[f.id];
 
 const health = {};   // backend name -> /health body, or null
 const up = {};       // frontend id  -> boolean
@@ -386,7 +394,11 @@ function renderSquare(f, b) {
   el.innerHTML = `<span class="on"></span><span class="path mono"></span><span class="mark"></span>`;
   el.querySelector(".on").textContent = b.name;
   el.querySelector(".path").textContent = ok ? endpoint(f, b) : "";
-  el.querySelector(".mark").textContent = ok ? "→" : localOnly(b) ? "local" : "·";
+  // `local` covers both axes: a backend this build doesn't publish, and a cell
+  // it doesn't either. Without the second, a cell left out of a deployment drew
+  // the same bare dot as a stack that is merely down, and those are different
+  // facts — one is "come back later", the other is "clone the repo".
+  el.querySelector(".mark").textContent = ok ? "→" : localOnly(b) || cellLocalOnly(f) ? "local" : "·";
   if (ok) {
     el.href = href(f, b);
     el.setAttribute("aria-label", `open ${f.name} with ${b.name} over ${endpoint(f, b)}`);
@@ -419,7 +431,19 @@ function renderState() {
   if (nothing) banner.innerHTML = `Nothing is running yet — <code>./scripts/setup.sh</code>, then <code>./scripts/run.sh</code> brings the matrix up.`;
   else if (HOSTED) {
     const nb = HOSTED.backends.length, nf = Object.keys(HOSTED.cells ?? {}).length;
-    banner.innerHTML = `The hosted matrix publishes ${nb} backend${nb === 1 ? "" : "s"} and ${nf} frontend${nf === 1 ? "" : "s"}. The rest of the grid is what a local clone gives you.`;
+    // The sentence a visitor needs before they type anything, and it is read
+    // back rather than asserted: a published backend answers `current:
+    // "scripted"` and `locked: true`, and the line appears only while every
+    // hosted backend says both. If one ever stopped saying it, the claim would
+    // leave the page instead of going quietly false on it.
+    const scripted = HOSTED.backends.length > 0 && HOSTED.backends.every(
+      (h) => modelState[h.name]?.current === "scripted" && modelState[h.name]?.locked,
+    );
+    banner.innerHTML =
+      `The hosted matrix publishes ${nb} backend${nb === 1 ? "" : "s"} and ${nf} frontend${nf === 1 ? "" : "s"}. The rest of the grid is what a local clone gives you.` +
+      (scripted
+        ? ` Every reply here comes from the <code>scripted</code> model — a canned stream the backend writes itself, fixed for this deployment — so no language model runs and no provider is called.`
+        : "");
   }
 }
 
@@ -433,6 +457,7 @@ function renderState() {
 
 const modelSig = {};   // backend name -> last /models body, to avoid rebuilding
 const modelVia = {};   // backend name -> how the current model is reached
+const modelState = {}; // backend name -> { current, locked }, for the hosted banner
 
 async function refreshModels(b, c) {
   const th = headEl.querySelector(`th[data-c="${c}"]`);
@@ -445,6 +470,7 @@ async function refreshModels(b, c) {
   } catch {
     select.hidden = true;
     delete modelVia[b.name];
+    delete modelState[b.name];
     return;
   }
   select.hidden = false;
@@ -453,6 +479,7 @@ async function refreshModels(b, c) {
   // catalogue and no way to move off `scripted`. A backend that doesn't say
   // (the other three) is unlocked, which is what it was before this existed.
   const fixed = Boolean(data.locked);
+  modelState[b.name] = { current: data.current, locked: fixed };
   select.disabled = fixed;
   select.classList.toggle("fixed", fixed);
   select.setAttribute("aria-label", fixed ? `model for ${b.name} — fixed: ${data.why}` : `model for ${b.name}`);
@@ -529,6 +556,8 @@ function say(f, b) {
       ? `<code>${new URL(frontendUrl(f)).host} → ${new URL(backendUrl(b)).host}${endpoint(f, b)}</code>`
       : localOnly(b)
       ? `${b.name} isn't hosted — a local clone runs it`
+      : cellLocalOnly(f)
+      ? `${f.name} isn't in this deployment — a local clone runs it`
       : up[f.id] !== true
       ? `${f.name} isn't running`
       : !health[b.name]
@@ -536,7 +565,8 @@ function say(f, b) {
       : `${b.name} doesn't serve ${f.speaks}`;
     parts.push(`<span class="pair">${f.name} × ${b.name}</span>`, `<span class="say">${f.long} ${b.long}<br>${state}</span>`);
   } else if (f) {
-    parts.push(`<span class="pair">${f.name}</span>`, `<span class="say">${f.long}</span>`);
+    const detail = cellLocalOnly(f) ? "<br>not in this deployment — a local clone runs it" : "";
+    parts.push(`<span class="pair">${f.name}</span>`, `<span class="say">${f.long}${detail}</span>`);
   } else if (b) {
     const h = health[b.name];
     const via = modelVia[b.name] ? ` via ${modelVia[b.name]}` : "";
@@ -606,12 +636,22 @@ outsideEl.querySelector(".why").textContent = OUTSIDE.why;
 document.getElementById("outsideNotes").href = `notes/${OUTSIDE.id}.html`;
 
 function renderOutside() {
+  // A hosted build can't serve this one — a Python process with a SQLite file
+  // beside it, where every other cell is a static export — so it stays on the
+  // page and says so rather than disappearing. Hiding it would make a published
+  // matrix look complete while a stack was quietly missing from it, which is the
+  // one thing a comparison must never do. Same treatment as a backend column
+  // this build doesn't publish: still drawn, marked, not a link.
+  const absent = cellLocalOnly(OUTSIDE);
   const ok = up[OUTSIDE.id] === true;
-  outsideWrapEl.hidden = Boolean(HOSTED) && !HOSTED.cells?.[OUTSIDE.id];
+  outsideWrapEl.hidden = false;
+  outsideEl.classList.toggle("absent", absent);
   outsideEl.href = ok ? frontendUrl(OUTSIDE) : "";
-  outsideEl.querySelector(".go").textContent = ok
-    ? `${new URL(frontendUrl(OUTSIDE)).host} — open →`
-    : "not running";
+  outsideEl.querySelector(".go").textContent = absent
+    ? "not in this demo — a local clone runs it"
+    : ok
+      ? `${new URL(frontendUrl(OUTSIDE)).host} — open →`
+      : "not running";
 }
 
 // ---- probes ---------------------------------------------------------------
@@ -719,7 +759,12 @@ async function refresh() {
       if (health[b.name]) await refreshModels(b, c);
       else headEl.querySelector(`th[data-c="${c}"] select.model`).hidden = true;
     }),
-    ...[...FRONTENDS, OUTSIDE].map(async (f) => { up[f.id] = await isUp(frontendUrl(f)); }),
+    // Same rule as the backends above, and for the same reason: a cell this
+    // build doesn't publish lives on localhost, and a public page asking every
+    // visitor's own machine about it would answer for the author's.
+    ...[...FRONTENDS, OUTSIDE].map(async (f) => {
+      up[f.id] = cellLocalOnly(f) ? false : await isUp(frontendUrl(f));
+    }),
   ]);
   probed = true;
   renderState();

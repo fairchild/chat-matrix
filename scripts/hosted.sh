@@ -8,17 +8,38 @@
 # with different URLs baked in:
 #   preview     everything on localhost — cells at :PORT+1000, index at :4000,
 #               backend at PREVIEW_BACKEND (default: the local :8002)
-#   production  https://chat-stack-<name>.<WORKERS_SUBDOMAIN>.workers.dev
+#   production  https://<WORKER_PREFIX>-<name>.<WORKERS_SUBDOMAIN>.workers.dev
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/stacks.sh"
 
 HOSTED_CELLS=(assistant-ui copilotkit ai-elements shadcn folio)   # each has a wrangler.jsonc
+# One deployment may publish fewer than that. A cell whose hosted topology
+# doesn't work is better absent from the hub, which then draws it as a square
+# you can't click, than present as a link that opens a page answering nothing.
+# Space-separated, and a subset of the line above. Read into the array rather
+# than used directly so that sourcing this file twice in one process — probe.sh
+# does — lands on the same list both times.
+[ -z "${DEMO_CELLS:-}" ] || read -r -a HOSTED_CELLS <<< "$DEMO_CELLS"
 HOSTED_BACKEND="cloudflare-agents"
 PREVIEW_OFFSET=1000
 PREVIEW_INDEX_PORT=4000
 WORKERS_SUBDOMAIN="${WORKERS_SUBDOMAIN:-irons-in-the-fire8698}"   # `bunx wrangler whoami`
 PREVIEW_BACKEND="${PREVIEW_BACKEND:-http://localhost:8002}"
 
-worker_name() { printf 'chat-stack-%s' "$1"; }
+# The one knob that moves a whole deployment aside. Every wrangler.jsonc names
+# `chat-stack-<x>` and publish.sh passes worker_name as `--name`, so the default
+# deploys exactly the committed names and any other prefix deploys a second,
+# complete matrix — its own backend, its own Durable Objects, its own hub, under
+# names nothing else claims. A shareable demo is a namespace rather than an edit
+# to the published one, which is what makes it disposable: `wrangler delete` over
+# that prefix takes the demo and leaves the deployment these docs describe.
+#
+# It has to be set for the build as well as the deploy, not just the deploy: the
+# hub's links and the cells' baked-in backend URL both come from production_url,
+# so a demo built at the default prefix would deploy under demo names and point
+# every square at the other matrix.
+WORKER_PREFIX="${WORKER_PREFIX:-chat-stack}"
+
+worker_name() { printf '%s-%s' "$WORKER_PREFIX" "$1"; }
 production_url() { printf 'https://%s.%s.workers.dev' "$(worker_name "$1")" "$WORKERS_SUBDOMAIN"; }
 
 cell_port() { # cell_port <name> — from stacks.sh

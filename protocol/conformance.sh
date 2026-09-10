@@ -100,6 +100,19 @@ import json, sys, urllib.request
 
 backend, thread = sys.argv[1], sys.argv[2]
 
+# Every request below names the gate rather than the interpreter. Cloudflare's
+# edge answers a `Python-urllib/x.y` User-Agent with `403` and error 1010 — a
+# browser-signature ban applied before the Worker is reached — so against a
+# deployed backend these two checks failed for their User-Agent and reported it
+# as the backend refusing the request. The curl calls in this same file were
+# never affected, which is what made it read as a route problem rather than a
+# client one. Installing the opener covers the bare-URL urlopen calls as well as
+# the Request objects.
+UA = "chat-matrix-conformance (+protocol/conformance.sh)"
+_opener = urllib.request.build_opener()
+_opener.addheaders = [("user-agent", UA)]
+urllib.request.install_opener(_opener)
+
 def get(path):
     with urllib.request.urlopen(f"{backend}{path}", timeout=30) as response:
         return json.load(response)
@@ -177,6 +190,12 @@ elif python3 - "$BACKEND" "$THREAD-auth" >"$partial" 2>"$whyp" <<'PYEOF'
 import json, sys, urllib.request
 
 backend, thread = sys.argv[1], sys.argv[2]
+
+# Same reason as the block above: the default User-Agent is banned at
+# Cloudflare's edge with a 403 before the Worker sees the request.
+_opener = urllib.request.build_opener()
+_opener.addheaders = [("user-agent", "chat-matrix-conformance (+protocol/conformance.sh)")]
+urllib.request.install_opener(_opener)
 
 def send(text, messages):
     body = json.dumps({
