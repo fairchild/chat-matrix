@@ -4,7 +4,9 @@
 # login` once; WORKERS_SUBDOMAIN must match `bunx wrangler whoami`.
 #
 #   ./scripts/publish.sh              build, then deploy everything
-#   ./scripts/publish.sh --no-build   deploy what's already built
+#   ./scripts/publish.sh --no-build   deploy what's already built, if it was
+#                                     built for this deployment — see the stamp
+#                                     check below
 #
 # WORKER_PREFIX deploys the same Workers under other names, which is how a
 # throwaway matrix gets published beside the real one rather than over it, and
@@ -15,7 +17,11 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/hosted.sh"
 
-[ "${1:-}" = "--no-build" ] || build_all production
+# --no-build deploys what is already built, which is only safe if what is already
+# built was built for *this* deployment. The stamp check runs before the first
+# remote write on purpose: the backend deploys first, so "it failed partway" is
+# not something you can undo by noticing.
+if [ "${1:-}" = "--no-build" ]; then require_built_for production; else build_all production; fi
 
 # `--name` rather than the name each wrangler.jsonc carries, and it resolves to
 # exactly that name at the default prefix — so this is a no-op for the published

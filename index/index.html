@@ -459,6 +459,17 @@ const modelSig = {};   // backend name -> last /models body, to avoid rebuilding
 const modelVia = {};   // backend name -> how the current model is reached
 const modelState = {}; // backend name -> { current, locked }, for the hosted banner
 
+/** Everything a backend's /models told us, dropped together. Called wherever
+ *  `health[name]` goes null, and that pairing is the point: the banner's
+ *  no-language-model sentence is read out of modelState, so a backend that stops
+ *  answering while its last answer stayed cached is exactly how a claim outlives
+ *  the evidence for it. The three are one fact and expire as one. */
+const forgetModels = (name) => {
+  delete modelSig[name];
+  delete modelVia[name];
+  delete modelState[name];
+};
+
 async function refreshModels(b, c) {
   const th = headEl.querySelector(`th[data-c="${c}"]`);
   const select = th.querySelector("select.model");
@@ -469,8 +480,7 @@ async function refreshModels(b, c) {
     data = await res.json();
   } catch {
     select.hidden = true;
-    delete modelVia[b.name];
-    delete modelState[b.name];
+    forgetModels(b.name);
     return;
   }
   select.hidden = false;
@@ -646,7 +656,13 @@ function renderOutside() {
   const ok = up[OUTSIDE.id] === true;
   outsideWrapEl.hidden = false;
   outsideEl.classList.toggle("absent", absent);
-  outsideEl.href = ok ? frontendUrl(OUTSIDE) : "";
+  // Remove the attribute rather than blank it. `href=""` is not "no link": it
+  // stays keyboard-focusable and resolves to the current document, so tabbing to
+  // a card that says it isn't here and pressing Enter reloads the hub. An anchor
+  // with no href attribute is inert, which is the same thing renderSquare gets by
+  // building a span for a square that isn't live.
+  if (ok) outsideEl.href = frontendUrl(OUTSIDE);
+  else outsideEl.removeAttribute("href");
   outsideEl.querySelector(".go").textContent = absent
     ? "not in this demo — a local clone runs it"
     : ok
@@ -749,7 +765,11 @@ async function refresh() {
       // A hosted page never probes localhost. The backends it doesn't publish
       // are somebody else's machine, and claiming they're up because they
       // happen to run on the author's would be a lie in every other browser.
-      if (localOnly(b)) return void (health[b.name] = null);
+      if (localOnly(b)) {
+        health[b.name] = null;
+        forgetModels(b.name);
+        return;
+      }
       try {
         const res = await fetch(`${backendUrl(b)}/health`, { cache: "no-store" });
         health[b.name] = res.ok ? await res.json() : null;
@@ -757,7 +777,13 @@ async function refresh() {
         health[b.name] = null;
       }
       if (health[b.name]) await refreshModels(b, c);
-      else headEl.querySelector(`th[data-c="${c}"] select.model`).hidden = true;
+      else {
+        // A backend that has stopped answering /health is not going to answer
+        // /models either, and the picker is hidden — so anything still held from
+        // its last answer is unowned state that the banner would keep reading.
+        forgetModels(b.name);
+        headEl.querySelector(`th[data-c="${c}"] select.model`).hidden = true;
+      }
     }),
     // Same rule as the backends above, and for the same reason: a cell this
     // build doesn't publish lives on localhost, and a public page asking every

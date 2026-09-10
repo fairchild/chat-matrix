@@ -207,8 +207,12 @@ Worker on the same `workers.dev` zone, which the platform refuses with `error
 code: 1042`, so a turn sends and no reply ever arrives. Nothing about the cell
 is wrong — it is correct under `next dev` — and a service binding is the fix;
 [`docs/publishing.md`](docs/publishing.md) carries both the diagnosis and the
-shape of it. Until then a deployment publishes the four cells that do work and
-the hub draws the fifth as a square you can't click.
+shape of it. The default subset still names all five, so `./scripts/publish.sh`
+deploys a CopilotKit Worker that serves its page and can't answer a turn.
+Narrowing that default is a decision about what the published matrix *is* rather
+than a fix, so it's written down here instead of made. `DEMO_CELLS="assistant-ui
+ai-elements shadcn folio"` publishes only the four that work, and the hub then
+draws the fifth as a square you can't click.
 
 Two variables move a whole deployment aside, for a link worth sharing before the
 published one is settled: `WORKER_PREFIX` renames every Worker and every URL

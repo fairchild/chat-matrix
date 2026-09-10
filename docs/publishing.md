@@ -344,6 +344,33 @@ Objects, its own thread store, starting empty. Everything else about it is the
 committed configuration, which is the point — a demo that ran a special build
 would be evidence about the special build.
 
+Both variables are checked rather than trusted, and the two checks guard the two
+ways this goes wrong quietly.
+
+`DEMO_CELLS` has to name cells that exist, name each once, and name at least one,
+and it is checked when `hosted.sh` is sourced — before a build starts and before
+the backend, which deploys first, is written. An unknown name would otherwise
+survive until its directory was missing, which is after a remote write.
+
+`--no-build` has to match the build it is skipping. `build_all` writes what it
+built for to `index/dist/.build` — mode, prefix, subdomain, backend URL, cell
+list — and a `--no-build` deploy compares that against its own invocation and
+refuses on a mismatch:
+
+```
+the built artifacts are for a different deployment.
+  built:    mode=production prefix=chat-matrix-demo … cells=assistant-ui ai-elements shadcn folio
+  asked for: mode=production prefix=chat-stack … cells=assistant-ui copilotkit ai-elements shadcn folio
+```
+
+That is the sequence worth naming, because it is a plausible afternoon and it
+ends on the live matrix: publish the demo, hit one failed deploy, retry with
+`--no-build` in a shell that has lost the prefix, and `wrangler deploy --name
+chat-stack-…` cheerfully publishes demo-linked pages over the deployment. Every
+URL in those artifacts is baked in, so nothing downstream would notice — the
+assets are valid and the names are real. `preview.sh --no-build` makes the same
+check for the same reason.
+
 **Verify** — the same three the deployment gets, against the demo's names:
 
 ```sh
@@ -370,10 +397,19 @@ that has a rule for Chrome and none for a downloaded binary is the usual reason,
 and it looks like every navigation timing out rather than like a block —
 `PROBE_BROWSER_CHANNEL=chrome` drives the installed browser instead.
 
-**Undo:** `bunx wrangler delete --name chat-matrix-demo-<x>` per Worker. Unlike
-step 3's undo this one costs nothing to get wrong: the demo's Durable Objects
-hold only what visitors typed into a demo, and rebuilding it is the one command
-above.
+**Undo:** all six by name, from `index/` because that is where wrangler is
+installed. It asks before each one; `--force` skips the asking.
+
+```sh
+cd index
+for w in index assistant-ui ai-elements shadcn folio backend-cloudflare-agents; do
+  bunx wrangler delete --name "chat-matrix-demo-$w"
+done
+```
+
+Unlike step 3's undo this one costs nothing to get wrong: the demo's Durable
+Objects hold only what visitors typed into a demo, and rebuilding it is the one
+command above.
 
 ## When Folio publishes
 
@@ -449,10 +485,17 @@ cheapest useful slice to add first.
 **`jinja` isn't hosted.** The hosted subset is static exports plus one Worker;
 the monolith is a Python process with a SQLite file, and it's the one square the
 published matrix can't offer. `index/monolith.html` says where it runs and why,
-in plain text rather than a link that would die on a public URL. It is no longer
-the only one: `copilotkit` is out of a hosted deployment too until its runtime
-hop reaches the backend through a service binding, and that one is a defect with
-a fix rather than a shape that was never going to fit.
+in plain text rather than a link that would die on a public URL.
+
+**`copilotkit` is broken hosted, and still in the default subset.** Its runtime
+hop can't reach the backend until it goes through a service binding (step 3), so
+`./scripts/publish.sh` as it stands deploys a Worker that serves its page and
+answers no turn. Removing it from `HOSTED_CELLS` would make the default honest
+in one sense and quietly smaller in another — the published matrix would stop
+offering a cell it has always offered — and that is a decision about what is
+published rather than a bug fix, so it is recorded here and not taken.
+`DEMO_CELLS` is how one deployment publishes only the four that work, which is
+what the throwaway matrix above does. Unlike `jinja`, this one has a fix waiting.
 
 **A cell left out is drawn, not hidden.** Both of those cases used to differ in
 the hub: an unhosted backend kept its column and said `local`, and an unhosted
