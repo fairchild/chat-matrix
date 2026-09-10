@@ -177,9 +177,14 @@ production backend and hub URLs baked in, then `index/dist/` with the hosted
 topology substituted into `HOSTED`, every sibling page copied beside it and the
 ergonomics notes generated — and then deploys seven Workers: the
 cloudflare-agents backend, the five hosted cells, and the index. It prints a
-`→ deploy <label>` line each, then a `published` block with every URL.
+`→ deploy <worker name>` line each, then a `published` block with every URL.
 `./scripts/publish.sh --no-build` deploys what's already built, which is what
 you want if one deploy failed and the rest are fine.
+
+The name on each line is `worker_name`'s, passed to `wrangler deploy --name`
+rather than read out of each `wrangler.jsonc`. At the default prefix the two are
+the same string, so this changes nothing here; it is what lets `WORKER_PREFIX`
+put a whole second matrix somewhere else, which the demo section below uses.
 
 **Verify** — every URL answers, the flows still pass against what was actually
 shipped, and the backend still meets the contract from the edge:
@@ -203,12 +208,36 @@ paths, so `/` 404s there and `/health` is its liveness probe.
 the deployed cells and the deployed hub — the hosted-subset filter applies, so
 `jinja` reports as a skip with the list that made the decision in its title, and
 the captures key under `<backend>-deployed` so they land beside the local and
-preview bands rather than on top of them. Expect **29 passed, 2 skipped, 0
-failed**: five hosted cells × five flows, plus four of the five hub tests. The
-second skip is one worth knowing about — `isPreview()` is `PROBE_PORT_OFFSET !==
-0`, and `--production` sets base URLs rather than an offset, so the hub test that
-checks a hosted build offers only what it can serve skips against the realest
-hosted build there is. The preview run is what actually exercises it.
+preview bands rather than on top of them. One of the two skips is worth knowing
+about: `isPreview()` is `PROBE_PORT_OFFSET !== 0`, and `--production` sets base
+URLs rather than an offset, so the hub test that checks a hosted build offers
+only what it can serve skips against the realest hosted build there is. The
+preview run is what actually exercises it.
+
+What that filter reads changed, and the reason is a run that lied. A remote run
+now takes its published list from `PROBE_BASES` — the URLs `probe.sh` filled in
+from the same topology this deploy used — rather than only applying the filter
+under a port offset. Before, a `--production` run left the filter off entirely
+and `cellUrl()` fell back to `http://localhost:<port>`, so a cell that was never
+deployed was driven against whatever happened to be running on the machine and
+reported green as though the deployment had served it. On a laptop with
+`run.sh` up, that is five passes attributed to a Worker that does not exist.
+
+**CopilotKit does not work in this topology, and the reason is a platform rule
+rather than the cell.** Its hosted shape is a Worker serving the static export
+plus the runtime hop at `/api/copilotkit`, and that hop does an ordinary
+`fetch()` to the backend's `workers.dev` URL — which is a Worker subrequest to
+another Worker on the same zone, which Cloudflare refuses. The visible shape is a
+turn that sends and never answers, with `[CopilotKit] Error
+(agent_run_error_event): Error: HTTP 404: error code: 1042` in the console; the
+badge bar still reads the right backend, because that read is the browser's
+rather than the Worker's. Nothing about the cell's code is wrong and it is
+correct under `next dev`. The fix is a service binding — declare the backend
+Worker in `frontends/copilotkit/wrangler.jsonc` under `services` and have
+`worker/index.ts` prefer `env.BACKEND.fetch()` over the URL — which routes the
+subrequest inside Cloudflare instead of back through the edge. Until that lands,
+`DEMO_CELLS` (below) is how a deployment publishes the four that do work, and
+the hub draws the fifth as a square you can't click.
 Conformance against the published
 backend is the one run that *should* end with a skip: exactly one, the bulk
 thread list, printed with the backend's own words for why it declines to serve
@@ -288,6 +317,100 @@ expensive rather than less: every reader who arrives learns the word in whatever
 sense the docs teach it, and the README now teaches one sense explicitly. The
 decision is recorded in `docs/plans/cell-naming.md` when it's made.
 
+## A throwaway matrix beside the published one
+
+Everything above publishes *the* deployment — the names the README prints, the
+Durable Objects holding every stored thread, the URLs the hub is built against.
+A link you want to hand to someone before any of that is settled is a different
+want, and it should not be served by pointing the same seven names at a build
+you are still deciding about.
+
+`WORKER_PREFIX` is that. It replaces `chat-stack` in every Worker name, and
+because `production_url()` builds the baked-in URLs from the same function, it
+moves the build and the deploy together — a demo built at the default prefix
+would deploy under demo names and point every square at the other matrix, which
+is the failure the one variable exists to make impossible. `DEMO_CELLS` narrows
+which cells are in it.
+
+```sh
+WORKER_PREFIX=chat-matrix-demo \
+DEMO_CELLS="assistant-ui ai-elements shadcn folio" \
+  ./scripts/publish.sh
+```
+
+That deploys six Workers named `chat-matrix-demo-*` and touches nothing else on
+the account. The backend among them is a *different* backend: its own Durable
+Objects, its own thread store, starting empty. Everything else about it is the
+committed configuration, which is the point — a demo that ran a special build
+would be evidence about the special build.
+
+Both variables are checked rather than trusted, and the two checks guard the two
+ways this goes wrong quietly.
+
+`DEMO_CELLS` has to name cells that exist, name each once, and name at least one,
+and it is checked when `hosted.sh` is sourced — before a build starts and before
+the backend, which deploys first, is written. An unknown name would otherwise
+survive until its directory was missing, which is after a remote write.
+
+`--no-build` has to match the build it is skipping. `build_all` writes what it
+built for to `index/dist/.build` — mode, prefix, subdomain, backend URL, cell
+list — and a `--no-build` deploy compares that against its own invocation and
+refuses on a mismatch:
+
+```
+the built artifacts are for a different deployment.
+  built:    mode=production prefix=chat-matrix-demo … cells=assistant-ui ai-elements shadcn folio
+  asked for: mode=production prefix=chat-stack … cells=assistant-ui copilotkit ai-elements shadcn folio
+```
+
+That is the sequence worth naming, because it is a plausible afternoon and it
+ends on the live matrix: publish the demo, hit one failed deploy, retry with
+`--no-build` in a shell that has lost the prefix, and `wrangler deploy --name
+chat-stack-…` cheerfully publishes demo-linked pages over the deployment. Every
+URL in those artifacts is baked in, so nothing downstream would notice — the
+assets are valid and the names are real. `preview.sh --no-build` makes the same
+check for the same reason.
+
+**Verify** — the same three the deployment gets, against the demo's names:
+
+```sh
+for u in index assistant-ui ai-elements shadcn folio; do
+  printf '%-14s ' "$u"
+  curl -s -o /dev/null -w '%{http_code}\n' "https://chat-matrix-demo-$u.irons-in-the-fire8698.workers.dev/"
+done
+curl -s https://chat-matrix-demo-backend-cloudflare-agents.irons-in-the-fire8698.workers.dev/models
+
+WORKER_PREFIX=chat-matrix-demo DEMO_CELLS="assistant-ui ai-elements shadcn folio" \
+  ./scripts/probe.sh --production
+./protocol/conformance.sh https://chat-matrix-demo-backend-cloudflare-agents.irons-in-the-fire8698.workers.dev
+```
+
+`/models` answers `"current":"scripted"` with `"locked":true` and every provider
+`available:false` carrying its reason, which is the deployment's no-model claim
+stated by the thing that would have to break it. `wrangler secret list --name
+chat-matrix-demo-backend-cloudflare-agents` answers `[]` — the other half, since
+`locked` keeps `scripted` in place and an empty binding list is why there is
+nothing else to move to.
+
+If Playwright's own chromium cannot reach the network — an outbound firewall
+that has a rule for Chrome and none for a downloaded binary is the usual reason,
+and it looks like every navigation timing out rather than like a block —
+`PROBE_BROWSER_CHANNEL=chrome` drives the installed browser instead.
+
+**Undo:** all six by name, from `index/` because that is where wrangler is
+installed. It asks before each one; `--force` skips the asking.
+
+```sh
+cd index
+for w in index assistant-ui ai-elements shadcn folio backend-cloudflare-agents; do
+  bunx wrangler delete --name "chat-matrix-demo-$w"
+done
+```
+
+Unlike step 3's undo this one costs nothing to get wrong: the demo's Durable
+Objects hold only what visitors typed into a demo, and rebuilding it is the one
+command above.
+
 ## When Folio publishes
 
 `frontends/folio` consumes `@fairchild/folio` as a vendored tarball, because no
@@ -341,7 +464,11 @@ Each of these is a decision, listed so the absence reads as one.
 **No custom domain.** `workers.dev` subdomains are what `production_url()`
 builds and what `probe.sh --production` drives, so a domain would mean both
 learning a second source of truth for the same URLs. Worth doing if the demo
-outlives the comparison; not worth doing to publish it.
+outlives the comparison; not worth doing to publish it. One thing has since
+argued the other way: a custom domain would also put the backend on a hostname
+CopilotKit's runtime hop is allowed to fetch, which is the same-zone rule
+described in step 3. A service binding fixes that without a domain, and is the
+smaller change of the two.
 
 **No identity, no per-visitor scoping.** The published backend declines to serve
 its bulk thread list and its model switch rather than growing an account system
@@ -359,6 +486,24 @@ cheapest useful slice to add first.
 the monolith is a Python process with a SQLite file, and it's the one square the
 published matrix can't offer. `index/monolith.html` says where it runs and why,
 in plain text rather than a link that would die on a public URL.
+
+**`copilotkit` is broken hosted, and still in the default subset.** Its runtime
+hop can't reach the backend until it goes through a service binding (step 3), so
+`./scripts/publish.sh` as it stands deploys a Worker that serves its page and
+answers no turn. Removing it from `HOSTED_CELLS` would make the default honest
+in one sense and quietly smaller in another — the published matrix would stop
+offering a cell it has always offered — and that is a decision about what is
+published rather than a bug fix, so it is recorded here and not taken.
+`DEMO_CELLS` is how one deployment publishes only the four that work, which is
+what the throwaway matrix above does. Unlike `jinja`, this one has a fix waiting.
+
+**A cell left out is drawn, not hidden.** Both of those cases used to differ in
+the hub: an unhosted backend kept its column and said `local`, and an unhosted
+cell disappeared — `jinja`'s card was `hidden`, and a grid row would have shown
+the same bare dot as a stack that is merely down. A published matrix that looks
+complete while a stack is missing from it is the one thing a comparison must not
+do, so both axes now mark rather than omit, and the readout distinguishes "isn't
+running" from "isn't in this deployment".
 
 **Nothing is announced anywhere.** Publishing a repository and telling people
 about it are different acts, and only the first one is written down here.

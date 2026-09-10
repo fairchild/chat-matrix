@@ -201,7 +201,24 @@ still asserts.
 
 The remaining thing to know about the hosted cells is that CopilotKit's runtime
 forwards only localhost backends, so `?backend=` can't move that cell off its
-configured backend once hosted.
+configured backend once hosted. And on Cloudflare it currently can't reach the
+backend it is configured with either: that hop is a Worker fetching another
+Worker on the same `workers.dev` zone, which the platform refuses with `error
+code: 1042`, so a turn sends and no reply ever arrives. Nothing about the cell
+is wrong — it is correct under `next dev` — and a service binding is the fix;
+[`docs/publishing.md`](docs/publishing.md) carries both the diagnosis and the
+shape of it. The default subset still names all five, so `./scripts/publish.sh`
+deploys a CopilotKit Worker that serves its page and can't answer a turn.
+Narrowing that default is a decision about what the published matrix *is* rather
+than a fix, so it's written down here instead of made. `DEMO_CELLS="assistant-ui
+ai-elements shadcn folio"` publishes only the four that work, and the hub then
+draws the fifth as a square you can't click.
+
+Two variables move a whole deployment aside, for a link worth sharing before the
+published one is settled: `WORKER_PREFIX` renames every Worker and every URL
+built from it, and `DEMO_CELLS` narrows which cells are in it. Same build, same
+committed config, different names — `docs/publishing.md` has the commands and
+what the undo costs.
 
 The topology column is a real difference, not a detail. The direct cells talk
 straight to the backend; CopilotKit requires a server-side runtime in the
