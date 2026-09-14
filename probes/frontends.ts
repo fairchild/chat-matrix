@@ -327,7 +327,20 @@ export const matrixOrder = (): { cells: string[]; backends: string[] } => ({
  *  when a cell is added — only when a cell needs new selectors. */
 export const frontends = (): { supported: Frontend[]; unsupported: Unsupported[] } => {
   const entries = entriesOf("FRONTENDS");
-  const hosted = portOffset() ? hostedCells() : null;
+  // What counts as published depends on where the run is aimed. A remote run
+  // carries the exact list — PROBE_BASES, filled by probe.sh from the same
+  // topology publish.sh deployed against — so a cell missing from it is a cell
+  // that was not deployed. That case used to fall through to `null`, and the
+  // failure it produced is the worst kind: cellUrl() fell back to
+  // http://localhost:<port>, so a --production run drove whatever happened to be
+  // running on the machine and reported those passes as the deployment's. A
+  // deployment that publishes four cells now reports the fifth as not-hosted
+  // instead of green from a process the deployment has never met.
+  const hosted = isRemote()
+    ? new Set(Object.keys(bases()))
+    : portOffset()
+      ? hostedCells()
+      : null;
 
   const supported: Frontend[] = [];
   const unsupported: Unsupported[] = [];

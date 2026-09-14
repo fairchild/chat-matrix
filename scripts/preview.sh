@@ -12,7 +12,10 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/hosted.sh"
 
 [ "${1:-}" = "--stop" ] && exec "$ROOT/scripts/stop.sh" hosted
-[ "${1:-}" = "--no-build" ] || build_all preview
+# Same stamp check publish.sh makes, and worth making here too: serving a
+# production build under preview shows a page whose every link points at the
+# deployment, which looks like the preview working.
+if [ "${1:-}" = "--no-build" ]; then require_built_for preview; else build_all preview; fi
 
 mkdir -p "$RUN_DIR"
 
