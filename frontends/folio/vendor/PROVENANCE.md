@@ -1,7 +1,7 @@
 # Provenance
 
 `fairchild-folio-0.4.1.tgz` here is derived from the tarball Folio's own Release
-workflow built — a `workflow_dispatch` dry run on `fairchild/folio` at commit
+workflow built — a `workflow_dispatch` dry run on Folio's source repository at commit
 `d9bb824c96d7756bda180169589977ce636fa048`, clean tree — and uploaded as the
 Actions artifact `folio-release-0.4.1`.
 
