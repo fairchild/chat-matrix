@@ -1,6 +1,6 @@
 # Frontend: Folio
 
-Next.js + [`@fairchild/folio`](https://github.com/fairchild/folio), a
+Next.js + the Folio package, a
 document-first conversation surface, talking to a backend over the Vercel AI
 data stream protocol (AI SDK v7).
 
